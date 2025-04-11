@@ -7,6 +7,7 @@ if (!MONGODB_URI) {
 }
 
 declare global {
+    /* eslint-disable no-var */
     var _mongoose: {
         conn: typeof mongoose | null;
         promise: Promise<typeof mongoose> | null;
