@@ -3,7 +3,7 @@ import { LoginSchema } from "./dto";
 import dbConnect from "@/core/db/connect";
 import User from "@/models/users";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import * as jwt from "jose";
 
 function normalizeKeys(obj: Record<string, unknown>): Record<string, unknown> {
     const normalized: Record<string, unknown> = {};
@@ -12,6 +12,10 @@ function normalizeKeys(obj: Record<string, unknown>): Record<string, unknown> {
     }
     return normalized;
 }
+
+const secret = new TextEncoder().encode(
+    'test',
+)
 
 export async function POST(
     request: NextRequest
@@ -39,7 +43,11 @@ export async function POST(
             "error_description": "invalid credential"
         }, { status: 400 });
     }
-    const token = jwt.sign({ id: user._id }, "test", { expiresIn: '1h' });
+    const token = await new jwt.SignJWT({ id: (user._id as string).toString() })
+        .setProtectedHeader({ alg: 'HS256' })
+        .setIssuedAt()
+        .setExpirationTime('1h')
+        .sign(secret);
     return Response.json({
         access_token: token,
         token_type: "bearer",
