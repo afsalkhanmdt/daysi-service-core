@@ -3,6 +3,7 @@ import { RegisterSchema } from "./dto";
 import dbConnect from "@/core/db/connect";
 import User from "@/models/users";
 import bcrypt from "bcrypt";
+import Family, { IFamily } from "@/models/family";
 
 function normalizeKeys(obj: Record<string, unknown>): Record<string, unknown> {
     const normalized: Record<string, unknown> = {};
@@ -28,10 +29,19 @@ export async function POST(
         return new Response("103", { status: 500 });
     }
     const password = await bcrypt.hash(result.data.password, 10);
+    const family = new Family({
+        name: result.data.familyname,
+        members: []
+    });
+    await family.save();
+    console.log(family);
+
     const user = new User({
-        name: result.data.firstname,
+        firstName: result.data.firstname,
         email: result.data.email,
         password,
+        familyId: family.familyId,
+
     });
     await user.save();
     return Response.json({ Promo: 0, Month: 0, FreeTrialPeriod: 30 / 30 });

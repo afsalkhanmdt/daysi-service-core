@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { NextRequest } from 'next/server'
 import * as jwt from 'jose'
 
 const secret = new TextEncoder().encode(
@@ -34,7 +34,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.next()
     }
     const accessToken = request.headers.get('authorization')?.split(' ')[1];
-    if (!accessToken || await validateToken(accessToken) === undefined) {
+    if (!accessToken) {
         return NextResponse.json({
             message: 'Unauthorized',
             status: 401,
@@ -42,7 +42,18 @@ export async function middleware(request: NextRequest) {
             status: 401,
         })
     }
-    return NextResponse.next()
+    const decoded = await validateToken(accessToken);
+    if (!decoded) {
+        return NextResponse.json({
+            message: 'Unauthorized',
+            status: 401,
+        }, {
+            status: 401,
+        })
+    }
+    const response = NextResponse.next();
+    response.cookies.set('user-id', decoded.payload.id as string);
+    return response;
 }
 
 export const config = {
