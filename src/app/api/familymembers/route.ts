@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import dbConnect from "../../../core/db/connect";
 import User from "../../../models/users";
 import { FamilyMemberCreateSchema } from "./dto";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { normalizeKeys } from "../normalizeKeys";
 import bcrypt from "bcrypt";
 
@@ -38,7 +38,7 @@ export async function POST(
     return Response.json({
         "Id": 673,
         "MemberId": user._id,
-        "MemberName": user.name,
+        "MemberName": user.firstName,
         "FirstName": user.firstName,
         "Email": user.email,
         "FamilyId": user.familyId,
@@ -59,7 +59,6 @@ export async function POST(
         "IsPrivate": false,
         "ExternalCalendars": null,
         "Frequency": 0,
-        "Counter": 0,
         "ExportEventUrl": "https://dev.daysi.dk/api/FamilyMembers/GetDaysiEvents?token=",
         "DeleteAllAppointment": false,
         "DeleteOwnAppointment": false,
@@ -82,4 +81,30 @@ export async function POST(
     }
 
     );
+}
+
+
+
+export async function GET() {
+    try {
+        const userId = (await cookies()).get('user-id')?.value;
+        if (!userId) {
+            return new Response('User ID not found in cookies', { status: 400 });
+        }
+        await dbConnect();
+        const user = await User.findById(userId);
+        if (!user) {
+            return new Response('User not found', { status: 404 });
+        }
+
+        if (!user.familyId) {
+            return new Response('Family ID not associated with user', { status: 404 });
+        }
+
+        const familyMembers = await User.find({ familyId: user.familyId });
+        return NextResponse.json({ familyMembers });
+    } catch (error) {
+        console.error("API Error:", error);
+        return new Response('Internal server error', { status: 500 });
+    }
 }

@@ -51,7 +51,7 @@ export async function POST(
     return Response.json({
         access_token: token,
         token_type: "bearer",
-        expires_in: 1 * 60 * 60 - 1,
+        expires_in: 10 * 60 * 60 - 1,
         userName: user.email,
         familyId: "48173",
         validateTillDate: new Date(
