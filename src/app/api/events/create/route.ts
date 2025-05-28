@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
         EventsUpdatedOn: new Date(),
         participants: participantsArray,
         title: result.data.title,
+        familyId: result.data.familyid,
         description: result.data.description,
         startDate: result.data.startdate,
         endDate: result.data.enddate,
