@@ -1,10 +1,7 @@
 import { z } from 'zod';
+import { string } from 'zod/v4';
 
-const ParticipantSchema = z.object({
-    localId: z.number({ required_error: 'Local ID is required' }),
-    memberId: z.string().min(1, { message: 'Member ID is required' }),
-    eventId: z.number().nullable().optional(), // Optional and nullable, as it's `int?` in C#
-});
+
 
 const SpecialEventSchema = z.any();
 const RepeatSchema = z.any();
@@ -13,35 +10,35 @@ const AlarmSchema = z.any();
 const RecurrenceRuleSchema = z.any();
 
 export const EventUpdateSchema = z.object({
-    id: z.number({ required_error: 'Id is required' }),
-    participants: z.array(ParticipantSchema, { required_error: 'Participants are required' }),
-    familyUserId: z.string().optional(),
-    familyId: z.number().optional(),
+    id: z.string({ required_error: 'Id is required' }),
+    participants: z.array(z.string(), { required_error: 'Participants are required' }),
+    familyUserid: z.string().optional(),
+    familyid: z.number().optional(),
     title: z.string({ required_error: 'Title is required' }),
     description: z.string().optional(),
-    startDate: z.coerce.date().optional(),
-    endDate: z.coerce.date().optional(),
+    startdate: z.coerce.date().optional(),
+    enddate: z.coerce.date().optional(),
     location: z.string().optional(),
-    specialEvent: SpecialEventSchema.optional(),
+    specialevent: SpecialEventSchema.optional(),
     repeat: RepeatSchema.optional(),
-    repeatEndDate: z.coerce.date().nullable().optional(),
+    repeatEnddate: z.coerce.date().nullable().optional(),
     alert: AlertSchema.optional(),
-    isForAll: z.number().optional(),
-    isAllDayEvent: z.number().optional(),
-    isSpecialEvent: z.number().optional(),
-    isPrivateEvent: z.number().optional(),
-    eventPerson: z.string().optional(),
-    eventsUpdatedOn: z.string().optional(),
-    localStartDate: z.string().optional(),
-    localEndDate: z.string().optional(),
-    timeZone: z.string().optional(),
-    offSet: z.string().optional(),
+    isforall: z.number().optional(),
+    isalldayevent: z.number().optional(),
+    isspecialevent: z.number().optional(),
+    isprivateevent: z.number().optional(),
+    eventperson: z.string().optional(),
+    eventsupdatedon: z.string().optional(),
+    localstartdate: z.string().optional(),
+    localenddate: z.string().optional(),
+    timezone: z.string().optional(),
+    offset: z.string().optional(),
     locale: z.string().optional(),
-    parentEventId: z.string().optional(),
-    eventGuID: z.string().optional(),
-    externalCalendarId: z.number().optional(),
+    parenteventid: z.string().optional(),
+    eventguid: z.string().optional(),
+    externalcalendarid: z.number().optional(),
     alarms: z.array(AlarmSchema).optional(),
     latitude: z.string().optional(),
     longitude: z.string().optional(),
-    recurrenceRule: RecurrenceRuleSchema.optional(),
+    recurrencerule: RecurrenceRuleSchema.optional(),
 });

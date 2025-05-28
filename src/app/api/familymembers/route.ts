@@ -11,26 +11,25 @@ export async function POST(
 ) {
     const normalizedRequest = normalizeKeys(await request.json());
     const result = FamilyMemberCreateSchema.safeParse(normalizedRequest);
-    if (!result.success) {
-        return new Response('100', { status: 500 });
-    }
 
-    if (!result.data.password) {
-        return new Response("Password is required", { status: 400 });
+      if (!result.success) {
+        return new Response(JSON.stringify(result.error.flatten()), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+        });
     }
-
-    const password = await bcrypt.hash(result.data.password, 10);
+    const password = result.data.password ? await bcrypt.hash(result.data.password, 10) : null;
     const userId = (await cookies()).get('user-id')?.value;
     await dbConnect();
     const currentUser = await User.findById(userId);
+
 
     const user = new User({
         firstName: result.data.firstname,
         email: result.data.email,
         familyId: currentUser?.familyId,
         password
-
-
+        
     });
     await user.save();
     console.log(user);
