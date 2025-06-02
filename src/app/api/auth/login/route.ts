@@ -8,7 +8,8 @@ export async function POST(
         email: z.string().email(),
         password: z.string(),
     });
-    // Parse the request body
+    
+    
     const result = schema.safeParse(await request.json());
     if (!result.success) {
         return Response.json({
