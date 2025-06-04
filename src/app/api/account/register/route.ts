@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
         const password = await bcrypt.hash(result.data.password, 10);
 
         const family = new Family({
-            name: result.data.familyname,
+            firstName: result.data.familyname,
         });
         await family.save();
 

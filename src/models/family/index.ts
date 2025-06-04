@@ -2,12 +2,12 @@ import { Schema, model, models, Document, Model } from 'mongoose';
 import AutoIncrementCounter from '../counter';
 
 export interface IFamily extends Document {
-    name: string;
+    firstName: string;
     familyId: number;
 }
 
 const FamilySchema = new Schema<IFamily>({
-    name: { type: String, required: true },
+    firstName: { type: String, required: true },
     familyId: { type: Number, unique: true },
 });
 
