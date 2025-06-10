@@ -1,8 +1,7 @@
 import dbConnect from '@/core/db/connect';
 import Family from '@/models/family';
 import { NextRequest, NextResponse } from 'next/server';
-import { normalizeKeys } from '../../normalizeKeys';
-import { familyUpdateSchema } from './dto';
+
 
 export async function GET(
   request: NextRequest,
@@ -25,20 +24,12 @@ export async function GET(
   }
 }
 
-export async function POST(
+export async function DELETE(
   request: NextRequest,
   context: { params: { id: string } }
 ) {
   const { params } = context;
   try {
-    const normalizedRequest = normalizeKeys(await request.json());
-    const result = familyUpdateSchema.safeParse(normalizedRequest);
-
-    if (!result.success) {
-      const { fieldErrors, formErrors } = result.error.flatten();
-      return NextResponse.json({ fieldErrors, formErrors }, { status: 400 });
-    }
-
     await dbConnect();
 
     const family = await Family.findById(params.id);
@@ -47,12 +38,11 @@ export async function POST(
       return NextResponse.json({ error: 'Family not found' }, { status: 404 });
     }
 
-    family.set(result.data);
-    await family.save();
-
-    return NextResponse.json({ message: 'Family updated successfully' });
+    await Family.deleteOne({ _id: params.id });
+    return NextResponse.json({ message: 'Family deleted successfully' }, { status: 200 });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
