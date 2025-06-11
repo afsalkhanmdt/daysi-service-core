@@ -1,28 +1,29 @@
-import { cookies } from "next/headers";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { normalizeKeys } from "../../normalizeKeys";
 import { ChangePasswordSchema } from "./dto";
 import dbConnect from "@/core/db/connect";
 import bcrypt from "bcrypt";
 import User from "@/models/users";
+import { cookies } from "next/headers";
 
 export async function POST(request:NextRequest) {
     try {
          const body = await request.json();
         const normalizedRequest = normalizeKeys(body);
-        console.log(`Normalized request: ${JSON.stringify(normalizedRequest)}`);
-        
         const result = ChangePasswordSchema.safeParse(normalizedRequest);
-       
-        
 
+        const userId=(await cookies()).get('user-id')?.value;
+        if (!userId) {
+            return new Response('User not authenticated', { status: 401 });
+        }
+        
        if (!result.success) {
             const { fieldErrors, formErrors } = result.error.flatten();
             return Response.json({ fieldErrors, formErrors }, { status: 400 });
         }
         await dbConnect();
 
-        const user=await User.findById(result.data.memberid);
+        const user=await User.findById(userId);
         console.log(`User found: ${user}`);
         if (!user) {
             return new Response('User not found', { status: 404 });
