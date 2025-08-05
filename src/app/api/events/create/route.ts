@@ -46,6 +46,11 @@ export async function POST(request: NextRequest) {
         EventData: [
             {
                 Id: event._id,
+                Title: event.title,
+                Description: event.description,
+                StartDate: event.startDate,
+                EndDate: event.endDate,
+                FamilyId: event.familyId,
                 Participants: userArray.map(user => ({
                     LocalId: 6352, // Replace with actual field if needed
                     MemberName: user?.firstName, // Replace with correct name field

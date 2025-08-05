@@ -6,8 +6,8 @@ export interface IEvent extends Document {
     title: string;
     familyId: number;
     description?: string;
-    startDate?: Date;
-    endDate?: Date;
+    startDate: Date;
+    endDate: Date;
     participants: string[];
 }
 
@@ -17,8 +17,8 @@ const EventSchema = new Schema<IEvent>({
     title: { type: String, required: true },
     familyId: { type: Number, required: true },
     description: { type: String, required: false },
-    startDate: { type: Date, required: false },
-    endDate: { type: Date, required: false },
+    startDate: { type: Date, required: true },
+    endDate: { type: Date, required: true },
 
 });
 

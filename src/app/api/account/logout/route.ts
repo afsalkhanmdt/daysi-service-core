@@ -1,15 +1,21 @@
 import { cookies } from "next/headers";
+import { NextRequest } from "next/server";
 
-export async function GET() {
+export async function POST(req: NextRequest) {
+  
+
     try {
+        const { searchParams } = new URL(req.url);
+        const memberId = searchParams.get('memberId');
+        const deviceToken = searchParams.get('deviceToken');
+        if (!memberId || !deviceToken) {
+            return new Response('Bad Request: Missing parameters', { status: 400 });
+        }
         const sessionId = (await cookies()).get('user-id')?.value;
-        console.log(`Session ID: ${sessionId}`);
 
         if (!sessionId) {
             return new Response('Unauthorized', { status: 401 });
         }
-
-        // Clear the cookie by setting it with past expiration
         const response = new Response('Logged out successfully', { status: 200 });
 
         response.headers.set(
