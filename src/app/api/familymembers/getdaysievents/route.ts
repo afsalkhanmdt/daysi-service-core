@@ -2,9 +2,8 @@ import dbConnect from '@/core/db/connect'
 import Event from '@/models/event'
 import ical from 'ical-generator'
 import { cookies } from 'next/headers'
-import { NextRequest, NextResponse } from 'next/server'
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const userId = (await cookies()).get('user-id')?.value
     if (!userId) {

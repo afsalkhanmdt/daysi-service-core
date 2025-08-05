@@ -5,6 +5,11 @@ import { normalizeKeys } from "../../normalizeKeys";
 import { EventCreateSchema } from "./dto";
 import User from "../../../../models/users";
 
+type ParticipantType = {
+    memberid: string;
+    localid: number;
+}
+
 export async function POST(request: NextRequest) {
     const normalizedRequest = normalizeKeys(await request.json());
     const result = EventCreateSchema.safeParse(normalizedRequest);
@@ -16,7 +21,7 @@ export async function POST(request: NextRequest) {
         });
     }
 
-    const participantsArray: string[] = result.data.participants.map((element: any) => element.memberid);
+    const participantsArray: string[] = result.data.participants.map((element: ParticipantType) => element.memberid);
     console.log(`Participants Array: ${participantsArray}`);
 
     await dbConnect();
