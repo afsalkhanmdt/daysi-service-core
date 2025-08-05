@@ -19,6 +19,7 @@ const validateToken = async (token: string) => {
 const allowlist = [
     '/api/account/register',
     '/token',
+    '/admin/login',
 ]
 
 export async function middleware(request: NextRequest) {
