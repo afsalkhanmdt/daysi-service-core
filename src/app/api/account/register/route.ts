@@ -4,6 +4,7 @@ import dbConnect from "@/core/db/connect";
 import User from "@/models/users";
 import bcrypt from "bcrypt";
 import Family from "@/models/family";
+import { getNextSequence } from "@/app/utils/getNextSequence";
 
 function normalizeKeys(obj: Record<string, unknown>): Record<string, unknown> {
     const normalized: Record<string, unknown> = {};
@@ -37,21 +38,23 @@ export async function POST(request: NextRequest) {
 
         const password = await bcrypt.hash(result.data.password, 10);
 
-        const family = new Family({
-            name: result.data.familyname,
-            registeredDate: new Date(),
+        const nextFamilyId = await getNextSequence("familyId");
 
-        });
-        await family.save();
+            const family = new Family({
+                name: result.data.familyname,
+                registeredDate: new Date(),
+                familyId: nextFamilyId,
+            });
+            await family.save();
 
-        const user = new User({
-            familyName: result.data.familyname,
-            firstName: result.data.firstname,
-            email: result.data.email,
-            password,
-            familyId: family._id,
-        });
-        await user.save();
+            const user = new User({
+                familyName: result.data.familyname,
+                firstName: result.data.firstname,
+                email: result.data.email,
+                password,
+                familyId: nextFamilyId,
+            });
+            await user.save();
 
         return Response.json({ Promo: 0, Month: 0, FreeTrialPeriod: 30 / 30 });
     } catch (err) {
