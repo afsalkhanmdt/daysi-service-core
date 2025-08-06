@@ -53,7 +53,7 @@ export async function POST(
         token_type: "bearer",
         expires_in: 10 * 60 * 60 - 1,
         userName: user.email,
-        familyId: "48173",
+        familyId: user.familyId,
         validateTillDate: new Date(
             Date.now() + 3600 * 1000
         ).toLocaleString('en-US', {

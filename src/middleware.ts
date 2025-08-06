@@ -1,10 +1,8 @@
-import { NextResponse } from 'next/server'
-import { NextRequest } from 'next/server'
-import * as jwt from 'jose'
+import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import * as jwt from 'jose';
 
-const secret = new TextEncoder().encode(
-    'test',
-)
+const secret = new TextEncoder().encode('test');
 
 const validateToken = async (token: string) => {
     try {
@@ -14,34 +12,43 @@ const validateToken = async (token: string) => {
         console.error('Token validation failed:', err);
         return undefined;
     }
-}
+};
+
 
 const allowlist = [
     '/api/account/register',
     '/token',
     '/admin/login',
-]
+];
+
+
+const isAllowlisted = (pathname: string) => {
+    return allowlist.some((pattern) => {
+        if (pattern.endsWith('*')) {
+            return pathname.startsWith(pattern.slice(0, -1));
+        }
+        return pathname === pattern;
+    });
+};
 
 export async function middleware(request: NextRequest) {
-    //Check the user is authenticated
-    const url = request.nextUrl
-    const pathname = url.pathname
+    const pathname = request.nextUrl.pathname;
+
+    
+    if (isAllowlisted(pathname)) {
+        return NextResponse.next();
+    }
+
+
     if ((pathname.startsWith('/api') || pathname.startsWith('/Token')) && pathname !== pathname.toLowerCase()) {
-        const lowercaseURL = url.clone()
-        lowercaseURL.pathname = pathname.toLowerCase()
-        return NextResponse.redirect(lowercaseURL)
+        const lowercaseURL = request.nextUrl.clone();
+        lowercaseURL.pathname = pathname.toLowerCase();
+        return NextResponse.redirect(lowercaseURL);
     }
-    if (allowlist.some((path) => pathname === path)) {
-        return NextResponse.next()
-    }
+
     const accessToken = request.headers.get('authorization')?.split(' ')[1];
     if (!accessToken) {
-        return NextResponse.json({
-            message: 'Unauthorized',
-            status: 401,
-        }, {
-            status: 401,
-        })
+        return NextResponse.json({ message: 'Unauthorized', status: 401 }, { status: 401 });
     }
     const decoded = await validateToken(accessToken);
     if (!decoded) {
@@ -57,6 +64,6 @@ export async function middleware(request: NextRequest) {
     return response;
 }
 
-export const config = {
-    matcher: '/api/:path*',
-}
+// export const config = {
+//     matcher: '/api/:path*',
+// }
