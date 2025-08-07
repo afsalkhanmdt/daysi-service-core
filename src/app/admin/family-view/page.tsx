@@ -7,29 +7,46 @@ import dp from "./assets/try.jpg";
 import icon from "./assets/MyFamilii Brand Guide (1)-2 1.png";
 import Image from "next/image";
 
+const imageArray = [icon.src, dp.src, eventIcon.src];
+
 const EventCardUI = ({ eventInfo }: { eventInfo: any }) => {
+  const start = eventInfo.event.start;
+  const end = eventInfo.event.end;
+
+  const formatTime = (date: Date) =>
+    date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
   return (
-    <div className="grid gap-1 p-2 border-t-4 rounded-2xl border-sky-500 bg-white shadow-sm">
-      <div className="text-center py-1 px-2 bg-indigo-50 text-sky-500 w-fit text-[10px] rounded-[32px]">
-        Event
-      </div>
-      <div className="grid gap-2">
-        <div className="font-semibold text-lg">{eventInfo.event.title}</div>
-        <div className="font-normal text-sm text-stone-500">
-          {eventInfo.timeText}
+    <div className="h-full border-t-4 rounded-2xl border-sky-500 bg-white shadow-sm overflow-x-auto">
+      <div className="flex flex-col flex-wrap gap-4 p-4 h-full">
+        <div className="text-center py-1 px-2 bg-indigo-50 text-sky-500 w-fit text-[10px] rounded-[32px]">
+          Event
         </div>
-      </div>
-      <div className="flex -space-x-2">
-        {[icon.src, dp.src, eventIcon.src].map((src, i) => (
-          <Image
-            key={i}
-            src={src}
-            alt={`avatar-${i}`}
-            width={32}
-            height={32}
-            className="rounded-full border-2 border-white"
-          />
-        ))}
+        <div className="grid gap-1">
+          <div className="font-semibold text-lg text-black">
+            {eventInfo.event.title}
+          </div>
+          <div className="font-normal text-sm text-stone-500">
+            {formatTime(start)} - {formatTime(end)}
+          </div>
+        </div>
+        <div className="flex flex-wrap justify-between w-full gap-2">
+          <div className="flex -space-x-2 ">
+            {imageArray.map((src, i) => (
+              <Image
+                key={i}
+                src={src}
+                alt={`avatar-${i}`}
+                width={32}
+                height={32}
+                className="rounded-full border-2 border-white"
+              />
+            ))}
+          </div>
+          <div className="rounded-[4px] py-0.5 px-1.5 font-semibold text-sky-500 text-sm bg-slate-100 h-fit w-fit">
+            {imageArray.length}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -40,18 +57,37 @@ export default function FamilyPage() {
     <div className="p-4">
       <FullCalendar
         plugins={[timeGridPlugin]}
-        initialView="timeGridWeek"
-        weekends={false}
+        initialView="timeGridDay"
+        initialDate={new Date()}
+        slotDuration="00:30:00"
+        slotLabelInterval="01:00"
+        slotMinTime="06:00:00"
+        slotMaxTime="22:00:00"
+        allDaySlot={false}
+        weekends={true}
+        nowIndicator={true}
+        height="auto"
+        displayEventTime={false}
+        eventOverlap={false}
+        slotEventOverlap={false}
         events={[
           {
             title: "Family Breakfast",
-            start: "2025-08-08T03:00:00",
-            end: "2025-08-08T07:00:00",
+            start: "2025-08-07T06:00:00",
+            end: "2025-08-07T09:00:00",
+            display: "block",
           },
           {
-            title: "Family Breakfast",
-            start: "2025-08-06T06:00:00",
-            end: "2025-08-06T07:00:00",
+            title: "Morning Walk",
+            start: "2025-08-07T06:30:00",
+            end: "2025-08-07T15:00:00",
+            display: "block",
+          },
+          {
+            title: "Team Call",
+            start: "2025-08-07T07:00:00",
+            end: "2025-08-07T08:00:00",
+            display: "block",
           },
         ]}
         eventContent={(eventInfo) => <EventCardUI eventInfo={eventInfo} />}
