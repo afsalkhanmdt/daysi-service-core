@@ -8,9 +8,16 @@ export const AdminLoginCall = async (username: string, password: string) => {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
-      },
+    },
     body: formData,
+    credentials: "omit",       // Do NOT send cookies or credentials
+    redirect: "manual",        // Prevent automatic redirect following
   });
+
+  // If server tries to redirect (status 3xx), treat as error here
+  if (res.status >= 300 && res.status < 400) {
+    throw new Error("Login failed: server redirected the request.");
+  }
 
   if (!res.ok) {
     throw new Error("Login failed");
