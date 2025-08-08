@@ -1,8 +1,10 @@
-import { NextResponse } from 'next/server';
-import { NextRequest } from 'next/server';
-import * as jwt from 'jose';
+import { NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import * as jwt from 'jose'
 
-const secret = new TextEncoder().encode('test');
+const secret = new TextEncoder().encode(
+    'test',
+)
 
 const validateToken = async (token: string) => {
     try {
@@ -12,13 +14,13 @@ const validateToken = async (token: string) => {
         console.error('Token validation failed:', err);
         return undefined;
     }
-};
-
+}
 
 const allowlist = [
     '/api/account/register',
     '/token',
     '/admin/login',
+    '/admin/family-view',
 ]
 
 export async function middleware(request: NextRequest) {
@@ -35,7 +37,12 @@ export async function middleware(request: NextRequest) {
     }
     const accessToken = request.headers.get('authorization')?.split(' ')[1];
     if (!accessToken) {
-        return NextResponse.json({ message: 'Unauthorized', status: 401 }, { status: 401 });
+        return NextResponse.json({
+            message: 'Unauthorized',
+            status: 401,
+        }, {
+            status: 401,
+        })
     }
     const decoded = await validateToken(accessToken);
     if (!decoded) {
@@ -52,5 +59,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-    matcher: '/api/:path*',
+    matcher: '/:path*',
 }
