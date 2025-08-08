@@ -11,7 +11,9 @@ export async function GET(
   try {
     await dbConnect();
 
-    const family = await Family.findById(params.id);
+    const family = await Family.findOne({ familyId: params.id });
+    console.log('Family ID:', params.id);
+    
 
     if (!family) {
       return NextResponse.json({ error: 'Family not found' }, { status: 404 });

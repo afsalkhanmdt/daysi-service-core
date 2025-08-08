@@ -4,6 +4,7 @@ import { Schema, model, models, Document, Model } from 'mongoose';
 
 
 export interface IFamily extends Document {
+  familyId: number;
   name: string;
   holidaysCountryCode?: string;
   registeredDate: Date;
@@ -22,6 +23,7 @@ export interface IFamily extends Document {
 
 const FamilySchema = new Schema<IFamily>(
   {
+    familyId: { type: Number, unique: true, required: true },
     name: { type: String, required: true },
     holidaysCountryCode: { type: String },
     registeredDate: { type: Date, required: true },
@@ -36,10 +38,10 @@ const FamilySchema = new Schema<IFamily>(
     everyoneCreatePmTask: { type: Boolean, default: false },
     region: { type: String },
     mailChimpSubscriptionType: {
-    type: String,
-    enum: ['Basis', 'Premium', 'Voucher', 'PremiumToBasis', 'VoucherToBasis'],
-    default: 'Basis',
-  },
+      type: String,
+      enum: ['Basis', 'Premium', 'Voucher', 'PremiumToBasis', 'VoucherToBasis'],
+      default: 'Basis',
+    },
   },
   { timestamps: true }
 );
