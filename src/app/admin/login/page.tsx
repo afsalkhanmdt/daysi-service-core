@@ -24,7 +24,7 @@ const Login = () => {
 
             localStorage.setItem("access_token", res.access_token);
 
-            await delay(1000); // wait 1 second before redirecting
+            await delay(100000); // wait 1 second before redirecting
 
             router.push("/admin/family-view");
         } catch (err) {
