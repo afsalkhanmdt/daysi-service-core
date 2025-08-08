@@ -3,17 +3,27 @@
 import { useState } from "react";
 import { AdminLoginCall } from "@/services/api/apiCall";
 import Link from "next/link";
+import Router from "next/router";
 
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); // prevent form refresh
+    e.preventDefault();
     try {
       const res = await AdminLoginCall(username, password);
       console.log("Login success:", res);
-      // Store token or redirect
+
+      // Store token in localStorage
+      localStorage.setItem("access_token", res.access_token);
+
+      // Optionally, store other info if you want:
+      // localStorage.setItem("userName", res.userName);
+      // localStorage.setItem("memberId", res.memberId);
+      Router.push("/admin/family-view");
+
+      // You can redirect or update UI here if needed
     } catch (err) {
       console.error("Login failed:", err);
     }
