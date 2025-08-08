@@ -5,23 +5,33 @@ import { AdminLoginCall } from "@/services/api/apiCall";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 const Login = () => {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
-
-    const router = useRouter();  // <-- get router instance
+    const [loading, setLoading] = useState(false); // To handle loading state
+    const [error, setError] = useState<string | null>(null);
+    const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError(null);
+        setLoading(true);
         try {
             const res = await AdminLoginCall(username, password);
             console.log("Login success:", res);
 
             localStorage.setItem("access_token", res.access_token);
 
-            router.push("/admin/family-view");  // <-- navigate using useRouter
+            await delay(1000); // wait 1 second before redirecting
+
+            router.push("/admin/family-view");
         } catch (err) {
             console.error("Login failed:", err);
+            setError("Login failed. Please check your credentials.");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -48,6 +58,8 @@ const Login = () => {
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400"
+                            disabled={loading}
+                            required
                         />
                         <label className="block text-sm font-medium text-gray-700 mt-4">
                             Password
@@ -58,22 +70,29 @@ const Login = () => {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400"
+                            disabled={loading}
+                            required
                         />
                         <div className="flex items-center justify-between text-sm text-gray-600 mt-2">
                             <label className="flex items-center gap-2">
-                                <input type="checkbox" className="accent-sky-500" />
+                                <input type="checkbox" className="accent-sky-500" disabled={loading} />
                                 Remember me
                             </label>
                             <Link href="#" className="text-sky-500 hover:underline">
                                 Forgot Password?
                             </Link>
                         </div>
+                        {error && (
+                            <p className="text-red-600 mt-3 text-center font-medium">{error}</p>
+                        )}
                     </div>
                     <button
                         type="submit"
-                        className="w-full py-2 px-4 bg-sky-500 hover:bg-sky-600 text-white font-semibold rounded-lg transition duration-300"
+                        className={`w-full py-2 px-4 bg-sky-500 hover:bg-sky-600 text-white font-semibold rounded-lg transition duration-300 ${loading ? "opacity-70 cursor-not-allowed" : ""
+                            }`}
+                        disabled={loading}
                     >
-                        Login
+                        {loading ? "Logging in..." : "Login"}
                     </button>
                 </form>
             </div>
