@@ -33,10 +33,47 @@
 
 /* Make the resource label content align at the top instead of centered */
 .fc-scrollgrid-sync-inner {
+  margin-left: 20px;
+  margin-right: 20px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  background-color: #ffffff;
   display: flex !important; /* Switch to flexbox */
   align-items: flex-start !important; /* Align items to the top */
   justify-content: flex-start !important; /* Align horizontally to start */
   border-radius: 62px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
   padding: 4px; /* Optional for spacing */
+}
+/* Remove all table borders in FullCalendar */
+.fc-theme-standard td,
+.fc-theme-standard th {
+  border: none !important;
+}
+
+/* Remove horizontal & vertical slot lines */
+.fc .fc-timegrid-slot {
+  border: none !important;
+}
+
+/* Remove vertical lines between resources */
+.fc .fc-timegrid-divider,
+.fc .fc-timegrid-col {
+  border: none !important;
+}
+
+/* Remove borders around header & scroll grid */
+.fc .fc-scrollgrid,
+.fc .fc-scrollgrid-section > * {
+  background: #f2f7fa;
+}
+
+/* Optional: remove background stripes for alternate time slots */
+.fc .fc-timegrid-slot-lane:nth-child(even) {
+  background: transparent !important;
+}
+
+/* Vertical dashed separator for resource/day columns only */
+.fc-timegrid-body .fc-timegrid-col:not(:last-of-type) {
+  border-right: 2px dashed rgba(0, 0, 0, 0.15) !important;
 }

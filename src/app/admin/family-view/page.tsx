@@ -12,6 +12,7 @@ import icon from "../assets/try.jpg";
 
 export default function FamilyPage() {
   const calendarRef = useRef<any>(null);
+  const [currentDate, setCurrentDate] = useState(dayjs());
   const baseDate = dayjs();
   const [loading, setLoading] = useState(false);
 
@@ -74,6 +75,25 @@ export default function FamilyPage() {
     }
   };
 
+  // Switch to a specific day (e.g., August 15, 2025)
+  const goToSpecificDate = (year: number, month: number, day: number) => {
+    const calendarApi = calendarRef.current?.getApi();
+    const targetDate = new Date(year, month - 1, day); // JS months are 0-indexed
+    calendarApi?.gotoDate(targetDate); // Moves calendar to that day
+    calendarApi?.changeView("resourceTimeGridDay"); // Optional: ensure day view
+  };
+
+  const goToDate = (date: dayjs.Dayjs) => {
+    const calendarApi = calendarRef.current?.getApi();
+    calendarApi?.gotoDate(date.toDate());
+    calendarApi?.changeView("resourceTimeGridDay");
+    setCurrentDate(date);
+  };
+
+  const handleNextMonth = () => goToDate(currentDate.add(1, "month"));
+  const handlePrevMonth = () => goToDate(currentDate.subtract(1, "month"));
+  const handleToday = () => goToDate(dayjs());
+
   return (
     <div className="p-4">
       <div className="mb-4 flex gap-2">
@@ -87,8 +107,32 @@ export default function FamilyPage() {
           </button>
         ))}
       </div>
-
-      <button
+      {/* Month Navigation with Today */}
+      <div className="mb-4 flex items-center gap-2">
+        <button
+          onClick={handleToday}
+          className="ml-4 px-3 py-1 rounded-lg bg-blue-500 text-white hover:bg-blue-600"
+        >
+          Today
+        </button>
+        <button
+          onClick={handlePrevMonth}
+          className="px-3 py-1 rounded-lg bg-gray-200 hover:bg-gray-300"
+        >
+          &lt;
+        </button>
+        <div className="font-semibold text-lg">
+          {currentDate.format("MMMM YYYY")}
+        </div>
+        <button
+          onClick={handleNextMonth}
+          className="px-3 py-1 rounded-lg bg-gray-200 hover:bg-gray-300"
+        >
+          &gt;
+        </button>
+      </div>
+      ;
+      {/* <button
         onClick={handleFetchFamilies}
         disabled={loading}
         className={`mb-6 px-4 py-2 rounded-lg font-semibold ${
@@ -98,24 +142,24 @@ export default function FamilyPage() {
         } text-white`}
       >
         {loading ? "Fetching Families..." : "Fetch Families"}
-      </button>
-
+      </button> */}
       <FullCalendar
         ref={calendarRef}
         plugins={[resourceTimeGridPlugin]}
         initialView="resourceTimeGridDay"
-        initialDate={new Date()}
+        initialDate={currentDate.toDate()}
         slotDuration="00:30:00"
         slotLabelInterval="01:00"
         slotMinTime="06:00:00"
         slotMaxTime="22:00:00"
         allDaySlot={false}
         weekends={true}
-        nowIndicator={true}
+        nowIndicator={false} // hide the red current time line
         height="auto"
         displayEventTime={false}
         eventOverlap={false}
         slotEventOverlap={false}
+        headerToolbar={false} // disables default FullCalendar navigation
         resources={people}
         events={events}
         resourceLabelContent={(arg) => {
