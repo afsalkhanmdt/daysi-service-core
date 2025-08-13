@@ -1,5 +1,5 @@
-import eventIcon from "../assets/cake-svgrepo-com 1.svg";
-import dp from "../assets/try.jpg";
+import eventIcon from "../../assets/cake-svgrepo-com 1.svg";
+import dp from "../../assets/try.jpg";
 const CelebrationDisplayCard = () => {
   return (
     <div className="grid gap-1 p-2">

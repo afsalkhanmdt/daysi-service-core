@@ -1,7 +1,8 @@
+"use client";
 import Image from "next/image";
-import eventIcon from "../assets/cake-svgrepo-com 1.svg";
-import dp from "../assets/MyFamilii Brand Guide (1)-2 1.png";
-import icon from "../assets/try.jpg";
+import eventIcon from "../../assets/cake-svgrepo-com 1.svg";
+import dp from "../../assets/MyFamilii Brand Guide (1)-2 1.png";
+import icon from "../../assets/try.jpg";
 
 const imageArray = [icon.src, dp.src, eventIcon.src];
 

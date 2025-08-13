@@ -7,6 +7,7 @@
   border: none !important;
   padding: 0 !important;
 }
+
 .fc-day-today {
   background-color: #f2f7fa !important;
 }
@@ -15,14 +16,11 @@
   background: transparent !important;
   border: none !important;
   padding: 0 !important;
-  margin-left: 16px;
-  margin-right: 16px;
-  margin-top: 2px;
-  margin-bottom: 2px;
+  margin: 2px 16px;
 }
 
 .fc-timegrid-now-indicator-line {
-  background: red;
+  background: red !important;
 }
 
 .fc-timegrid-col.fc-day-today {
@@ -31,4 +29,14 @@
 
 .fc .fc-timegrid-slot {
   height: 50px;
+}
+
+/* Make the resource label content align at the top instead of centered */
+.fc-scrollgrid-sync-inner {
+  display: flex !important; /* Switch to flexbox */
+  align-items: flex-start !important; /* Align items to the top */
+  justify-content: flex-start !important; /* Align horizontally to start */
+  border-radius: 62px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+  padding: 4px; /* Optional for spacing */
 }

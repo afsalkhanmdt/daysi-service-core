@@ -1,5 +1,4 @@
-import eventIcon from "../assets/cake-svgrepo-com 1.svg";
-import dp from "../assets/try.jpg";
+import dp from "../../assets/try.jpg";
 const PMDisplayCard = () => {
   return (
     <div className="flex justify-between p-2">
