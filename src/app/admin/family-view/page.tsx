@@ -6,24 +6,21 @@ import EventCardUI from "./components/EventCard";
 import { useRef, useState } from "react";
 import dayjs from "dayjs";
 import Image from "next/image";
-import { getAllFamilies } from "@/services/api/apiCall";
 import dp from "../assets/MyFamilii Brand Guide (1)-2 1.png";
+import calIcon from "../assets/calendar-minimalistic-svgrepo-com (4) 1.svg";
 import icon from "../assets/try.jpg";
 
 export default function FamilyPage() {
   const calendarRef = useRef<any>(null);
+  const dayRefs = useRef<Record<string, HTMLButtonElement | null>>({}); // store refs for days
   const [currentDate, setCurrentDate] = useState(dayjs());
-  const baseDate = dayjs();
-  const [loading, setLoading] = useState(false);
 
-  // People / Event Owners
   const people = [
     { id: "1", name: "Alice", image: icon.src },
     { id: "2", name: "Bob", image: dp.src },
     { id: "3", name: "Charlie", image: icon.src },
   ];
 
-  // Events assigned to owners via resourceId
   const events = [
     {
       title: "Family Breakfast",
@@ -48,101 +45,129 @@ export default function FamilyPage() {
     },
   ];
 
-  const daysOfWeek = Array.from({ length: 7 }).map((_, i) =>
-    baseDate.startOf("week").add(i, "day")
-  );
-
-  const handleDayClick = (date: dayjs.Dayjs) => {
-    const calendarApi = calendarRef.current?.getApi();
-    calendarApi?.changeView("resourceTimeGridDay", date.toDate());
+  // Generate all days in the given month
+  const getDaysInMonth = (date: dayjs.Dayjs) => {
+    const start = date.startOf("month");
+    const end = date.endOf("month");
+    const days: dayjs.Dayjs[] = [];
+    for (
+      let d = start;
+      d.isBefore(end) || d.isSame(end, "day");
+      d = d.add(1, "day")
+    ) {
+      days.push(d);
+    }
+    return days;
   };
 
-  const handleFetchFamilies = async () => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("access_token");
-      if (!token) {
-        console.warn("No access token found");
-        setLoading(false);
-        return;
-      }
-      const data = await getAllFamilies("935", token);
-      console.log("Families API response:", data);
-    } catch (error) {
-      console.error("Failed to fetch families:", error);
-    } finally {
-      setLoading(false);
+  const [visibleDays, setVisibleDays] = useState(getDaysInMonth(currentDate));
+
+  const scrollToDay = (date: dayjs.Dayjs) => {
+    const key = date.format("YYYY-MM-DD");
+    const el = dayRefs.current[key];
+    if (el) {
+      el.scrollIntoView({
+        behavior: "smooth",
+        inline: "center",
+        block: "nearest",
+      });
     }
   };
 
-  // Switch to a specific day (e.g., August 15, 2025)
-  const goToSpecificDate = (year: number, month: number, day: number) => {
-    const calendarApi = calendarRef.current?.getApi();
-    const targetDate = new Date(year, month - 1, day); // JS months are 0-indexed
-    calendarApi?.gotoDate(targetDate); // Moves calendar to that day
-    calendarApi?.changeView("resourceTimeGridDay"); // Optional: ensure day view
-  };
-
-  const goToDate = (date: dayjs.Dayjs) => {
+  const handleDayClick = (date: dayjs.Dayjs) => {
     const calendarApi = calendarRef.current?.getApi();
     calendarApi?.gotoDate(date.toDate());
     calendarApi?.changeView("resourceTimeGridDay");
     setCurrentDate(date);
+    scrollToDay(date); // scroll selected day into view
   };
 
-  const handleNextMonth = () => goToDate(currentDate.add(1, "month"));
-  const handlePrevMonth = () => goToDate(currentDate.subtract(1, "month"));
-  const handleToday = () => goToDate(dayjs());
+  const goToMonth = (date: dayjs.Dayjs) => {
+    const calendarApi = calendarRef.current?.getApi();
+    const firstDay = date.startOf("month");
+    calendarApi?.gotoDate(firstDay.toDate());
+    calendarApi?.changeView("resourceTimeGridDay");
+    setCurrentDate(firstDay);
+    setVisibleDays(getDaysInMonth(date));
+    setTimeout(() => scrollToDay(firstDay), 50); // scroll after re-render
+  };
+
+  const handleNextMonth = () => goToMonth(currentDate.add(1, "month"));
+  const handlePrevMonth = () => goToMonth(currentDate.subtract(1, "month"));
+  const handleToday = () => {
+    const today = dayjs();
+    const calendarApi = calendarRef.current?.getApi();
+    calendarApi?.gotoDate(today.toDate());
+    calendarApi?.changeView("resourceTimeGridDay");
+    setCurrentDate(today);
+    setVisibleDays(getDaysInMonth(today));
+    setTimeout(() => scrollToDay(today), 50); // scroll after re-render
+  };
 
   return (
-    <div className="p-4">
-      <div className="mb-4 flex gap-2">
-        {daysOfWeek.map((day) => (
-          <button
-            key={day.format("YYYY-MM-DD")}
-            className="px-4 py-2 rounded-lg bg-blue-100 hover:bg-blue-300"
-            onClick={() => handleDayClick(day)}
-          >
-            {day.format("ddd, MMM D")}
-          </button>
-        ))}
-      </div>
-      {/* Month Navigation with Today */}
-      <div className="mb-4 flex items-center gap-2">
-        <button
-          onClick={handleToday}
-          className="ml-4 px-3 py-1 rounded-lg bg-blue-500 text-white hover:bg-blue-600"
-        >
-          Today
-        </button>
-        <button
-          onClick={handlePrevMonth}
-          className="px-3 py-1 rounded-lg bg-gray-200 hover:bg-gray-300"
-        >
-          &lt;
-        </button>
-        <div className="font-semibold text-lg">
-          {currentDate.format("MMMM YYYY")}
+    <div className="p-4 bg-slate-100 grid gap-4">
+      <div className="bg-white p-4 rounded-2xl gap-6 grid">
+        {/* Month Navigation with Today */}
+        <div className="w-full flex justify-between align-middle ">
+          <div className="flex gap-2 ">
+            <Image
+              src={calIcon.src}
+              alt="Next.js logo"
+              width={28}
+              height={28}
+              priority
+            />
+            <div className="grid place-items-center text-3xl font-semibold">
+              family name
+            </div>
+          </div>
+
+          <div className="mb-4 flex items-center gap-2">
+            <button
+              onClick={handleToday}
+              className="ml-4 px-3 py-1 rounded-lg bg-blue-500 text-white hover:bg-blue-600"
+            >
+              Today
+            </button>
+            <button
+              onClick={handlePrevMonth}
+              className="px-3 py-1 rounded-lg bg-gray-200 hover:bg-gray-300"
+            >
+              &lt;
+            </button>
+            <div className="font-semibold text-lg">
+              {currentDate.format("MMMM YYYY")}
+            </div>
+            <button
+              onClick={handleNextMonth}
+              className="px-3 py-1 rounded-lg bg-gray-200 hover:bg-gray-300"
+            >
+              &gt;
+            </button>
+          </div>
         </div>
-        <button
-          onClick={handleNextMonth}
-          className="px-3 py-1 rounded-lg bg-gray-200 hover:bg-gray-300"
-        >
-          &gt;
-        </button>
+        {/* Scrollable Days Bar */}
+        <div className="mb-4 flex gap-0.5 overflow-x-auto max-w-full scroll-smooth">
+          {visibleDays.map((day) => (
+            <button
+              key={day.format("YYYY-MM-DD")}
+              ref={(el) => {
+                dayRefs.current[day.format("YYYY-MM-DD")] = el;
+              }}
+              className={`flex flex-col items-center justify-center px-2 py-3 rounded-2xl min-w-36 ${
+                day.isSame(currentDate, "day")
+                  ? "bg-blue-500 text-white"
+                  : "bg-blue-100 hover:bg-blue-300"
+              }`}
+              onClick={() => handleDayClick(day)}
+            >
+              <div className="text-sm font-normal">{day.format("dddd")}</div>
+              <div className="text-4xl font-bold">{day.format("D")}</div>
+            </button>
+          ))}
+        </div>
       </div>
-      ;
-      {/* <button
-        onClick={handleFetchFamilies}
-        disabled={loading}
-        className={`mb-6 px-4 py-2 rounded-lg font-semibold ${
-          loading
-            ? "bg-gray-400 cursor-not-allowed"
-            : "bg-green-500 hover:bg-green-600"
-        } text-white`}
-      >
-        {loading ? "Fetching Families..." : "Fetch Families"}
-      </button> */}
+
       <FullCalendar
         ref={calendarRef}
         plugins={[resourceTimeGridPlugin]}
@@ -154,12 +179,12 @@ export default function FamilyPage() {
         slotMaxTime="22:00:00"
         allDaySlot={false}
         weekends={true}
-        nowIndicator={false} // hide the red current time line
+        nowIndicator={false}
         height="auto"
         displayEventTime={false}
         eventOverlap={false}
         slotEventOverlap={false}
-        headerToolbar={false} // disables default FullCalendar navigation
+        headerToolbar={false}
         resources={people}
         events={events}
         resourceLabelContent={(arg) => {

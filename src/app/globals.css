@@ -67,6 +67,11 @@
 .fc .fc-scrollgrid-section > * {
   background: #f2f7fa;
 }
+/* Kill the outer border of the main calendar grid */
+.fc-theme-standard .fc-scrollgrid,
+.fc-theme-standard .fc-scrollgrid * {
+  border: none !important;
+}
 
 /* Optional: remove background stripes for alternate time slots */
 .fc .fc-timegrid-slot-lane:nth-child(even) {
