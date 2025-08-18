@@ -2,7 +2,7 @@ import eventIcon from "../../assets/cake-svgrepo-com 1.svg";
 import dp from "../../assets/try.jpg";
 const CelebrationDisplayCard = () => {
   return (
-    <div className="grid gap-1 p-2">
+    <div className="grid gap-1 p-2 border rounded-xl border-slate-200">
       <div className="flex  gap-3 ">
         <img className="rounded-full w-10 h-10" src={dp.src} alt="" />
         <div className="grid gap-2">
@@ -12,7 +12,7 @@ const CelebrationDisplayCard = () => {
           </div>
         </div>
       </div>
-      <div className="flex justify-between">
+      <div className="flex justify-between items-end">
         <div className="text-stone-500 italic">25 years old</div>
         <img src={eventIcon.src} alt="" />
       </div>
