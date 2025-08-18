@@ -1,109 +1,66 @@
 "use client";
-
-import FullCalendar from "@fullcalendar/react";
-import timeGridPlugin from "@fullcalendar/timegrid";
-import EventCardUI from "./components/EventCard";
-import { useRef, useState } from "react";
-import dayjs from "dayjs";
-import { getAllFamilies } from "@/services/api/apiCall";
+import CalendarView from "@/app/admin/family-view/components/CalendarView";
+import CelebrationDisplayCard from "@/app/admin/family-view/components/CelebrationDisplayCard";
+import PMDisplayCard from "./components/PMDisplayCard";
+import Image from "next/image";
+import mainIcon from "@/app/admin/assets/MyFamilii Brand Guide (1)-2 1.png";
+import ToggleThemeAndLogout from "./components/ToggleThemeAndLogout";
 
 export default function FamilyPage() {
-  const calendarRef = useRef<any>(null);
-  const baseDate = dayjs();
-  const [loading, setLoading] = useState(false);
-
-  const daysOfWeek = Array.from({ length: 7 }).map((_, i) =>
-    baseDate.startOf("week").add(i, "day")
-  );
-
-  const handleDayClick = (date: dayjs.Dayjs) => {
-    const calendarApi = calendarRef.current?.getApi();
-    calendarApi?.changeView("timeGridDay", date.toDate());
-  };
-
-  const handleFetchFamilies = async () => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("access_token");
-      if (!token) {
-        console.warn("No access token found");
-        setLoading(false);
-        return;
-      }
-
-      const data = await getAllFamilies("935", token);
-      console.log("Families API response:", data);
-    } catch (error) {
-      console.error("Failed to fetch families:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <div className="p-4">
-      <div className="mb-4 flex gap-2">
-        {daysOfWeek.map((day) => (
-          <button
-            key={day.format("YYYY-MM-DD")}
-            className="px-4 py-2 rounded-lg bg-blue-100 hover:bg-blue-300"
-            onClick={() => handleDayClick(day)}
-          >
-            {day.format("ddd, MMM D")}
-          </button>
-        ))}
+    <div className="flex w-screen h-screen py-5 pr-5 bg-white dark:bg-gray-800 transition-colors">
+      {/* Sidebar */}
+      <div
+        className="
+          flex flex-col flex-shrink 
+          min-w-[200px] max-w-[330px] w-[25%] 
+          bg-white dark:bg-gray-800 border-r dark:border-gray-700
+          text-gray-800 dark:text-gray-100
+        "
+      >
+        {/* Logo */}
+        <div className="border-b-2 border-slate-100 dark:border-gray-700 pb-5 grid place-items-center">
+          <Image src={mainIcon.src} alt={"mainIcon"} width={172} height={68} />
+        </div>
+
+        {/* Main Scrollable Sections */}
+        <div className="flex-1 min-h-0 flex flex-col">
+          {/* Celebration Section */}
+          <div className="flex-1 min-h-0 flex flex-col border-b-2 border-slate-100 dark:border-gray-700">
+            <div className="p-5 text-xl font-semibold grid place-content-center border-b dark:border-gray-700">
+              Celebration’s Today 🎉
+            </div>
+            <div className="flex-1 overflow-y-auto p-5">
+              <div className="grid gap-4">
+                {[...Array(10)].map((_, i) => (
+                  <CelebrationDisplayCard key={i} />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Pocket Money Section */}
+          <div className="flex-1 min-h-0 flex flex-col">
+            <div className="p-5 text-xl font-semibold grid place-content-center border-b dark:border-gray-700">
+              Pocket Money 💸
+            </div>
+            <div className="flex-1 overflow-y-auto p-5">
+              <div className="grid gap-4">
+                {[...Array(20)].map((_, i) => (
+                  <PMDisplayCard key={i} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <ToggleThemeAndLogout />
       </div>
 
-      <button
-        onClick={handleFetchFamilies}
-        disabled={loading}
-        className={`mb-6 px-4 py-2 rounded-lg font-semibold ${
-          loading
-            ? "bg-gray-400 cursor-not-allowed"
-            : "bg-green-500 hover:bg-green-600"
-        } text-white`}
-      >
-        {loading ? "Fetching Families..." : "Fetch Families"}
-      </button>
-
-      <FullCalendar
-        ref={calendarRef}
-        plugins={[timeGridPlugin]}
-        initialView="timeGridDay"
-        initialDate={new Date()}
-        slotDuration="00:30:00"
-        slotLabelInterval="01:00"
-        slotMinTime="06:00:00"
-        slotMaxTime="22:00:00"
-        allDaySlot={false}
-        weekends={true}
-        nowIndicator={true}
-        height="auto"
-        displayEventTime={false}
-        eventOverlap={false}
-        slotEventOverlap={false}
-        events={[
-          {
-            title: "Family Breakfast",
-            start: "2025-08-07T06:00:00",
-            end: "2025-08-07T09:00:00",
-            display: "block",
-          },
-          {
-            title: "Morning Walk",
-            start: "2025-08-07T06:30:00",
-            end: "2025-08-07T15:00:00",
-            display: "block",
-          },
-          {
-            title: "Team Call",
-            start: "2025-08-07T07:00:00",
-            end: "2025-08-07T08:00:00",
-            display: "block",
-          },
-        ]}
-        eventContent={(eventInfo) => <EventCardUI eventInfo={eventInfo} />}
-      />
+      {/* Calendar expands automatically */}
+      <div className="flex-1 min-w-0 h-full">
+        <CalendarView />
+      </div>
     </div>
   );
 }

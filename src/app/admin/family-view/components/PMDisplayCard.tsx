@@ -1,8 +1,7 @@
-import eventIcon from "../assets/cake-svgrepo-com 1.svg";
-import dp from "../assets/try.jpg";
+import dp from "../../assets/try.jpg";
 const PMDisplayCard = () => {
   return (
-    <div className="flex justify-between p-2">
+    <div className="flex justify-between p-2 border rounded-xl border-slate-200">
       <div className="grid grid-flow-col place-items-center gap-3 ">
         <img className="rounded-full w-10 h-10" src={dp.src} alt="" />
         <div className="grid gap-2">
