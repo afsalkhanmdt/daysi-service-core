@@ -10,7 +10,7 @@ export default function ToggleThemeAndLogout() {
 
   const handleLogout = () => {
     localStorage.removeItem("authToken");
-    router.push("/login");
+    router.push("/admin/login");
   };
 
   useEffect(() => {

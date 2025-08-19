@@ -8,43 +8,38 @@ import dayjs from "dayjs";
 import Image from "next/image";
 import dp from "@/app/admin/assets/MyFamilii Brand Guide (1)-2 1.png";
 import calIcon from "@/app/admin/assets/calendar-minimalistic-svgrepo-com (4) 1.svg";
-import icon from "@/app/admin/assets/try.jpg";
 import { MemberResponse } from "@/app/types/familyMemberTypes";
 
 const calendarView = ({ MemberData }: { MemberData: MemberResponse[] }) => {
   const calendarRef = useRef<any>(null);
   const dayRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const [currentDate, setCurrentDate] = useState(dayjs());
+  console.log("Member Data:", MemberData);
 
-  const people = [
-    { id: "1", name: "Alice", image: icon.src },
-    { id: "2", name: "Bob", image: dp.src },
-    { id: "3", name: "Charlie", image: icon.src },
-  ];
+  const resources = MemberData.map((member: any) => ({
+    id: member.Id,
+    title: member.FirstName,
+    image: member.ResourceUrl,
+  }));
 
-  const events = [
-    {
-      title: "Family Breakfast",
-      start: "2025-08-07T06:00:00",
-      end: "2025-08-07T09:00:00",
-      resourceId: "1",
+  const events = MemberData.flatMap((member: any) =>
+    member.Events.map((event: any) => ({
+      id: event.Id,
+      resourceId: member.Id,
+      title: event.Title,
+      start: new Date(Number(event.Start)),
+      end: new Date(Number(event.End)),
       display: "block",
-    },
-    {
-      title: "Morning Walk",
-      start: "2025-08-07T06:30:00",
-      end: "2025-08-07T15:00:00",
-      resourceId: "2",
-      display: "block",
-    },
-    {
-      title: "Team Call",
-      start: "2025-08-07T07:00:00",
-      end: "2025-08-07T08:00:00",
-      resourceId: "3",
-      display: "block",
-    },
-  ];
+      // extendedProps: {
+      //   LocalRepeatEndDate: member.ResourceUrl,
+      //   IsAllDayEvent: member.FirstName,
+      //   image: member.ResourceUrl,
+      // },
+    }))
+  );
+
+  console.log("Resources:", resources);
+  console.log("Events:", events);
 
   // Generate all days in month
   const getDaysInMonth = (date: dayjs.Dayjs) => {
@@ -190,21 +185,22 @@ const calendarView = ({ MemberData }: { MemberData: MemberResponse[] }) => {
           eventOverlap={false}
           slotEventOverlap={false}
           headerToolbar={false}
-          resources={people}
+          resources={resources}
           events={events}
           resourceLabelContent={(arg) => {
-            const person = people.find((p) => p.id === arg.resource.id);
+            console.log("Resource Label Arg:", arg);
+
             return (
               <div className="flex gap-1.5 p-1.5">
                 <Image
-                  src={person?.image || ""}
-                  alt={person?.name || ""}
+                  src={arg.resource._resource.extendedProps.image || dp.src}
+                  alt={arg.resource._resource.title || ""}
                   width={28}
                   height={28}
                   className="rounded-full w-7 h-7 border"
                 />
                 <div className="text-sm grid place-content-center font-semibold truncate">
-                  {person?.name}
+                  {arg.resource._resource.title || "Unknown"}
                 </div>
               </div>
             );

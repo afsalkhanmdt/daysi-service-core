@@ -68,136 +68,136 @@ export enum DuplicateSequence {
 
 // --- Submodels ---
 export interface EventParticipant {
-  participantId: string
-  participant: string
-  participantClass: string
-  participantFirstName: string
+  ParticipantId: string
+  Participant: string
+  ParticipantClass: string
+  ParticipantFirstName: string
 }
 
 export interface Alarm {
-  id: number
+  Id: number
 }
 
 export interface RecurrenceRule {
-  frequency: FrequencyEnum
-  interval: number
+  Frequency: FrequencyEnum
+  Interval: number
 }
 
 export interface UserEvent {
-  id: number
-  familyId: number
-  title: string
-  description: string
-  location: string
-  actualStartDate: string
-  start: string
-  end: string
-  specialEvent?: SpecialEvent
-  eventPerson: string
-  repeat: Repeat
-  repeatEndDate: string
-  alert: Alert
-  isForAll: number
-  isSpecialEvent: number
-  isAllDayEvent: number
-  isPrivateEvent: number
-  familyColorCode: string
-  attendee: string[]
-  eventParticipant: EventParticipant[]
-  parentEventId: string
-  updatedOn: string
-  addedBy: string
-  externalCalendarId: number
-  externalCalendarName: string
-  alarms: Alarm[]
-  latitude: string
-  longitude: string
-  recurrenceRule: RecurrenceRule
-  localStartDate: string
-  localEndDate: string
-  localRepeatEndDate: string
+  Id: number
+  FamilyId: number
+  Title: string
+  Description: string
+  Location: string
+  ActualStartDate: string
+  Start: string
+  End: string
+  SpecialEvent?: SpecialEvent
+  EventPerson: string
+  Repeat: Repeat
+  RepeatEndDate: string
+  Alert: Alert
+  IsForAll: number
+  IsSpecialEvent: number
+  IsAllDayEvent: number
+  IsPrivateEvent: number
+  FamilyColorCode: string
+  Attendee: string[]
+  EventParticipant: EventParticipant[]
+  ParentEventId: string
+  UpdatedOn: string
+  AddedBy: string
+  ExternalCalendarId: number
+  ExternalCalendarName: string
+  Alarms: Alarm[]
+  Latitude: string
+  Longitude: string
+  RecurrenceRule: RecurrenceRule
+  LocalStartDate: string
+  LocalEndDate: string
+  LocalRepeatEndDate: string
 }
 
 export interface SharedInFamilyResponse {
-  email: string
-  memberId: string
-  familyId?: number
-  invitationStatus: InvitationStatus
+  Email: string
+  MemberId: string
+  FamilyId?: number
+  InvitationStatus: InvitationStatus
 }
 
 export interface ExternalCalendarResponse {
-  calendarName: string
-  calendarURL: string
-  calendarId: number
-  familyId: number
-  memberId: string
-  membersUpdatedOn: string
+  CalendarName: string
+  CalendarURL: string
+  CalendarId: number
+  FamilyId: number
+  MemberId: string
+  MembersUpdatedOn: string
 }
 
 export interface ToDoAccessSpecifier {
-  memberId: string
-  hasViewAccess: boolean
-  hasCreateAccess: boolean
+  MemberId: string
+  HasViewAccess: boolean
+  HasCreateAccess: boolean
 }
 
 export interface MasterScheduleResponse {
-  shMasterId: number
-  familyId: number
-  familyMemberId: string
-  weekday: number
-  startTime: string
-  endTime: string
-  description: string
-  note: string
-  sequence: DuplicateSequence
-  startDate: string
-  endDate: string
-  icon: string
+  ShMasterId: number
+  FamilyId: number
+  FamilyMemberId: string
+  Weekday: number
+  StartTime: string
+  EndTime: string
+  Description: string
+  Note: string
+  Sequence: DuplicateSequence
+  StartDate: string
+  EndDate: string
+  Icon: string
 }
 
 // --- Main MemberResponse ---
 export interface MemberResponse {
-  id: number
-  memberId: string
-  memberName: string
-  firstName: string
-  email: string
-  familyId: number
-  sharedFamilyId?: number
-  memberType: MemberType
-  colorCode: string
-  userFileResourceId?: number
-  resourceUrl: string
-  events: UserEvent[]
-  birthdate?: string
-  membersUpdatedOn: string
-  holidaysCountryCode: string
-  invitationStatus: InvitationStatus
-  sharedInFamily: SharedInFamilyResponse[]
-  autoSubscription: string
-  externalEmail: string
-  emailSystem: EmailSystem
-  isPrivate: boolean
-  externalCalendars: ExternalCalendarResponse[]
-  frequency: number
-  counter: number
-  exportEventUrl: string
-  deleteAllAppointment: boolean
-  deleteOwnAppointment: boolean
-  createPMTask: boolean
-  pocketMoneyUser: boolean
-  pmTaskApprovedSendConfirmation: boolean
-  amountEarned: number
-  createToDoGroup: boolean
-  showDeletedToDoTasks: number
-  accessToMembersToDo: ToDoAccessSpecifier[]
-  hasMasterScheduleAccess: boolean
-  masterSchedules: MasterScheduleResponse[]
-  latitude: string
-  longitude: string
-  hasLocationVisible: boolean
-  hasMembersLocationAccess: boolean
-  lastLocationUpdatedOn?: string
-  canApprovePMTasks: boolean
-  locale: string
+  Id: number
+  MemberId: string
+  MemberName: string
+  FirstName: string
+  Email: string
+  FamilyId: number
+  SharedFamilyId?: number
+  MemberType: MemberType
+  ColorCode: string
+  UserFileResourceId?: number
+  ResourceUrl: string
+  Events: UserEvent[]
+  Birthdate?: string
+  MembersUpdatedOn: string
+  HolidaysCountryCode: string
+  InvitationStatus: InvitationStatus
+  SharedInFamily: SharedInFamilyResponse[]
+  AutoSubscription: string
+  ExternalEmail: string
+  EmailSystem: EmailSystem
+  IsPrivate: boolean
+  ExternalCalendars: ExternalCalendarResponse[]
+  Frequency: number
+  Counter: number
+  ExportEventUrl: string
+  DeleteAllAppointment: boolean
+  DeleteOwnAppointment: boolean
+  CreatePMTask: boolean
+  PocketMoneyUser: boolean
+  PMTaskApprovedSendConfirmation: boolean
+  AmountEarned: number
+  CreateToDoGroup: boolean
+  ShowDeletedToDoTasks: number
+  AccessToMembersToDo: ToDoAccessSpecifier[]
+  HasMasterScheduleAccess: boolean
+  MasterSchedules: MasterScheduleResponse[]
+  Latitude: string
+  Longitude: string
+  HasLocationVisible: boolean
+  HasMembersLocationAccess: boolean
+  LastLocationUpdatedOn?: string
+  CanApprovePMTasks: boolean
+  Locale: string
 }
