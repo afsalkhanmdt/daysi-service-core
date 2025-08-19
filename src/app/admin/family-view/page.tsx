@@ -5,9 +5,9 @@ import PMDisplayCard from "./components/PMDisplayCard";
 import Image from "next/image";
 import mainIcon from "@/app/admin/assets/MyFamilii Brand Guide (1)-2 1.png";
 import ToggleThemeAndLogout from "./components/ToggleThemeAndLogout";
-import { useEffect, useState } from "react";
 import { FamilyResponse } from "@/app/types/familytypes";
 import { MemberResponse } from "@/app/types/familyMemberTypes";
+import { useFetch } from "@/app/hooks/useFetch";
 
 interface FamilyData {
   Family: FamilyResponse;
@@ -15,51 +15,15 @@ interface FamilyData {
 }
 
 export default function FamilyPage() {
-  const [data, setData] = useState<FamilyData>();
-  const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState<string | null>(null);
+  const {
+    data: familyDetails,
+    loading,
+    error,
+  } = useFetch<FamilyData>(
+    "https://dev.daysi.dk/api/Families/GetAllFamilies?familyId=935"
+  );
 
-  useEffect(() => {
-    const storedToken = localStorage.getItem("access_token");
-    setToken(storedToken);
-  }, []);
-
-  useEffect(() => {
-    async function fetchData() {
-      if (!token) return;
-
-      try {
-        const res = await fetch(
-          "https://dev.daysi.dk/api/Families/GetAllFamilies?familyId=935",
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (!res.ok) {
-          throw new Error(`Error: ${res.status}`);
-        }
-
-        const json = await res.json();
-        console.log("Families Data:", json);
-
-        setData({
-          Family: json[0].Family,
-          Members: json[0].Members,
-        });
-      } catch (err) {
-        console.error("Fetch error:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchData();
-  }, [token]);
+  console.log("Family Details:", familyDetails);
 
   return (
     <div className="flex w-screen h-screen py-3 pr-3 bg-white dark:bg-gray-800 transition-colors">
@@ -110,12 +74,8 @@ export default function FamilyPage() {
 
       {/* Calendar */}
       <div className="flex-1 min-w-0 h-full">
-        {loading && data?.Members ? (
-          <div className="flex items-center justify-center h-full text-gray-500 text-xs">
-            Loading...
-          </div>
-        ) : data ? (
-          <CalendarView MemberData={data.Members} />
+        {familyDetails ? (
+          <CalendarView MemberData={familyDetails.Members} />
         ) : (
           <div className="flex items-center justify-center h-full text-gray-500 text-xs">
             No data available.
