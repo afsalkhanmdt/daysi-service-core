@@ -14,33 +14,33 @@ const EventCardUI = ({ eventInfo }: { eventInfo: any }) => {
     date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
   return (
-    <div className="h-full border-t-4 rounded-2xl border-sky-500 bg-white shadow-sm overflow-x-auto">
-      <div className="flex flex-col flex-wrap gap-4 p-4 h-full">
-        <div className="text-center py-1 px-2 bg-indigo-50 text-sky-500 w-fit text-[10px] rounded-[32px]">
+    <div className="h-full border-t-[2.8px] rounded-xl border-sky-500 bg-white shadow-sm overflow-x-auto">
+      <div className="flex flex-col flex-wrap gap-3 p-3 h-full">
+        <div className="text-center py-0.5 px-1.5 bg-indigo-50 text-sky-500 w-fit text-[7px] rounded-2xl">
           Event
         </div>
-        <div className="grid gap-1">
-          <div className="font-semibold text-lg text-black">
+        <div className="grid gap-0.5">
+          <div className="font-semibold text-[13px] text-black">
             {eventInfo.event.title}
           </div>
-          <div className="font-normal text-sm text-stone-500">
+          <div className="font-normal text-[9px] text-stone-500">
             {formatTime(start)} - {formatTime(end)}
           </div>
         </div>
-        <div className="flex flex-wrap justify-between w-full gap-2">
-          <div className="flex -space-x-2 ">
+        <div className="flex flex-wrap justify-between w-full gap-1.5">
+          <div className="flex -space-x-1.5">
             {imageArray.map((src, i) => (
               <Image
                 key={i}
                 src={src}
                 alt={`avatar-${i}`}
-                width={32}
-                height={32}
-                className="rounded-full border-2 border-white"
+                width={22}
+                height={22}
+                className="rounded-full border-[1.4px] border-white"
               />
             ))}
           </div>
-          <div className="rounded-[4px] py-0.5 px-1.5 font-semibold text-sky-500 text-sm bg-slate-100 h-fit w-fit">
+          <div className="rounded-[3px] py-0.5 px-1 text-sky-500 text-[9px] font-semibold bg-slate-100 h-fit w-fit">
             {imageArray.length}
           </div>
         </div>
