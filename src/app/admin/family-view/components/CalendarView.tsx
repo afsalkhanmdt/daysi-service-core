@@ -23,20 +23,50 @@ const calendarView = ({ MemberData }: { MemberData: MemberResponse[] }) => {
   }));
 
   const events = MemberData.flatMap((member: any) =>
-    member.Events.map((event: any) => ({
-      id: event.Id,
-      resourceId: member.Id,
-      title: event.Title,
-      start: new Date(Number(event.Start)),
-      end: new Date(Number(event.End)),
-      display: "block",
-      // extendedProps: {
-      //   LocalRepeatEndDate: member.ResourceUrl,
-      //   IsAllDayEvent: member.FirstName,
-      //   image: member.ResourceUrl,
-      // },
-    }))
-  );
+    member.Events.map((event: any) => {
+      let start = new Date(Number(event.Start));
+      let end = new Date(Number(event.End));
+
+      if (event.IsSpecialEvent) {
+        const now = new Date();
+        start.setFullYear(now.getFullYear());
+        end.setFullYear(now.getFullYear());
+      }
+
+      if (event.IsAllDayEvent === 1) {
+        const dayStart = new Date(start);
+        dayStart.setHours(0, 0, 0, 0);
+
+        const dayEnd = new Date(start);
+        dayEnd.setHours(23, 59, 59, 999);
+
+        start = dayStart;
+        end = dayEnd;
+      }
+
+      const eventPerson = event.EventPerson;
+      const EventPersonId = MemberData.find(
+        (m: any) => m.FirstName === eventPerson
+      )?.Id;
+
+      if (eventPerson === member.FirstName && EventPersonId) {
+        return {
+          id: event.Id,
+          resourceId: EventPersonId,
+          title: event.Title,
+          start,
+          end,
+          display: "block",
+          extendedProps: {
+            IsSpecialEvent: event.IsSpecialEvent,
+            IsAllDayEvent: event.IsAllDayEvent,
+          },
+        };
+      }
+
+      return null; // always return something
+    })
+  ).filter(Boolean); // removes null/undefined
 
   console.log("Resources:", resources);
   console.log("Events:", events);
