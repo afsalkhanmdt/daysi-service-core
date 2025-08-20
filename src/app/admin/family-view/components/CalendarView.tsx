@@ -9,29 +9,24 @@ import Image from "next/image";
 import dp from "@/app/admin/assets/MyFamilii Brand Guide (1)-2 1.png";
 import calIcon from "@/app/admin/assets/calendar-minimalistic-svgrepo-com (4) 1.svg";
 import { MemberResponse } from "@/app/types/familyMemberTypes";
+import { FamilyData } from "../page";
+import TodoEventUi from "./TodoEventsUi";
 
-const calendarView = ({ MemberData }: { MemberData: MemberResponse[] }) => {
+const calendarView = ({ data }: { data: FamilyData }) => {
   const calendarRef = useRef<any>(null);
   const dayRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const [currentDate, setCurrentDate] = useState(dayjs());
-  console.log("Member Data:", MemberData);
 
-  const resources = MemberData.map((member: any) => ({
+  const resources = data.Members.map((member: any) => ({
     id: member.Id,
     title: member.FirstName,
     image: member.ResourceUrl,
   }));
 
-  const events = MemberData.flatMap((member: any) =>
+  const events = data.Members.flatMap((member: any) =>
     member.Events.map((event: any) => {
       let start = new Date(Number(event.Start));
       let end = new Date(Number(event.End));
-
-      if (event.IsSpecialEvent) {
-        const now = new Date();
-        start.setFullYear(now.getFullYear());
-        end.setFullYear(now.getFullYear());
-      }
 
       if (event.IsAllDayEvent === 1) {
         const dayStart = new Date(start);
@@ -44,15 +39,10 @@ const calendarView = ({ MemberData }: { MemberData: MemberResponse[] }) => {
         end = dayEnd;
       }
 
-      const eventPerson = event.EventPerson;
-      const EventPersonId = MemberData.find(
-        (m: any) => m.FirstName === eventPerson
-      )?.Id;
-
-      if (eventPerson === member.FirstName && EventPersonId) {
+      if (event.IsSpecialEvent === 0) {
         return {
           id: event.Id,
-          resourceId: EventPersonId,
+          resourceId: member.Id,
           title: event.Title,
           start,
           end,
@@ -64,12 +54,9 @@ const calendarView = ({ MemberData }: { MemberData: MemberResponse[] }) => {
         };
       }
 
-      return null; // always return something
+      return null;
     })
-  ).filter(Boolean); // removes null/undefined
-
-  console.log("Resources:", resources);
-  console.log("Events:", events);
+  ).filter(Boolean);
 
   // Generate all days in month
   const getDaysInMonth = (date: dayjs.Dayjs) => {
@@ -131,8 +118,8 @@ const calendarView = ({ MemberData }: { MemberData: MemberResponse[] }) => {
   };
 
   return (
-    <div className="p-2.5 bg-slate-100 flex flex-col gap-4 h-full rounded-xl">
-      <div className="bg-white p-2.5 rounded-xl gap-4 grid">
+    <div className="p-2.5 bg-slate-100 flex flex-col h-full rounded-xl">
+      <div className="bg-white p-2.5 rounded-xl gap-4 grid mb-4">
         {/* Month Navigation */}
         <div className="w-full md:flex md:justify-between grid gap-1.5 place-items-center">
           <div className="flex gap-1.5">
@@ -197,7 +184,13 @@ const calendarView = ({ MemberData }: { MemberData: MemberResponse[] }) => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      {/* Calendar + Sidebar Wrapper */}
+
+      {/* Calendar */}
+      <div className="flex-1 overflow-y-auto relative">
+        <div className=" absolute py-0.5 rounded-full left-1 top-4 w-10 flex items-center justify-center  text-xs bg-gradient-to-r from-emerald-400 to-sky-500 text-white">
+          Events
+        </div>
         <FullCalendar
           ref={calendarRef}
           plugins={[resourceTimeGridPlugin]}
@@ -210,6 +203,7 @@ const calendarView = ({ MemberData }: { MemberData: MemberResponse[] }) => {
           allDaySlot={false}
           weekends={true}
           nowIndicator={false}
+          timeZone="UTC"
           height="100%"
           displayEventTime={false}
           eventOverlap={false}
@@ -218,8 +212,6 @@ const calendarView = ({ MemberData }: { MemberData: MemberResponse[] }) => {
           resources={resources}
           events={events}
           resourceLabelContent={(arg) => {
-            console.log("Resource Label Arg:", arg);
-
             return (
               <div className="flex gap-1.5 p-1.5">
                 <Image
@@ -237,6 +229,36 @@ const calendarView = ({ MemberData }: { MemberData: MemberResponse[] }) => {
           }}
           eventContent={(eventInfo) => <EventCardUI eventInfo={eventInfo} />}
         />
+      </div>
+
+      {/* Extra Rows (To-Do + Pocket Money) */}
+      <div className="flex w-full h-40 bg-slate-100 border-dashed border-b-2 border-slate-300">
+        <div className="w-14 grid place-items-center">
+          <div className="text-xs px-2 rounded-xl py-0.5 bg-gradient-to-r from-emerald-400 to-sky-500 text-white ">
+            To Do
+          </div>
+        </div>
+        <div className="w-full h-full flex bg-slate-200 overflow-x-auto gap-3 p-3">
+          {data.Family.ToDoFamilyGroups.map((group, index) => (
+            <div key={index} className="shrink-0">
+              <TodoEventUi />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="flex w-full h-28 bg-slate-100">
+        <div className="w-14   grid place-items-center">
+          <div className="text-xs px-2 rounded-xl py-0.5 bg-gradient-to-r from-emerald-400 to-sky-500 text-white ">
+            Pocket Money
+          </div>
+        </div>
+        <div className="w-full h-full flex bg-slate-200 overflow-x-auto gap-3 p-3">
+          {data.Family.ToDoFamilyGroups.map((group, index) => (
+            <div key={index} className="shrink-0">
+              <TodoEventUi />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

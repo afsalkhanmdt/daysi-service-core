@@ -2,78 +2,67 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Kill FullCalendar default event borders & background */
 .fc .fc-event {
   background: transparent !important;
-  border: none !important;
+  border: none !important; /* this kills default borders */
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 2px 16px; /* spacing between your custom event cards */
+}
+
+/* Do NOT reset border on .fc-event-main */
+.fc .fc-event-main {
+  background: transparent !important;
+  box-shadow: none !important;
   padding: 0 !important;
 }
 
+/* Highlight today’s background */
 .fc-day-today {
   background-color: #f2f7fa !important;
 }
 
-.fc-event {
-  background: transparent !important;
-  border: none !important;
-  padding: 0 !important;
-  margin: 2px 16px;
-}
-
+/* Red line for current time */
 .fc-timegrid-now-indicator-line {
   background: red !important;
 }
 
+/* Slightly different background for today column */
 .fc-timegrid-col.fc-day-today {
   background-color: #f0f9ff !important;
 }
 
+/* Increase slot height */
 .fc .fc-timegrid-slot {
   height: 50px;
+  border: none !important; /* remove slot lines */
 }
 
-/* Make the resource label content align at the top instead of centered */
+/* Style resource labels (left-side names) */
 .fc-scrollgrid-sync-inner {
-  margin-left: 20px;
-  margin-right: 20px;
-  margin-top: 10px;
-  margin-bottom: 10px;
+  margin: 10px 20px;
   background-color: #ffffff;
-  display: flex !important; /* Switch to flexbox */
-  align-items: flex-start !important; /* Align items to the top */
-  justify-content: flex-start !important; /* Align horizontally to start */
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
   border-radius: 62px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
-  padding: 4px; /* Optional for spacing */
+  padding: 4px;
 }
-/* Remove all table borders in FullCalendar */
+
+/* Remove table borders but don't touch custom event borders */
 .fc-theme-standard td,
-.fc-theme-standard th {
+.fc-theme-standard th,
+.fc-theme-standard .fc-scrollgrid {
   border: none !important;
 }
 
-/* Remove horizontal & vertical slot lines */
-.fc .fc-timegrid-slot {
+.fc-theme-standard .fc-scrollgrid > table {
   border: none !important;
 }
 
-/* Remove vertical lines between resources */
-.fc .fc-timegrid-divider,
-.fc .fc-timegrid-col {
-  border: none !important;
-}
-
-/* Remove borders around header & scroll grid */
-.fc .fc-scrollgrid,
-.fc .fc-scrollgrid-section > * {
-  background: #f2f7fa;
-}
-/* Kill the outer border of the main calendar grid */
-.fc-theme-standard .fc-scrollgrid,
-.fc-theme-standard .fc-scrollgrid * {
-  border: none !important;
-}
-
-/* Optional: remove background stripes for alternate time slots */
+/* Remove background stripes for alternate time slots */
 .fc .fc-timegrid-slot-lane:nth-child(even) {
   background: transparent !important;
 }

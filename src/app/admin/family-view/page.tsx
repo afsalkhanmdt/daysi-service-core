@@ -9,10 +9,10 @@ import { FamilyResponse } from "@/app/types/familytypes";
 import { MemberResponse } from "@/app/types/familyMemberTypes";
 import { useFetch } from "@/app/hooks/useFetch";
 
-interface FamilyData {
+export type FamilyData = {
   Family: FamilyResponse;
   Members: MemberResponse[];
-}
+};
 
 export default function FamilyPage() {
   const {
@@ -24,6 +24,13 @@ export default function FamilyPage() {
   );
 
   console.log("Family Details:", familyDetails);
+
+  const mainEvents =
+    familyDetails?.Members.flatMap((member: any) =>
+      member.Events.filter((event: any) => event.IsSpecialEvent === 1)
+    ) ?? [];
+
+  console.log("MainEvents:", mainEvents);
 
   return (
     <div className="flex w-screen h-screen py-3 pr-3 bg-white dark:bg-gray-800 transition-colors">
@@ -48,8 +55,8 @@ export default function FamilyPage() {
           </div>
           <div className="flex-1 overflow-y-auto p-3">
             <div className="grid gap-2">
-              {[...Array(10)].map((_, i) => (
-                <CelebrationDisplayCard key={i} />
+              {mainEvents.map((event, i) => (
+                <CelebrationDisplayCard key={i} mainEvent={event} />
               ))}
             </div>
           </div>
@@ -62,8 +69,10 @@ export default function FamilyPage() {
           </div>
           <div className="flex-1 overflow-y-auto p-3">
             <div className="grid gap-2">
-              {[...Array(20)].map((_, i) => (
-                <PMDisplayCard key={i} />
+              {familyDetails?.Members.filter(
+                (member) => member.PocketMoneyUser === true
+              ).map((member, i) => (
+                <PMDisplayCard key={i} memberDetails={member} />
               ))}
             </div>
           </div>
@@ -75,7 +84,7 @@ export default function FamilyPage() {
       {/* Calendar */}
       <div className="flex-1 min-w-0 h-full">
         {familyDetails ? (
-          <CalendarView MemberData={familyDetails.Members} />
+          <CalendarView data={familyDetails} />
         ) : (
           <div className="flex items-center justify-center h-full text-gray-500 text-xs">
             No data available.

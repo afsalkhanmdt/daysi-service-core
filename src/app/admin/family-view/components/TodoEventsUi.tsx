@@ -6,13 +6,7 @@ import icon from "../../assets/try.jpg";
 
 const imageArray = [icon.src, dp.src, eventIcon.src];
 
-const EventCardUI = ({ eventInfo }: { eventInfo: any }) => {
-  const start = eventInfo.event.start;
-  const end = eventInfo.event.end;
-
-  const formatTime = (date: Date) =>
-    date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-
+const TodoEventUi = () => {
   return (
     <div className="h-full border-t-4 rounded-xl border-sky-500 bg-white shadow-sm overflow-x-auto">
       <div className="flex flex-col flex-wrap gap-3 p-3 h-full">
@@ -21,10 +15,10 @@ const EventCardUI = ({ eventInfo }: { eventInfo: any }) => {
         </div>
         <div className="grid gap-0.5">
           <div className="font-semibold text-[13px] text-black">
-            {eventInfo.event.title}
+            book vayikk mona
           </div>
           <div className="font-normal text-[9px] text-stone-500">
-            {formatTime(start)} - {formatTime(end)}
+            paisa thara mona
           </div>
         </div>
         <div className="flex flex-wrap justify-between w-full gap-1.5">
@@ -48,4 +42,4 @@ const EventCardUI = ({ eventInfo }: { eventInfo: any }) => {
     </div>
   );
 };
-export default EventCardUI;
+export default TodoEventUi;
