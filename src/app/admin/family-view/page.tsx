@@ -99,7 +99,7 @@ export default function FamilyPage() {
       </div>
 
       {/* Calendar */}
-      <div className="flex-1 min-w-0 h-full">
+      <div className="flex-1 min-w-0 sm:h-full">
         {familyDetails ? (
           <CalendarView data={familyDetails} />
         ) : (
@@ -107,6 +107,44 @@ export default function FamilyPage() {
             No data available.
           </div>
         )}
+      </div>
+      <div
+        className="
+          bg-white dark:bg-gray-800 border-r dark:border-gray-700
+          text-gray-800 dark:text-gray-100 sm:hidden"
+      >
+        <div className=" border-b border-slate-100 dark:border-gray-700">
+          <div className="p-3 text-base font-semibold grid place-content-center border-b dark:border-gray-700">
+            Celebration’s Today 🎉
+          </div>
+          <div className="flex-1 overflow-y-auto p-3 max-h-40">
+            <div className="grid gap-2">
+              {mainEvents.map((event, i) => (
+                <CelebrationDisplayCard
+                  key={i}
+                  mainEvent={event}
+                  imageUrl={imageUrls?.[event.EventPerson]}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Pocket Money Section */}
+        <div className="flex-1 min-h-0 flex flex-col">
+          <div className="p-3 text-base font-semibold grid place-content-center border-b dark:border-gray-700">
+            Pocket Money 💸
+          </div>
+          <div className="flex-1 overflow-y-auto p-3">
+            <div className="grid gap-2">
+              {familyDetails?.Members.filter(
+                (member) => member.PocketMoneyUser === true
+              ).map((member, i) => (
+                <PMDisplayCard key={i} memberDetails={member} />
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

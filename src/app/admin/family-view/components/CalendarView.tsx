@@ -11,7 +11,7 @@ import calIcon from "@/app/admin/assets/calendar-minimalistic-svgrepo-com (4) 1.
 import { FamilyData } from "../page";
 import ToDoAndPMComponent from "./ToDoAndPMComponent";
 import { EventParticipant } from "@/app/types/familyMemberTypes";
-import PocketMoneyEventUi from "./PocketMoneyEventsUi";
+import MobileViewComponent from "./MobileviewComponent";
 
 const calendarView = ({ data }: { data: FamilyData }) => {
   const calendarRef = useRef<any>(null);
@@ -127,8 +127,8 @@ const calendarView = ({ data }: { data: FamilyData }) => {
   };
 
   return (
-    <div className="p-2.5 bg-slate-100 flex flex-col h-full sm:rounded-xl">
-      <div className="bg-white p-2.5 rounded-xl gap-2 sm:gap-4 grid mb-4">
+    <div className="p-2.5 bg-slate-100 flex flex-col sm:h-full sm:rounded-xl ">
+      <div className="bg-white p-2.5 rounded-xl gap-2 sm:gap-4 grid sm:mb-4">
         {/* Month Navigation */}
         <div className="w-full flex justify-between gap-1 sm:gap-1.5 ">
           <div className="flex gap-1 sm:gap-1.5  justify-center items-center">
@@ -198,38 +198,7 @@ const calendarView = ({ data }: { data: FamilyData }) => {
         </div>
       </div>
 
-      {/*mobile view*/}
-      <div className="sm:hidden grid  gap-2 sm:gap-4">
-        {[...Array(3)].map((_, index) => (
-          <div className=" border-t-4 rounded-xl border-sky-500 bg-white shadow-sm overflow-auto ">
-            <div className="flex flex-col   p-3 h-full w-full">
-              <div className="text-center py-0.5 px-1.5   bg-indigo-50 text-sky-500 w-fit text-[7px] text-xs rounded-2xl">
-                Event
-              </div>
-              <div className="grid">
-                <div className="font-semibold text-md  text-black">title</div>
-                <div className="font-normal text-[9px] md:text-xs text-stone-500">
-                  <div className="text-sm text-stone-500">10:00-12:00 UTC</div>
-                </div>
-              </div>
-              <div className="flex flex-wrap justify-between max-w-full gap-2">
-                <div className="flex -space-x-2">
-                  <Image
-                    src={dp.src}
-                    alt={`avatar`}
-                    width={22}
-                    height={22}
-                    className="rounded-full border-2 border-white"
-                  />
-                </div>
-                <div className=" rounded-xs py-0.5 px-1 text-sky-500 text-[9px] font-semibold bg-slate-100 h-fit w-fit">
-                  3
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      <MobileViewComponent resources={resources} />
 
       {/* Calendar */}
       <div className="hidden sm:block flex-1 overflow-y-auto relative">
@@ -300,6 +269,7 @@ const calendarView = ({ data }: { data: FamilyData }) => {
           <PocketMoneyEventUi />
         ))}
       </div> */}
+
       <ToDoAndPMComponent familyDetails={data} />
     </div>
   );
