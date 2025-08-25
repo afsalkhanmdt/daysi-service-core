@@ -2,12 +2,12 @@
 import Image from "next/image";
 import icon from "../../assets/try.jpg";
 
-const TodoEventUi = () => {
+const PocketMoneyEventUi = () => {
   return (
-    <div className="h-20 border-t-4 rounded-xl border-emerald-500 bg-white shadow-sm flex flex-col justify-between gap-1 p-1">
+    <div className="h-20 border-t-4 rounded-xl border-sky-800 bg-white shadow-sm flex flex-col justify-between gap-1 p-1">
       <div>
         <div className="flex justify-between items-center">
-          <div className="text-center py-0.5 px-1.5 bg-emerald-50 text-emerald-500 w-fit text-[7px] rounded-2xl">
+          <div className="text-center py-0.5 px-1.5 bg-slate-200 text-sky-800 w-fit text-[7px] rounded-2xl">
             To-Do
           </div>
           <input
@@ -28,7 +28,7 @@ const TodoEventUi = () => {
           className="rounded-full border-[1.4px] border-white"
         />
 
-        <div className="flex  items-center justify-center gap-0.5 bg-emerald-500 text-center px-2 py-1 rounded-2xl text-white w-14">
+        <div className="flex  items-center justify-center gap-0.5 bg-sky-500 text-center px-2 py-1 rounded-2xl text-white w-14">
           <div className="font-semibold text-[10px]">100</div>
           <div className="font-normal text-[10px]">Dkk</div>
         </div>
@@ -36,4 +36,4 @@ const TodoEventUi = () => {
     </div>
   );
 };
-export default TodoEventUi;
+export default PocketMoneyEventUi;

@@ -40,14 +40,14 @@ export default function ToggleThemeAndLogout() {
   };
 
   return (
-    <div className="border-t border-slate-100 dark:border-gray-700 p-1.5 grid gap-1.5">
+    <div className="flex sm:grid border-t border-slate-100 dark:border-gray-700  sm:p-1.5 gap-1.5 place-items-center">
       {/* Toggle Theme */}
       <div
-        className={`flex justify-between shadow ${
+        className={`sm:flex sm:justify-between sm:shadow-md ${
           isDark ? `shadow-gray-900` : `shadow-gray-300`
-        } px-3 py-1.5 items-center gap-1.5 w-full rounded-full`}
+        } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full`}
       >
-        <div className="text-center font-semibold text-sm text-stone-500">
+        <div className="sm:block hidden text-center font-semibold text-sm text-stone-500">
           DarkMode
         </div>
 
@@ -93,11 +93,11 @@ export default function ToggleThemeAndLogout() {
       {/* Logout */}
       <button
         onClick={handleLogout}
-        className={`flex justify-between shadow ${
+        className={`sm:flex sm:justify-between shadow-md ${
           isDark ? `shadow-gray-900` : `shadow-gray-300`
-        } px-3 py-1.5 items-center gap-1.5 w-full rounded-full`}
+        }  px-1.5 sm:px-3 py-1.5  grid place-items-center sm:items-center gap-1.5 sm:w-full rounded-lg sm:rounded-full`}
       >
-        <div className="text-center font-semibold text-sm text-stone-500">
+        <div className="sm:block hidden text-center font-semibold text-sm text-stone-500">
           Logout
         </div>
         <svg

@@ -6,30 +6,44 @@ import icon from "../../assets/try.jpg";
 
 const imageArray = [icon.src, dp.src, eventIcon.src];
 
-const EventCardUI = ({ eventInfo }: { eventInfo: any }) => {
+const EventCardUI = ({
+  eventInfo,
+  participantImages,
+}: {
+  eventInfo: any;
+  participantImages: string[];
+}) => {
+  console.log("participantImages", participantImages);
+
   const start = eventInfo.event.start;
   const end = eventInfo.event.end;
 
-  const formatTime = (date: Date) =>
-    date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const formatTimeUTC = (date: Date) =>
+    date.toLocaleTimeString("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "UTC",
+    });
 
   return (
-    <div className="h-full border-t-4 rounded-xl border-sky-500 bg-white shadow-sm overflow-x-auto">
-      <div className="flex flex-col flex-wrap gap-3 p-3 h-full">
-        <div className="text-center py-0.5 px-1.5 bg-indigo-50 text-sky-500 w-fit text-[7px] rounded-2xl">
+    <div className="h-full border-t-4 rounded-xl border-sky-500 bg-white shadow-sm overflow-auto">
+      <div className="flex flex-col  sm:gap-1 p-1 h-full">
+        <div className="text-center py-0.5 px-1.5 md:py-1  md:px-2 bg-indigo-50 text-sky-500 w-fit text-[7px] text-xs rounded-2xl">
           Event
         </div>
-        <div className="grid gap-0.5">
-          <div className="font-semibold text-[13px] text-black">
+        <div className="grid">
+          <div className="font-semibold text-[13px] md:text-sm text-black">
             {eventInfo.event.title}
           </div>
-          <div className="font-normal text-[9px] text-stone-500">
-            {formatTime(start)} - {formatTime(end)}
+          <div className="font-normal text-[9px] md:text-xs text-stone-500">
+            <div className="text-[9px] md:text-xs text-stone-500">
+              {formatTimeUTC(start)} - {formatTimeUTC(end)} UTC
+            </div>
           </div>
         </div>
-        <div className="flex flex-wrap justify-between w-full gap-1.5">
+        <div className="flex flex-wrap justify-between max-w-full gap-1.5 md:gap-3">
           <div className="flex -space-x-1.5">
-            {imageArray.map((src, i) => (
+            {participantImages.map((src, i) => (
               <Image
                 key={i}
                 src={src}
@@ -40,7 +54,7 @@ const EventCardUI = ({ eventInfo }: { eventInfo: any }) => {
               />
             ))}
           </div>
-          <div className="rounded-[3px] py-0.5 px-1 text-sky-500 text-[9px] font-semibold bg-slate-100 h-fit w-fit">
+          <div className="hidden sm:block rounded-[3px] py-0.5 px-1 text-sky-500 text-[9px] font-semibold bg-slate-100 h-fit w-fit">
             {imageArray.length}
           </div>
         </div>

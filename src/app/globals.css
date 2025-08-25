@@ -8,7 +8,7 @@
   border: none !important; /* this kills default borders */
   box-shadow: none !important;
   padding: 0 !important;
-  margin: 2px 16px; /* spacing between your custom event cards */
+  margin: 4px 0px;
 }
 
 /* Do NOT reset border on .fc-event-main */
