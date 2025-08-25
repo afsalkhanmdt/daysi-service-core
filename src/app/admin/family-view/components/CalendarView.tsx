@@ -3,20 +3,27 @@
 import FullCalendar from "@fullcalendar/react";
 import resourceTimeGridPlugin from "@fullcalendar/resource-timegrid";
 import EventCardUI from "@/app/admin/family-view/components/EventCard";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import dayjs from "dayjs";
 import Image from "next/image";
 import dp from "@/app/admin/assets/MyFamilii Brand Guide (1)-2 1.png";
 import calIcon from "@/app/admin/assets/calendar-minimalistic-svgrepo-com (4) 1.svg";
 import { FamilyData } from "../page";
-import ToDoAndPMComponent from "./ToDoAndPMComponent";
+import ToDoAndPMComponent, { PMData } from "./ToDoAndPMComponent";
 import { EventParticipant } from "@/app/types/familyMemberTypes";
 import MobileViewComponent from "./MobileviewComponent";
+import { useFetch } from "@/app/hooks/useFetch";
 
 const calendarView = ({ data }: { data: FamilyData }) => {
   const calendarRef = useRef<any>(null);
   const dayRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const [currentDate, setCurrentDate] = useState(dayjs());
+  const [selectedMember, setSelectedMember] = useState<number>();
+  const {
+    data: PMTaskDetails,
+    loading,
+    error,
+  } = useFetch<PMData>(`PocketMoney/GetPMTasks?familyId=936`);
 
   const resources = data.Members.map((member: any) => ({
     id: member.Id,
@@ -29,7 +36,6 @@ const calendarView = ({ data }: { data: FamilyData }) => {
     name: member.FirstName,
     imageUrl: member.ResourceUrl || dp.src,
   }));
-  console.log("Image URLs:", imageUrls);
 
   const events = data.Members.flatMap((member: any) =>
     member.Events.map((event: any) => {
@@ -126,6 +132,10 @@ const calendarView = ({ data }: { data: FamilyData }) => {
     setTimeout(() => scrollToDay(today), 50);
   };
 
+  useEffect(() => {
+    scrollToDay(currentDate);
+  }, []);
+
   return (
     <div className="p-2.5 bg-slate-100 flex flex-col sm:h-full sm:rounded-xl ">
       <div className="bg-white p-2.5 rounded-xl gap-2 sm:gap-4 grid sm:mb-4">
@@ -196,9 +206,16 @@ const calendarView = ({ data }: { data: FamilyData }) => {
             </button>
           ))}
         </div>
+        {/* Scrollable Days Bar */}
       </div>
 
-      <MobileViewComponent resources={resources} />
+      <MobileViewComponent
+        selectedMember={selectedMember}
+        setSelectedMember={setSelectedMember}
+        resources={resources}
+        familyData={data}
+        currentDate={currentDate}
+      />
 
       {/* Calendar */}
       <div className="hidden sm:block flex-1 overflow-y-auto relative">
@@ -270,7 +287,13 @@ const calendarView = ({ data }: { data: FamilyData }) => {
         ))}
       </div> */}
 
-      <ToDoAndPMComponent familyDetails={data} />
+      {PMTaskDetails && (
+        <ToDoAndPMComponent
+          PMTaskDetails={PMTaskDetails}
+          familyDetails={data}
+          selectedMember={selectedMember}
+        />
+      )}
     </div>
   );
 };

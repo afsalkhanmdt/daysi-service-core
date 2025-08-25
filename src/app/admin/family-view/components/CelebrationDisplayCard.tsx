@@ -1,6 +1,5 @@
 import { UserEvent } from "@/app/types/familyMemberTypes";
 import eventIcon from "../../assets/cake-svgrepo-com 1.svg";
-import dp from "../../assets/try.jpg";
 import dayjs from "dayjs";
 
 const CelebrationDisplayCard = ({

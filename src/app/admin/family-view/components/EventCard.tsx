@@ -1,10 +1,5 @@
 "use client";
 import Image from "next/image";
-import eventIcon from "../../assets/cake-svgrepo-com 1.svg";
-import dp from "../../assets/MyFamilii Brand Guide (1)-2 1.png";
-import icon from "../../assets/try.jpg";
-
-const imageArray = [icon.src, dp.src, eventIcon.src];
 
 const EventCardUI = ({
   eventInfo,
@@ -13,8 +8,6 @@ const EventCardUI = ({
   eventInfo: any;
   participantImages: string[];
 }) => {
-  console.log("participantImages", participantImages);
-
   const start = eventInfo.event.start;
   const end = eventInfo.event.end;
 
@@ -55,7 +48,7 @@ const EventCardUI = ({
             ))}
           </div>
           <div className="hidden sm:block rounded-[3px] py-0.5 px-1 text-sky-500 text-[9px] font-semibold bg-slate-100 h-fit w-fit">
-            {imageArray.length}
+            {participantImages.length}
           </div>
         </div>
       </div>

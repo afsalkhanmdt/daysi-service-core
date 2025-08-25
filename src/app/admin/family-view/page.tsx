@@ -9,6 +9,7 @@ import ToggleThemeAndLogout from "./components/ToggleThemeAndLogout";
 import { FamilyResponse } from "@/app/types/familytypes";
 import { MemberResponse } from "@/app/types/familyMemberTypes";
 import { useFetch } from "@/app/hooks/useFetch";
+import { useSearchParams } from "next/navigation";
 
 export type FamilyData = {
   Family: FamilyResponse;
@@ -16,15 +17,13 @@ export type FamilyData = {
 };
 
 export default function FamilyPage() {
+  const searchParams = useSearchParams();
+  const familyId = searchParams.get("familyId");
   const {
     data: familyDetails,
     loading,
     error,
-  } = useFetch<FamilyData>(
-    "https://dev.daysi.dk/api/Families/GetAllFamilies?familyId=935"
-  );
-
-  console.log("Family Details:", familyDetails);
+  } = useFetch<FamilyData>(`Families/GetAllFamilies?familyId=${familyId}`);
 
   const mainEvents =
     familyDetails?.Members.flatMap((member: MemberResponse) =>
@@ -108,6 +107,7 @@ export default function FamilyPage() {
           </div>
         )}
       </div>
+      {/* Mobile view */}
       <div
         className="
           bg-white dark:bg-gray-800 border-r dark:border-gray-700
@@ -146,6 +146,7 @@ export default function FamilyPage() {
           </div>
         </div>
       </div>
+      {/* Mobile view end */}
     </div>
   );
 }

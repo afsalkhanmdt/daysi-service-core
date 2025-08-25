@@ -1,4 +1,5 @@
 "use client";
+import apiUrl from "@/config/apiUrl";
 import { useEffect, useState, useCallback } from "react";
 
 interface FetchState<T> {
@@ -21,7 +22,7 @@ export function useFetch<T>(url: string | null, options?: RequestInit) {
 
     try {
       const token = localStorage.getItem("access_token");
-      const res = await fetch(url, {
+      const res = await fetch(apiUrl+url, {
         ...options,
         headers: {
           "Content-Type": "application/json",
