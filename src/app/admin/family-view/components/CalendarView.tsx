@@ -8,12 +8,16 @@ import dayjs from "dayjs";
 import Image from "next/image";
 import dp from "@/app/admin/assets/MyFamilii Brand Guide (1)-2 1.png";
 import calIcon from "@/app/admin/assets/calendar-minimalistic-svgrepo-com (4) 1.svg";
-import { FamilyData } from "../page";
+
 import ToDoAndPMComponent, { PMData } from "./ToDoAndPMComponent";
 import { EventParticipant } from "@/app/types/familyMemberTypes";
-import MobileViewComponent from "./MobileviewComponent";
+
 import { useFetch } from "@/app/hooks/useFetch";
 import { useSearchParams } from "next/navigation";
+import { FamilyData } from "./FamilyViewWrapper";
+
+import SideBarMobileView from "./SideBarMobileView";
+import MobileEventAndScrollBar from "./MobileEventAndScrollBar";
 export type ToDoTaskType = {
   ToDoTaskId: number;
   FamilyId: number;
@@ -163,10 +167,10 @@ const calendarView = ({ data }: { data: FamilyData }) => {
   }, []);
 
   return (
-    <div className="p-2.5 bg-slate-100 flex flex-col sm:h-full sm:rounded-xl ">
-      <div className="bg-white p-2.5 rounded-xl gap-2 sm:gap-4 grid sm:mb-4">
+    <div className="sm:p-2.5 bg-slate-100 flex flex-col sm:h-full sm:rounded-xl ">
+      <div className="bg-white p-2 m-2 rounded-xl gap-2 sm:gap-4 grid sm:mb-4">
         {/* Month Navigation */}
-        <div className="w-full flex justify-between gap-1 sm:gap-1.5 ">
+        <div className="first-letter:w-full flex justify-between gap-1 sm:gap-1.5 ">
           <div className="flex gap-1 sm:gap-1.5  justify-center items-center">
             <Image
               src={calIcon.src}
@@ -235,7 +239,7 @@ const calendarView = ({ data }: { data: FamilyData }) => {
         {/* Scrollable Days Bar */}
       </div>
 
-      <MobileViewComponent
+      <MobileEventAndScrollBar
         selectedMember={selectedMember}
         setSelectedMember={setSelectedMember}
         resources={resources}
@@ -307,12 +311,6 @@ const calendarView = ({ data }: { data: FamilyData }) => {
           }}
         />
       </div>
-      {/* <div className="flex overflow-x-auto h-20 sm:hidden gap-2">
-        {[...Array(3)].map((_, index) => (
-          <PocketMoneyEventUi />
-        ))}
-      </div> */}
-
       {PMTaskDetails && todoData && (
         <ToDoAndPMComponent
           todoDetails={todoData}
@@ -320,6 +318,9 @@ const calendarView = ({ data }: { data: FamilyData }) => {
           familyDetails={data}
           selectedMember={selectedMember}
         />
+      )}
+      {data && (
+        <SideBarMobileView familyDetails={data} currentDate={currentDate} />
       )}
     </div>
   );

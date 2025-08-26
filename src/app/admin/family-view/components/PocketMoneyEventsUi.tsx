@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
-import { PMData, PMMember, PMTask } from "./ToDoAndPMComponent";
-import { FamilyData } from "../page";
+import { PMTask } from "./ToDoAndPMComponent";
+import { FamilyData } from "./FamilyViewWrapper";
 
 const PocketMoneyEventUi = ({
   PMEventData,
@@ -11,7 +11,7 @@ const PocketMoneyEventUi = ({
   familyDetails: FamilyData;
 }) => {
   return (
-    <div className=" min-w-40 h-20 border-t-4 rounded-xl border-sky-800 bg-white shadow-sm flex flex-col justify-between gap-1 p-1">
+    <div className=" min-w-52 h-20 border-t-2 sm:border-t-4 shadow-gray-300 rounded-xl border-sky-800 bg-white shadow-md flex flex-col justify-between gap-1 p-1">
       <div>
         <div className="flex justify-between items-center">
           <div className="text-center py-0.5 px-1.5 bg-slate-200 text-sky-800 w-fit text-[7px] rounded-2xl">
@@ -26,7 +26,7 @@ const PocketMoneyEventUi = ({
           {PMEventData.PMDescription}
         </div>
       </div>
-      <div className="flex flex-wrap justify-between w-full gap-1.5">
+      <div className="flex flex-wrap justify-between w-full ">
         <div className="flex -space-x-2">
           {familyDetails.Members.filter((m) =>
             PMEventData.FamilyMembersPlanned.some(
@@ -39,7 +39,7 @@ const PocketMoneyEventUi = ({
               alt={participant.MemberName}
               width={22}
               height={22}
-              className="rounded-full border-2 border-white"
+              className="w-6 h-6 rounded-full border-2 border-white bg-white shadow-sm shadow-gray-200"
             />
           ))}
         </div>

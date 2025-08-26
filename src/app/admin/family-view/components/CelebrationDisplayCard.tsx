@@ -27,7 +27,10 @@ const CelebrationDisplayCard = ({
       <div className="flex gap-[0.5rem]">
         <img className="rounded-full w-7 h-7" src={imageUrl} alt="" />
         <div className="grid gap-[0.35rem]">
-          <div className="font-semibold text-base">{mainEvent.Title}</div>
+          <div className="font-semibold text-base">
+            {mainEvent.Title}
+            {mainEvent.SpecialEvent === 0 ? "BirthDay" : "Anniversary"}
+          </div>
           <div className="font-normal text-[10px] text-stone-500">
             {startTime} - {endTime}
           </div>

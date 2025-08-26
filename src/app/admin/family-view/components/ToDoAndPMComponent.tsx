@@ -1,9 +1,9 @@
 "use client";
 import PocketMoneyEventUi from "./PocketMoneyEventsUi";
 import TodoEventUi from "./TodoEventsUi";
-import { FamilyData } from "../page";
 import { useEffect, useState } from "react";
 import { ToDoTaskType } from "./CalendarView";
+import { FamilyData } from "./FamilyViewWrapper";
 
 export type PMMember = {
   MemberId: string;
@@ -88,7 +88,7 @@ const ToDoAndPMComponent = ({
   }, []);
 
   return (
-    <div className="relative w-full">
+    <div className="relative ">
       {/* Show pull-up button only on sm and above */}
       {!isSmallScreen && (
         <div className="sticky top-0 left-0 z-10 flex justify-center py-2 bg-white">
@@ -103,7 +103,7 @@ const ToDoAndPMComponent = ({
 
       {/* Rows */}
       <div
-        className={`flex flex-col w-full transition-all duration-500 ${
+        className={`flex flex-col gap-1 w-full transition-all duration-500 pb-1 bg-blue-100 ${
           isSmallScreen
             ? "max-h-[28rem]" // Always visible on small screens
             : isTasksOpen
@@ -112,14 +112,14 @@ const ToDoAndPMComponent = ({
         }`}
       >
         {/* Pocket Money */}
-        <div className="flex border-dashed border-b-2 h-24">
+        <div className="flex sm:border-dashed border-b-2 h-24 bg-blue-200 px-2 rounded-lg mx-2">
           <div className="w-7 flex items-center justify-center pr-2">
             <span className="text-xs px-2 rounded-xl py-0.5 bg-gradient-to-r from-emerald-400 to-sky-500 text-white whitespace-nowrap transform -rotate-90 ">
               Pocket Money
             </span>
           </div>
 
-          <div className="w-full h-full flex overflow-x-auto gap-3 p-2">
+          <div className="w-full h-full flex overflow-x-auto gap-3 items-center">
             {(() => {
               // filter tasks based on selectedMember
               const filteredTasks = PMTaskDetails.PMTasks.filter((PMTask) =>
@@ -153,14 +153,14 @@ const ToDoAndPMComponent = ({
         </div>
 
         {/* To-Do */}
-        <div className="flex border-dashed border-b-2">
+        <div className="flex sm:border-dashed border-b-2 bg-blue-200 mx-2 px-2 rounded-lg h-24">
           <div className="w-7 flex items-center justify-center pr-2">
             <span className="text-xs px-2 rounded-xl py-0.5 bg-gradient-to-r from-emerald-400 to-sky-500 text-white whitespace-nowrap transform -rotate-90 ">
               To Do
             </span>
           </div>
 
-          <div className="w-full h-full flex overflow-x-auto gap-3 p-2">
+          <div className="w-full h-full flex overflow-x-auto gap-3 items-center">
             {(() => {
               const filteredTodos = todos.filter((todo) =>
                 selectedMember
