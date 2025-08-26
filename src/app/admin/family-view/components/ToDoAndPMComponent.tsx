@@ -3,7 +3,7 @@ import PocketMoneyEventUi from "./PocketMoneyEventsUi";
 import TodoEventUi from "./TodoEventsUi";
 import { FamilyData } from "../page";
 import { useEffect, useState } from "react";
-import { useFetch } from "@/app/hooks/useFetch";
+import { ToDoTaskType } from "./CalendarView";
 
 export type PMMember = {
   MemberId: string;
@@ -58,14 +58,22 @@ export type PMData = {
 };
 
 const ToDoAndPMComponent = ({
+  todoDetails,
   selectedMember,
   familyDetails,
   PMTaskDetails,
 }: {
+  todoDetails: ToDoTaskType[];
   familyDetails: FamilyData;
   selectedMember?: number;
   PMTaskDetails: PMData;
 }) => {
+  const todos = Array.isArray(todoDetails)
+    ? todoDetails
+    : todoDetails
+    ? [todoDetails]
+    : [];
+
   const taskMember = familyDetails.Members.find((m) => m.Id === selectedMember);
   const [isTasksOpen, setIsTasksOpen] = useState(false);
   const [isSmallScreen, setIsSmallScreen] = useState(true); // default true until checked
@@ -78,8 +86,6 @@ const ToDoAndPMComponent = ({
     window.addEventListener("resize", checkScreenSize);
     return () => window.removeEventListener("resize", checkScreenSize);
   }, []);
-
-  console.log(PMTaskDetails, "PMTaskDetails in ToDoAndPMComponent");
 
   return (
     <div className="relative w-full">
@@ -153,12 +159,31 @@ const ToDoAndPMComponent = ({
               To Do
             </span>
           </div>
+
           <div className="w-full h-full flex overflow-x-auto gap-3 p-2">
-            {familyDetails.Family.ToDoFamilyGroups.map((group, index) => (
-              <div key={index} className="shrink-0">
-                <TodoEventUi />
-              </div>
-            ))}
+            {(() => {
+              const filteredTodos = todos.filter((todo) =>
+                selectedMember
+                  ? todo.AssignedTo === taskMember?.MemberId // assuming AssignedTo matches Member.Id
+                  : true
+              );
+
+              if (filteredTodos.length === 0) {
+                return (
+                  <div className="flex items-center justify-center w-full h-24 text-gray-500 text-sm italic">
+                    {selectedMember
+                      ? "No To-Do tasks for this member"
+                      : "No To-Do tasks available"}
+                  </div>
+                );
+              }
+
+              return filteredTodos.map((todo, index) => (
+                <div key={index} className="shrink-0">
+                  <TodoEventUi ToDoData={todo} familyDetails={familyDetails} />
+                </div>
+              ));
+            })()}
           </div>
         </div>
       </div>

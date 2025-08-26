@@ -13,17 +13,43 @@ import ToDoAndPMComponent, { PMData } from "./ToDoAndPMComponent";
 import { EventParticipant } from "@/app/types/familyMemberTypes";
 import MobileViewComponent from "./MobileviewComponent";
 import { useFetch } from "@/app/hooks/useFetch";
+import { useSearchParams } from "next/navigation";
+export type ToDoTaskType = {
+  ToDoTaskId: number;
+  FamilyId: number;
+  CreatedBy: string;
+  AssignedTo: string;
+  ToDoGroupId: number;
+  Description: string;
+  Note: string;
+  Private: boolean;
+  CreatedDate: string; // ISO timestamp string
+  ClosedDate: string | null; // can be null
+  Status: number; // likely an enum (e.g., 0 = open, 1 = closed, etc.)
+  UpdatedOn: string; // looks like a .NET ticks string
+  IsForAll: boolean;
+};
+
+type ToDoTaskList = ToDoTaskType[];
 
 const calendarView = ({ data }: { data: FamilyData }) => {
   const calendarRef = useRef<any>(null);
   const dayRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const [currentDate, setCurrentDate] = useState(dayjs());
   const [selectedMember, setSelectedMember] = useState<number>();
+  const searchParams = useSearchParams();
+  const familyId = searchParams.get("familyId");
   const {
     data: PMTaskDetails,
-    loading,
-    error,
-  } = useFetch<PMData>(`PocketMoney/GetPMTasks?familyId=936`);
+    loading: PMLoading,
+    error: PMError,
+  } = useFetch<PMData>(`PocketMoney/GetPMTasks?familyId=${familyId}`);
+
+  const {
+    data: todoData,
+    loading: todoLoading,
+    error: todoError,
+  } = useFetch<ToDoTaskType[]>(`ToDo/GetToDos?familyId=${familyId}`);
 
   const resources = data.Members.map((member: any) => ({
     id: member.Id,
@@ -287,8 +313,9 @@ const calendarView = ({ data }: { data: FamilyData }) => {
         ))}
       </div> */}
 
-      {PMTaskDetails && (
+      {PMTaskDetails && todoData && (
         <ToDoAndPMComponent
+          todoDetails={todoData}
           PMTaskDetails={PMTaskDetails}
           familyDetails={data}
           selectedMember={selectedMember}

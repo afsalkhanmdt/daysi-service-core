@@ -1,8 +1,19 @@
 "use client";
 import Image from "next/image";
 import icon from "../../assets/try.jpg";
+import { ToDoTaskType } from "./CalendarView";
+import { FamilyData } from "../page";
 
-const TodoEventUi = () => {
+const TodoEventUi = ({
+  ToDoData,
+  familyDetails,
+}: {
+  ToDoData: ToDoTaskType;
+  familyDetails: FamilyData;
+}) => {
+  const imageUrl =
+    familyDetails.Members.find((m) => m.MemberId === ToDoData.AssignedTo)
+      ?.ResourceUrl || icon.src;
   return (
     <div className="h-20 border-t-4 rounded-xl border-emerald-500 bg-white shadow-sm flex flex-col justify-between gap-1 p-1">
       <div>
@@ -16,12 +27,12 @@ const TodoEventUi = () => {
           />
         </div>
         <div className="font-semibold text-[13px] text-black max-w-40 truncate">
-          book vayikk monadfadfsdfsdfsdfsdfsdfsdfsdfsdfsdf
+          {ToDoData.Description}
         </div>
       </div>
       <div className="flex flex-wrap justify-between w-full gap-1.5">
         <Image
-          src={icon.src}
+          src={imageUrl}
           alt={`avatar`}
           width={22}
           height={22}
@@ -29,7 +40,7 @@ const TodoEventUi = () => {
         />
 
         <div className="flex  items-center justify-center gap-0.5 bg-emerald-500 text-center px-2 py-1 rounded-2xl text-white w-14">
-          <div className="font-semibold text-[10px]">100</div>
+          <div className="font-semibold text-[10px]">{}</div>
           <div className="font-normal text-[10px]">Dkk</div>
         </div>
       </div>

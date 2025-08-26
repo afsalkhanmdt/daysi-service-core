@@ -10,8 +10,6 @@ const PocketMoneyEventUi = ({
   PMEventData: PMTask;
   familyDetails: FamilyData;
 }) => {
-  console.log(familyDetails, "familyDetails in PM event");
-
   return (
     <div className=" min-w-40 h-20 border-t-4 rounded-xl border-sky-800 bg-white shadow-sm flex flex-col justify-between gap-1 p-1">
       <div>

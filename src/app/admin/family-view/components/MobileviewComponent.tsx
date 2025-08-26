@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { FamilyData } from "../page";
-import { useState, useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 
@@ -87,51 +87,62 @@ const MobileViewComponent = ({
       </div>
 
       {/* Selected member events */}
+
       <div className="sm:hidden grid gap-2 sm:gap-4">
-        {selectedDaysEvents.map((event) => (
-          <div
-            key={event.Id}
-            className="border-t-4 rounded-xl border-sky-500 bg-white shadow-sm overflow-auto"
-          >
-            <div className="flex flex-col p-3 h-full w-full">
-              <div className="text-center py-0.5 px-1.5 bg-indigo-50 text-sky-500 w-fit text-[7px] text-xs rounded-2xl">
-                Event
-              </div>
-              <div className="grid">
-                <div className="font-semibold text-md text-black">
-                  {event.Title}
+        {!selectedMember ? (
+          <div className="p-2 border-t-4 rounded-xl border-gray-300 bg-white shadow-sm flex items-center justify-center h-20 text-gray-500 italic">
+            No member selected.
+          </div>
+        ) : selectedDaysEvents.length > 0 ? (
+          selectedDaysEvents.map((event) => (
+            <div
+              key={event.Id}
+              className="border-t-4 rounded-xl border-sky-500 bg-white shadow-sm overflow-auto"
+            >
+              <div className="flex flex-col p-3 h-full w-full">
+                <div className="text-center py-0.5 px-1.5 bg-indigo-50 text-sky-500 w-fit text-[7px] text-xs rounded-2xl">
+                  Event
                 </div>
-                <div className="font-normal text-[9px] md:text-xs text-stone-500">
-                  <div className="text-sm text-stone-500">
-                    {event.Start} - {event.End}
+                <div className="grid">
+                  <div className="font-semibold text-md text-black">
+                    {event.Title}
+                  </div>
+                  <div className="font-normal text-[9px] md:text-xs text-stone-500">
+                    <div className="text-sm text-stone-500">
+                      {event.Start} - {event.End}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex flex-wrap justify-between max-w-full gap-2">
+                  {/* Participant avatars */}
+                  <div className="flex -space-x-2">
+                    {familyData.Members.filter((m) =>
+                      event.Attendee?.includes(m.Email)
+                    ).map((participant) => (
+                      <Image
+                        key={participant.Id}
+                        src={participant.ResourceUrl || "/fallback.png"}
+                        alt={participant.MemberName}
+                        width={22}
+                        height={22}
+                        className="rounded-full border-2 border-white"
+                      />
+                    ))}
+                  </div>
+
+                  {/* Participant count */}
+                  <div className="rounded-xs py-0.5 px-1 text-sky-500 text-[9px] font-semibold bg-slate-100 h-fit w-fit">
+                    {event.Attendee?.length || 0}
                   </div>
                 </div>
               </div>
-              <div className="flex flex-wrap justify-between max-w-full gap-2">
-                {/* Participant avatars */}
-                <div className="flex -space-x-2">
-                  {familyData.Members.filter((m) =>
-                    event.Attendee?.includes(m.Email)
-                  ).map((participant) => (
-                    <Image
-                      key={participant.Id}
-                      src={participant.ResourceUrl || "/fallback.png"}
-                      alt={participant.MemberName}
-                      width={22}
-                      height={22}
-                      className="rounded-full border-2 border-white"
-                    />
-                  ))}
-                </div>
-
-                {/* Participant count */}
-                <div className="rounded-xs py-0.5 px-1 text-sky-500 text-[9px] font-semibold bg-slate-100 h-fit w-fit">
-                  {event.Attendee?.length || 0}
-                </div>
-              </div>
             </div>
+          ))
+        ) : (
+          <div className="p-2 border-t-4 rounded-xl border-gray-300 bg-white shadow-sm flex items-center justify-center h-20 text-gray-500 italic">
+            No events for the selected day for the selected member.
           </div>
-        ))}
+        )}
       </div>
     </div>
   );
