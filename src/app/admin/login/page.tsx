@@ -28,7 +28,7 @@ const Login = () => {
 
       localStorage.setItem("access_token", res.access_token);
 
-      router.push("/admin/family-view");
+      router.push(`/admin/family-view/?familyId=${res.familyId}`);
     } catch (err) {
       console.error("Login failed:", err);
       setError("Login failed. Please check your credentials.");

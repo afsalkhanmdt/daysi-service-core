@@ -3,48 +3,105 @@
 import FullCalendar from "@fullcalendar/react";
 import resourceTimeGridPlugin from "@fullcalendar/resource-timegrid";
 import EventCardUI from "@/app/admin/family-view/components/EventCard";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import dayjs from "dayjs";
 import Image from "next/image";
 import dp from "@/app/admin/assets/MyFamilii Brand Guide (1)-2 1.png";
 import calIcon from "@/app/admin/assets/calendar-minimalistic-svgrepo-com (4) 1.svg";
-import icon from "@/app/admin/assets/try.jpg";
-import { MemberResponse } from "@/app/types/familyMemberTypes";
 
-const calendarView = ({ MemberData }: { MemberData: MemberResponse[] }) => {
+import ToDoAndPMComponent, { PMData } from "./ToDoAndPMComponent";
+import { EventParticipant } from "@/app/types/familyMemberTypes";
+
+import { useFetch } from "@/app/hooks/useFetch";
+import { useSearchParams } from "next/navigation";
+import { FamilyData } from "./FamilyViewWrapper";
+
+import SideBarMobileView from "./SideBarMobileView";
+import MobileEventAndScrollBar from "./MobileEventAndScrollBar";
+export type ToDoTaskType = {
+  ToDoTaskId: number;
+  FamilyId: number;
+  CreatedBy: string;
+  AssignedTo: string;
+  ToDoGroupId: number;
+  Description: string;
+  Note: string;
+  Private: boolean;
+  CreatedDate: string; // ISO timestamp string
+  ClosedDate: string | null; // can be null
+  Status: number; // likely an enum (e.g., 0 = open, 1 = closed, etc.)
+  UpdatedOn: string; // looks like a .NET ticks string
+  IsForAll: boolean;
+};
+
+type ToDoTaskList = ToDoTaskType[];
+
+const calendarView = ({ data }: { data: FamilyData }) => {
   const calendarRef = useRef<any>(null);
   const dayRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const [currentDate, setCurrentDate] = useState(dayjs());
+  const [selectedMember, setSelectedMember] = useState<number>();
+  const searchParams = useSearchParams();
+  const familyId = searchParams.get("familyId");
+  const {
+    data: PMTaskDetails,
+    loading: PMLoading,
+    error: PMError,
+  } = useFetch<PMData>(`PocketMoney/GetPMTasks?familyId=${familyId}`);
 
-  const people = [
-    { id: "1", name: "Alice", image: icon.src },
-    { id: "2", name: "Bob", image: dp.src },
-    { id: "3", name: "Charlie", image: icon.src },
-  ];
+  const {
+    data: todoData,
+    loading: todoLoading,
+    error: todoError,
+  } = useFetch<ToDoTaskType[]>(`ToDo/GetToDos?familyId=${familyId}`);
 
-  const events = [
-    {
-      title: "Family Breakfast",
-      start: "2025-08-07T06:00:00",
-      end: "2025-08-07T09:00:00",
-      resourceId: "1",
-      display: "block",
-    },
-    {
-      title: "Morning Walk",
-      start: "2025-08-07T06:30:00",
-      end: "2025-08-07T15:00:00",
-      resourceId: "2",
-      display: "block",
-    },
-    {
-      title: "Team Call",
-      start: "2025-08-07T07:00:00",
-      end: "2025-08-07T08:00:00",
-      resourceId: "3",
-      display: "block",
-    },
-  ];
+  const resources = data.Members.map((member: any) => ({
+    id: member.Id,
+    title: member.FirstName,
+    image: member.ResourceUrl,
+  }));
+
+  const imageUrls = data?.Members.map((member) => ({
+    id: member.MemberId,
+    name: member.FirstName,
+    imageUrl: member.ResourceUrl || dp.src,
+  }));
+
+  const events = data.Members.flatMap((member: any) =>
+    member.Events.map((event: any) => {
+      let start = new Date(Number(event.Start));
+      let end = new Date(Number(event.End));
+
+      if (event.IsAllDayEvent === 1) {
+        const dayStart = new Date(start);
+        dayStart.setHours(0, 0, 0, 0);
+
+        const dayEnd = new Date(start);
+        dayEnd.setHours(23, 59, 59, 999);
+
+        start = dayStart;
+        end = dayEnd;
+      }
+
+      if (event.IsSpecialEvent === 0) {
+        return {
+          id: event.Id,
+          resourceId: member.Id,
+          title: event.Title,
+          start,
+          end,
+          display: "block",
+          extendedProps: {
+            IsSpecialEvent: event.IsSpecialEvent,
+            IsAllDayEvent: event.IsAllDayEvent,
+            participants: event.EventParticipant,
+          },
+        };
+      }
+
+      return null;
+    })
+  ).filter(Boolean);
 
   // Generate all days in month
   const getDaysInMonth = (date: dayjs.Dayjs) => {
@@ -105,44 +162,49 @@ const calendarView = ({ MemberData }: { MemberData: MemberResponse[] }) => {
     setTimeout(() => scrollToDay(today), 50);
   };
 
+  useEffect(() => {
+    scrollToDay(currentDate);
+  }, []);
+
   return (
-    <div className="p-2.5 bg-slate-100 flex flex-col gap-4 h-full rounded-xl">
-      <div className="bg-white p-2.5 rounded-xl gap-4 grid">
+    <div className="sm:p-2.5 bg-slate-100 flex flex-col sm:h-full sm:rounded-xl ">
+      <div className="bg-white p-2 m-2 rounded-xl gap-2 sm:gap-4 grid sm:mb-4">
         {/* Month Navigation */}
-        <div className="w-full md:flex md:justify-between grid gap-1.5 place-items-center">
-          <div className="flex gap-1.5">
+        <div className="first-letter:w-full flex justify-between gap-1 sm:gap-1.5 ">
+          <div className="flex gap-1 sm:gap-1.5  justify-center items-center">
             <Image
               src={calIcon.src}
               alt="calendar icon"
               width={20}
               height={20}
               priority
+              className="w-4 h-4 sm:w-6 sm:h-6 "
             />
-            <div className="grid place-items-center text-xl font-semibold">
+            <div className="grid  place-items-center text-lg sm:text-xl font-semibold">
               family name
             </div>
           </div>
 
-          <div className="grid place-items-center sm:flex sm:items-center gap-1.5">
+          <div className="grid place-items-center sm:flex sm:items-center gap-1 sm:gap-1.5 ">
             <button
               onClick={handleToday}
-              className="ml-2 px-3 py-1.5 rounded-lg bg-emerald-400 text-white hover:bg-emerald-600 text-sm font-semibold"
+              className="hidden sm:block ml-2 px-3 py-1.5 rounded-lg bg-emerald-400 text-white hover:bg-emerald-600 text-sm font-semibold"
             >
               Today
             </button>
             <div className="flex items-center gap-1.5">
               <button
                 onClick={handlePrevMonth}
-                className="px-3 py-1.5 text-sm font-semibold rounded bg-slate-100 text-zinc-600 hover:bg-slate-300"
+                className=" px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm font-semibold rounded bg-slate-100 text-zinc-600 hover:bg-slate-300"
               >
                 &lt;
               </button>
-              <div className="font-semibold text-lg text-center">
+              <div className="font-semibold text-sm sm:text-lg text-center">
                 {currentDate.format("MMMM YYYY")}
               </div>
               <button
                 onClick={handleNextMonth}
-                className="px-3 py-1.5 text-sm font-semibold rounded bg-slate-100 text-zinc-600 hover:bg-slate-300"
+                className="px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm font-semibold rounded bg-slate-100 text-zinc-600 hover:bg-slate-300"
               >
                 &gt;
               </button>
@@ -158,21 +220,38 @@ const calendarView = ({ MemberData }: { MemberData: MemberResponse[] }) => {
               ref={(el) => {
                 dayRefs.current[day.format("YYYY-MM-DD")] = el;
               }}
-              className={`flex flex-col items-center justify-center px-1.5 py-2 rounded-xl min-w-28 ${
+              className={`flex flex-col items-center justify-center px-0.5 py-1  sm:px-1.5 sm:py-2 rounded-xl min-w-20 sm:min-w-28 ${
                 day.isSame(currentDate, "day")
                   ? "bg-blue-500 text-white"
                   : "bg-blue-100 hover:bg-blue-300"
               }`}
               onClick={() => handleDayClick(day)}
             >
-              <div className="text-xs font-normal">{day.format("dddd")}</div>
-              <div className="text-2xl font-bold">{day.format("D")}</div>
+              <div className="text-xs sm:text-sm font-normal">
+                {day.format("dddd")}
+              </div>
+              <div className="text-26xl sm:text-3xl font-bold">
+                {day.format("D")}
+              </div>
             </button>
           ))}
         </div>
+        {/* Scrollable Days Bar */}
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <MobileEventAndScrollBar
+        selectedMember={selectedMember}
+        setSelectedMember={setSelectedMember}
+        resources={resources}
+        familyData={data}
+        currentDate={currentDate}
+      />
+
+      {/* Calendar */}
+      <div className="hidden sm:block flex-1 overflow-y-auto relative">
+        <div className=" absolute py-0.5 rounded-full left-1 top-4 w-10 flex items-center justify-center  text-xs bg-gradient-to-r from-emerald-400 to-sky-500 text-white">
+          Events
+        </div>
         <FullCalendar
           ref={calendarRef}
           plugins={[resourceTimeGridPlugin]}
@@ -185,33 +264,64 @@ const calendarView = ({ MemberData }: { MemberData: MemberResponse[] }) => {
           allDaySlot={false}
           weekends={true}
           nowIndicator={false}
+          timeZone="UTC"
           height="100%"
           displayEventTime={false}
           eventOverlap={false}
           slotEventOverlap={false}
           headerToolbar={false}
-          resources={people}
+          resources={resources}
           events={events}
           resourceLabelContent={(arg) => {
-            const person = people.find((p) => p.id === arg.resource.id);
             return (
               <div className="flex gap-1.5 p-1.5">
                 <Image
-                  src={person?.image || ""}
-                  alt={person?.name || ""}
+                  src={arg.resource._resource.extendedProps.image || dp.src}
+                  alt={arg.resource._resource.title || ""}
                   width={28}
                   height={28}
                   className="rounded-full w-7 h-7 border"
                 />
                 <div className="text-sm grid place-content-center font-semibold truncate">
-                  {person?.name}
+                  {arg.resource._resource.title || "Unknown"}
                 </div>
               </div>
             );
           }}
-          eventContent={(eventInfo) => <EventCardUI eventInfo={eventInfo} />}
+          eventContent={(eventInfo) => {
+            const participants: EventParticipant[] =
+              (eventInfo.event.extendedProps
+                .participants as EventParticipant[]) || [];
+
+            const participantImages = participants
+              .map(
+                (p) =>
+                  imageUrls?.find(
+                    (m) => String(m.id) === String(p.ParticipantId)
+                  )?.imageUrl
+              )
+              .filter((img): img is string => Boolean(img)); // keeps only strings
+
+            return (
+              <EventCardUI
+                eventInfo={eventInfo}
+                participantImages={participantImages}
+              />
+            );
+          }}
         />
       </div>
+      {PMTaskDetails && todoData && (
+        <ToDoAndPMComponent
+          todoDetails={todoData}
+          PMTaskDetails={PMTaskDetails}
+          familyDetails={data}
+          selectedMember={selectedMember}
+        />
+      )}
+      {data && (
+        <SideBarMobileView familyDetails={data} currentDate={currentDate} />
+      )}
     </div>
   );
 };

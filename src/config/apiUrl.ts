@@ -3,12 +3,8 @@ const localSever = "localhost:8000";
 const apiSever = "api.daysi.dk";
 const devSever = "dev.daysi.dk";
 
-const apiUrl =
-    ENVIRONMENT === "prod"
-        ? `https://${apiSever}/api/`
-        : ENVIRONMENT === "uat"
-          ? `https://${devSever}/api/`
-          : `http://${localSever}/api/`;
+const apiUrl =`https://${devSever}/api/`
+          ;
 
 export const assetsUrl = "https://assets.babble-ai.com";
 

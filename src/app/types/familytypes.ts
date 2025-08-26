@@ -1,45 +1,40 @@
+export type PMStdFamilyTaskResponse = {
+  PMStdFamilyTaskId: number;
+  Sorting: number;
+  Description: string;
+  Amount: number;
+};
 
+export type ToDoFamilyGroupResponse = {
+  ToDoFamilyGroupId: number;
+  FamilyId: number;
+  GroupName: string;
+  Sorting: number;
+  Description: string;
+  Icon: string;
+  IsActive: boolean;
+};
 
-export enum SubscriptionType {
-  Basis = 0,
-  Premium = 1,
-}
+export type SubscriptionType = "Basis" | "Premium";
 
-export interface PMStdFamilyTaskResponse {
-  pmStdFamilyTaskId: number
-  sorting: number
-  description: string
-  amount: number
-}
-
-export interface ToDoFamilyGroupResponse {
-  toDoFamilyGroupId: number
-  familyId: number
-  groupName: string
-  sorting: number
-  description: string
-  icon: string
-  isActive: boolean
-}
-
-export interface FamilyResponse {
-  id: number
-  name: string
-  userName: string
-  memberId: string
-  colorCode: string
-  resourceUrl: string
-  eventsUpdatedOn: string
-  membersUpdatedOn: string
-  validTillDate: string
-  subscriptionType: SubscriptionType
-  familyMemberQTY: number
-  defaultAlarm: number
-  specialEventColorCode: string
-  hasGiftVoucher: boolean
-  pocketMoneyUser: boolean
-  pmStdFamilyTasks: PMStdFamilyTaskResponse[]
-  currencyCode: string
-  everyoneCreatePMTask: boolean
-  toDoFamilyGroups: ToDoFamilyGroupResponse[]
-}
+export type FamilyResponse = {
+  Id: number;
+  Name: string;
+  UserName: string;
+  MemberId: string;
+  ColorCode: string;
+  ResourceUrl: string;
+  EventsUpdatedOn: string;
+  MembersUpdatedOn: string;
+  ValidTillDate: string; // DateTime -> string (ISO)
+  SubscriptionType: SubscriptionType;
+  FamilyMemberQTY: number;
+  DefaultAlarm: number;
+  SpecialEventColorCode: string;
+  HasGiftVoucher: boolean;
+  PocketMoneyUser: boolean;
+  PMStdFamilyTasks: PMStdFamilyTaskResponse[];
+  CurrencyCode: string;
+  EveryoneCreatePMTask: boolean;
+  ToDoFamilyGroups: ToDoFamilyGroupResponse[];
+};
