@@ -9,7 +9,7 @@ export default function ToggleThemeAndLogout() {
   const [isDark, setIsDark] = useState(false);
 
   const handleLogout = () => {
-    localStorage.removeItem("authToken");
+    localStorage.removeItem("access_token");
     router.push("/admin/login");
   };
 

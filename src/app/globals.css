@@ -35,13 +35,16 @@
 
 /* Increase slot height */
 .fc .fc-timegrid-slot {
-  height: 50px;
+  vertical-align: top !important;
+  min-height: 250px !important;
+  height: 250px !important;
+  max-height: none !important;
   border: none !important; /* remove slot lines */
 }
 
 /* Style resource labels (left-side names) */
 .fc-scrollgrid-sync-inner {
-  margin: 10px 20px;
+  margin: 10px;
   background-color: #ffffff;
   display: flex !important;
   align-items: flex-start !important;
@@ -70,4 +73,24 @@
 /* Vertical dashed separator for resource/day columns only */
 .fc-timegrid-body .fc-timegrid-col:not(:last-of-type) {
   border-right: 2px dashed rgba(0, 0, 0, 0.15) !important;
+}
+/* Hide license message */
+.fc-license-message {
+  display: none !important;
+}
+
+.fc .fc-scrollgrid {
+  width: auto !important; /* let it shrink/grow naturally */
+  min-width: 100% !important; /* never collapse smaller than container */
+}
+/* Let resource columns expand but still have a min width */
+.fc .fc-resource,
+.fc .fc-timegrid-col {
+  min-width: 250px !important;
+  width: 250px !important;
+  max-width: none !important; /* remove the cap */
+}
+
+.fc-resourceTimeGridDay-view fc-view fc-timegrid {
+  overflow-x: auto !important;
 }
