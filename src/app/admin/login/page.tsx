@@ -9,8 +9,6 @@ import daysiLogo from "../assets/MyFamilii Brand Guide (1)-2 1.png";
 import emailPlaceholderLogo from "../assets/inputEmailIcon.svg";
 import passwordPlaceholderLogo from "../assets/inputLockIcon.svg";
 
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -38,8 +36,8 @@ const Login = () => {
   };
 
   return (
-    <div className="grid h-screen w-screen place-items-center bg-gradient-to-r from-emerald-400 to-sky-500">
-      <div className="bg-white rounded-2xl shadow-xl p-8 grid place-items-center gap-6">
+    <div className="grid h-screen w-screen place-items-center bg-gradient-to-r from-emerald-400 to-sky-500 p-10">
+      <div className="bg-white rounded-2xl shadow-xl p-8 grid place-items-center sm:gap-6">
         <Image src={daysiLogo.src} alt={""} width={160} height={60} />
         <form className="grid gap-8" onSubmit={handleSubmit}>
           <div className="grid gap-3">
