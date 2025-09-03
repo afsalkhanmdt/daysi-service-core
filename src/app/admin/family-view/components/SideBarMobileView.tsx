@@ -31,8 +31,6 @@ const SideBarMobileView = ({
     );
   });
 
-  console.log("mainEvents", mainEvents);
-
   const selectedDaysEvents =
     uniqueEvents?.filter((event) => {
       const eventStart = dayjs(Number(event.Start));

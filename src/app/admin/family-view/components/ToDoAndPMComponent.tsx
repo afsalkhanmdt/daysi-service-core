@@ -91,10 +91,10 @@ const ToDoAndPMComponent = ({
     <div className="relative ">
       {/* Show pull-up button only on sm and above */}
       {!isSmallScreen && (
-        <div className="sticky top-0 left-0 z-10 flex justify-center py-2 bg-white">
+        <div className="sticky top-0 left-0 z-10 flex justify-center">
           <button
             onClick={() => setIsTasksOpen(!isTasksOpen)}
-            className="px-4 py-1 bg-gradient-to-r from-emerald-400 to-sky-500 text-white text-xs rounded-full shadow-md"
+            className="px-4 py-1 bg-gradient-to-r from-emerald-400 to-sky-500 text-white text-xs rounded-t-lg shadow-md w-24"
           >
             {isTasksOpen ? "Hide" : "Pull Me Up"}
           </button>
@@ -103,7 +103,7 @@ const ToDoAndPMComponent = ({
 
       {/* Rows */}
       <div
-        className={`flex flex-col gap-1 w-full transition-all duration-500 pb-1 bg-blue-100 ${
+        className={`flex flex-col gap-1 w-full transition-all duration-500 bg-blue-100 ${
           isSmallScreen
             ? "max-h-[28rem]" // Always visible on small screens
             : isTasksOpen

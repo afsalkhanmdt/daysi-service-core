@@ -3,7 +3,7 @@
 import FullCalendar from "@fullcalendar/react";
 import resourceTimeGridPlugin from "@fullcalendar/resource-timegrid";
 import EventCardUI from "@/app/admin/family-view/components/EventCard";
-import { useRef, useState } from "react";
+import { Dispatch, SetStateAction, useRef, useState } from "react";
 import dayjs from "dayjs";
 import Image from "next/image";
 import dp from "@/app/admin/assets/MyFamilii Brand Guide (1)-2 1.png";
@@ -34,10 +34,17 @@ export type ToDoTaskType = {
   IsForAll: boolean;
 };
 
-const calendarView = ({ data }: { data: FamilyData }) => {
+const calendarView = ({
+  data,
+  setCurrentDate,
+  currentDate,
+}: {
+  data: FamilyData;
+  currentDate: dayjs.Dayjs;
+  setCurrentDate: Dispatch<SetStateAction<dayjs.Dayjs>>;
+}) => {
   const calendarRef = useRef<any>(null);
 
-  const [currentDate, setCurrentDate] = useState(dayjs());
   const [selectedMember, setSelectedMember] = useState<number>();
   const searchParams = useSearchParams();
   const familyId = searchParams.get("familyId");

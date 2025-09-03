@@ -11,6 +11,9 @@ import { MemberResponse } from "@/app/types/familyMemberTypes";
 import { useFetch } from "@/app/hooks/useFetch";
 import PMDisplayCard from "./PMDisplayCard";
 import ToggleThemeAndLogout from "./ToggleThemeAndLogout";
+import { useState } from "react";
+import dayjs from "dayjs";
+import SideBarMobileView from "./SideBarMobileView";
 
 export type FamilyData = {
   Family: FamilyResponse;
@@ -23,11 +26,44 @@ const FamilyViewWrapper = ({ familyId }: { familyId: string }) => {
     loading,
     error,
   } = useFetch<FamilyData>(`Families/GetAllFamilies?familyId=${familyId}`);
+  console.log("familyDetails", familyDetails);
+
+  const [currentDate, setCurrentDate] = useState(dayjs());
 
   const mainEvents =
     familyDetails?.Members.flatMap((member: MemberResponse) =>
       member.Events.filter((event: any) => event.IsSpecialEvent === 1)
     ) ?? [];
+
+  const uniqueEvents = mainEvents.filter((event, index, self) => {
+    return (
+      index ===
+      self.findIndex(
+        (e) =>
+          e.Start === event.Start &&
+          e.End === event.End &&
+          e.EventPerson === event.EventPerson &&
+          e.IsSpecialEvent === event.IsSpecialEvent
+      )
+    );
+  });
+
+  const selectedDaysEvents =
+    uniqueEvents?.filter((event) => {
+      const eventStart = dayjs(Number(event.Start));
+      const eventEnd = dayjs(Number(event.End));
+
+      const normalizedEventStart = eventStart.year(currentDate.year());
+      const normalizedEventEnd = eventEnd.year(currentDate.year());
+
+      const dayStart = currentDate.startOf("day");
+      const dayEnd = currentDate.endOf("day");
+
+      return (
+        normalizedEventStart.isBefore(dayEnd) &&
+        normalizedEventEnd.isAfter(dayStart)
+      );
+    }) || [];
 
   const imageUrls = familyDetails?.Members.reduce(
     (acc: Record<string, string>, member) => {
@@ -52,26 +88,30 @@ const FamilyViewWrapper = ({ familyId }: { familyId: string }) => {
         <div className="border-b border-slate-100 dark:border-gray-700 pb-3 grid place-items-center">
           <Image src={mainIcon.src} alt={"mainIcon"} width={120} height={48} />
         </div>
-
-        {/* Celebration Section */}
+        {/* Celebration Section */}(
         <div className="flex-1 min-h-0 flex flex-col border-b border-slate-100 dark:border-gray-700">
           <div className="p-3 text-base font-semibold grid place-content-center border-b dark:border-gray-700">
             Celebration’s Today 🎉
           </div>
-          <div className="flex-1 overflow-y-auto p-3">
-            <div className="grid gap-2">
-              {mainEvents.map((event, i) => (
-                <CelebrationDisplayCard
-                  key={i}
-                  mainEvent={event}
-                  imageUrl={imageUrls?.[event.EventPerson]}
-                />
-              ))}
+          {selectedDaysEvents.length > 0 ? (
+            <div className="flex-1 overflow-y-auto p-3">
+              <div className="grid gap-2">
+                {selectedDaysEvents.map((event, i) => (
+                  <CelebrationDisplayCard
+                    key={i}
+                    mainEvent={event}
+                    imageUrl={imageUrls?.[event.EventPerson]}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="p-2 border-t-4 rounded-xl m-2 border-gray-300 bg-white shadow-sm flex items-center justify-center h-20 text-gray-500 italic">
+              No special events today.
+            </div>
+          )}
         </div>
-
-        {/* Pocket Money Section */}
+        ){/* Pocket Money Section */}
         <div className="flex-1 min-h-0 flex flex-col">
           <div className="p-3 text-base font-semibold grid place-content-center border-b dark:border-gray-700">
             Pocket Money 💸
@@ -86,7 +126,6 @@ const FamilyViewWrapper = ({ familyId }: { familyId: string }) => {
             </div>
           </div>
         </div>
-
         <ToggleThemeAndLogout />
       </div>
       <div className="sm:hidden w-full  flex justify-between p-2">
@@ -99,7 +138,11 @@ const FamilyViewWrapper = ({ familyId }: { familyId: string }) => {
       {/* Calendar */}
       <div className="flex-1 min-w-0 sm:h-full">
         {familyDetails ? (
-          <CalendarView data={familyDetails} />
+          <CalendarView
+            data={familyDetails}
+            currentDate={currentDate}
+            setCurrentDate={setCurrentDate}
+          />
         ) : (
           <div className="flex items-center justify-center h-full text-gray-500 text-xs">
             No data available.
