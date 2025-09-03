@@ -113,7 +113,7 @@ const DateScrollAndDisplay = ({
             >
               &lt;
             </button>
-            <div className="font-semibold text-sm sm:text-lg text-center">
+            <div className="font-semibold text-sm sm:text-lg text-center w-40">
               {currentDate.format("MMMM YYYY")}
             </div>
             <button
