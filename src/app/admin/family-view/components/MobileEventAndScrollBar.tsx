@@ -9,6 +9,7 @@ type resourcesType = {
   id: any;
   title: any;
   image: any;
+  sortOrder: number;
 }[];
 
 const MobileEventAndScrollBar = ({

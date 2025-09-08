@@ -18,6 +18,15 @@ import { FamilyData } from "./FamilyViewWrapper";
 import SideBarMobileView from "./SideBarMobileView";
 import MobileEventAndScrollBar from "./MobileEventAndScrollBar";
 import DateScrollAndDisplay from "./DateScrollAndDisplay";
+const memberOrder: Record<number, number> = {
+  1: 0, // Family first
+  0: 1, // FamilyAdmin second
+  2: 2, // Member
+  3: 3, // Shared
+  4: 4, // SuperAdmin
+  5: 5, // SharedAdmin
+};
+
 export type ToDoTaskType = {
   ToDoTaskId: number;
   FamilyId: number;
@@ -60,11 +69,18 @@ const calendarView = ({
     error: todoError,
   } = useFetch<ToDoTaskType[]>(`ToDo/GetToDos?familyId=${familyId}`);
 
-  const resources = data.Members.map((member: any) => ({
+  const sortedMembers = [...data.Members].sort(
+    (a, b) => memberOrder[a.MemberType] - memberOrder[b.MemberType]
+  );
+
+  const resources = sortedMembers.map((member: any, index: number) => ({
     id: member.Id,
     title: member.FirstName,
     image: member.ResourceUrl,
+    sortOrder: index, // 👈 store the order explicitly
   }));
+
+  console.log("resources", resources);
 
   const imageUrls = data?.Members.map((member) => ({
     id: member.MemberId,
@@ -134,6 +150,7 @@ const calendarView = ({
           height="100%"
           contentHeight="100%"
           expandRows={true}
+          resourceOrder="sortOrder"
           plugins={[resourceTimeGridPlugin]}
           initialView="resourceTimeGridDay"
           initialDate={currentDate.toDate()}
