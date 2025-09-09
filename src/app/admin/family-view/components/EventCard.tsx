@@ -30,7 +30,7 @@ const EventCardUI = ({
           </div>
           <div className="font-normal text-[9px] md:text-xs text-stone-500">
             <div className="text-[9px] md:text-xs text-stone-500">
-              {formatTimeUTC(start)} - {formatTimeUTC(end)} UTC
+              {formatTimeUTC(start)} - {formatTimeUTC(end)}
             </div>
           </div>
         </div>

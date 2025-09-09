@@ -13,14 +13,19 @@ import PMDisplayCard from "./PMDisplayCard";
 import ToggleThemeAndLogout from "./ToggleThemeAndLogout";
 import { useState } from "react";
 import dayjs from "dayjs";
-import SideBarMobileView from "./SideBarMobileView";
 
 export type FamilyData = {
   Family: FamilyResponse;
   Members: MemberResponse[];
 };
 
-const FamilyViewWrapper = ({ familyId }: { familyId: string }) => {
+const FamilyViewWrapper = ({
+  familyId,
+  userId,
+}: {
+  familyId: string;
+  userId?: string;
+}) => {
   const {
     data: familyDetails,
     loading,
@@ -28,7 +33,15 @@ const FamilyViewWrapper = ({ familyId }: { familyId: string }) => {
   } = useFetch<FamilyData>(`Families/GetAllFamilies?familyId=${familyId}`);
   console.log("familyDetails", familyDetails);
 
+  const memberLanguage = familyDetails?.Members.find(
+    (member) => member.MemberId === userId
+  )?.Locale;
+  console.log("userId", userId);
+
+  console.log("memberLanguage", memberLanguage);
+
   const [currentDate, setCurrentDate] = useState(dayjs());
+  console.log("currentDate", currentDate);
 
   const mainEvents =
     familyDetails?.Members.flatMap((member: MemberResponse) =>
@@ -120,9 +133,11 @@ const FamilyViewWrapper = ({ familyId }: { familyId: string }) => {
             <div className="grid gap-2">
               {familyDetails?.Members.filter(
                 (member) => member.PocketMoneyUser === true
-              ).map((member, i) => (
-                <PMDisplayCard key={i} memberDetails={member} />
-              ))}
+              )
+                .sort((a, b) => b.AmountEarned - a.AmountEarned)
+                .map((member, i) => (
+                  <PMDisplayCard key={i} memberDetails={member} />
+                ))}
             </div>
           </div>
         </div>

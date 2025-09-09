@@ -65,17 +65,23 @@ const SideBarMobileView = ({
         <div className="p-3 text-base font-semibold grid place-content-center border-b dark:border-gray-700">
           Celebration’s Today 🎉
         </div>
-        <div className="flex-1 overflow-y-auto p-3 max-h-40">
-          <div className="grid gap-2">
-            {selectedDaysEvents.map((event, i) => (
-              <CelebrationDisplayCard
-                key={i}
-                mainEvent={event}
-                imageUrl={imageUrls?.[event.EventPerson]}
-              />
-            ))}
+        {selectedDaysEvents.length > 0 ? (
+          <div className="flex-1 overflow-y-auto p-3 max-h-40">
+            <div className="grid gap-2">
+              {selectedDaysEvents.map((event, i) => (
+                <CelebrationDisplayCard
+                  key={i}
+                  mainEvent={event}
+                  imageUrl={imageUrls?.[event.EventPerson]}
+                />
+              ))}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="p-2 border-t-4 rounded-xl m-2 border-gray-300 bg-white shadow-sm flex items-center justify-center h-20 text-gray-500 italic">
+            No special events today.
+          </div>
+        )}
       </div>
 
       {/* Pocket Money Section */}
@@ -87,9 +93,11 @@ const SideBarMobileView = ({
           <div className="grid gap-2">
             {familyDetails?.Members.filter(
               (member) => member.PocketMoneyUser === true
-            ).map((member, i) => (
-              <PMDisplayCard key={i} memberDetails={member} />
-            ))}
+            )
+              .sort((a, b) => b.AmountEarned - a.AmountEarned)
+              .map((member, i) => (
+                <PMDisplayCard key={i} memberDetails={member} />
+              ))}
           </div>
         </div>
       </div>
