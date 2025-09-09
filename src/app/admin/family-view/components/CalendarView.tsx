@@ -4,14 +4,14 @@ import FullCalendar from "@fullcalendar/react";
 import resourceTimeGridPlugin from "@fullcalendar/resource-timegrid";
 import EventCardUI from "@/app/admin/family-view/components/EventCard";
 import { Dispatch, SetStateAction, useRef, useState } from "react";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
-import timezone from "dayjs/plugin/timezone";
 import Image from "next/image";
 import dp from "@/app/admin/assets/MyFamilii Brand Guide (1)-2 1.png";
 
 import ToDoAndPMComponent, { PMData } from "./ToDoAndPMComponent";
-import { EventParticipant } from "@/app/types/familyMemberTypes";
+import {
+  EventParticipant,
+  MemberResponse,
+} from "@/app/types/familyMemberTypes";
 
 import { useFetch } from "@/app/hooks/useFetch";
 import { useSearchParams } from "next/navigation";
@@ -20,9 +20,7 @@ import { FamilyData } from "./FamilyViewWrapper";
 import SideBarMobileView from "./SideBarMobileView";
 import MobileEventAndScrollBar from "./MobileEventAndScrollBar";
 import DateScrollAndDisplay from "./DateScrollAndDisplay";
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
+import { EventInput } from "@fullcalendar/core";
 
 const memberOrder: Record<number, number> = {
   1: 0,
@@ -51,12 +49,12 @@ export type ToDoTaskType = {
 
 const CalendarView = ({
   data,
-  setCurrentDate,
   currentDate,
+  setCurrentDate,
 }: {
   data: FamilyData;
-  currentDate: dayjs.Dayjs;
-  setCurrentDate: Dispatch<SetStateAction<dayjs.Dayjs>>;
+  currentDate: Date;
+  setCurrentDate: Dispatch<SetStateAction<Date>>;
 }) => {
   const calendarRef = useRef<any>(null);
   const [selectedMember, setSelectedMember] = useState<number>();
@@ -74,12 +72,14 @@ const CalendarView = ({
     (a, b) => memberOrder[a.MemberType] - memberOrder[b.MemberType]
   );
 
-  const resources = sortedMembers.map((member: any, index: number) => ({
-    id: member.Id,
+  const resources = sortedMembers.map((member, index) => ({
+    id: String(member.Id),
     title: member.FirstName,
     image: member.ResourceUrl,
     sortOrder: index,
   }));
+
+  const allMemberIds = data.Members.map((m) => String(m.Id));
 
   const imageUrls = data.Members.map((member) => ({
     id: member.MemberId,
@@ -87,14 +87,10 @@ const CalendarView = ({
     imageUrl: member.ResourceUrl || dp.src,
   }));
 
-  const allMemberIds = data.Members.map((m) => String(m.Id));
-
-  const userTz = dayjs.tz.guess();
-
-  const events = data.Members.flatMap((member: any) =>
-    member.Events.map((event: any) => {
-      const start = dayjs.utc(Number(event.Start)).tz(userTz).format();
-      const end = dayjs.utc(Number(event.End)).tz(userTz).format();
+  const events: EventInput[] = data.Members.flatMap((member: MemberResponse) =>
+    member.Events.flatMap((event: any): EventInput[] => {
+      const start = new Date(Number(event.Start));
+      const end = new Date(Number(event.End));
 
       const participants = (event.EventParticipant || []).map((p: any) =>
         String(p.ParticipantId)
@@ -104,24 +100,25 @@ const CalendarView = ({
         participants.length === allMemberIds.length &&
         allMemberIds.every((id) => participants.includes(id));
 
-      if (isAllMembersEvent && member.MemberType !== 1) return null;
-      if (!isAllMembersEvent && member.MemberType === 1) return null;
+      if (isAllMembersEvent && member.MemberType !== 1) return [];
+      if (!isAllMembersEvent && member.MemberType === 1) return [];
 
-      return {
-        id: event.Id,
-        resourceId: member.Id,
-        title: event.Title,
-        start,
-        end,
-        display: "block",
-        extendedProps: {
-          IsSpecialEvent: event.IsSpecialEvent,
-          IsAllDayEvent: event.IsAllDayEvent,
-          participants: event.EventParticipant,
+      return [
+        {
+          id: event.Id,
+          resourceId: String(member.Id),
+          title: event.Title,
+          start,
+          end,
+          display: "block",
+          extendedProps: {
+            ...event,
+            participants: event.EventParticipant,
+          },
         },
-      };
+      ];
     })
-  ).filter(Boolean);
+  );
 
   return (
     <div className="sm:p-2.5 bg-slate-100 flex flex-col sm:h-full sm:rounded-xl">
@@ -152,7 +149,7 @@ const CalendarView = ({
           resourceOrder="sortOrder"
           plugins={[resourceTimeGridPlugin]}
           initialView="resourceTimeGridDay"
-          initialDate={currentDate.toDate()}
+          initialDate={currentDate}
           slotDuration="04:00:00"
           slotLabelInterval="04:00"
           slotMinTime="08:00:00"
@@ -160,7 +157,7 @@ const CalendarView = ({
           allDaySlot={false}
           weekends
           nowIndicator={false}
-          timeZone={dayjs.tz.guess()}
+          timeZone="local"
           displayEventTime={false}
           eventOverlap={false}
           slotEventOverlap={false}

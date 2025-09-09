@@ -11,7 +11,7 @@ const SideBarMobileView = ({
   currentDate,
 }: {
   familyDetails: FamilyData;
-  currentDate: dayjs.Dayjs;
+  currentDate: Date;
 }) => {
   const mainEvents =
     familyDetails?.Members.flatMap((member: MemberResponse) =>
@@ -36,11 +36,15 @@ const SideBarMobileView = ({
       const eventStart = dayjs(Number(event.Start));
       const eventEnd = dayjs(Number(event.End));
 
-      const normalizedEventStart = eventStart.year(currentDate.year());
-      const normalizedEventEnd = eventEnd.year(currentDate.year());
+      const normalizedEventStart = dayjs(event.Start).year(
+        dayjs(currentDate).year()
+      );
+      const normalizedEventEnd = dayjs(event.End).year(
+        dayjs(currentDate).year()
+      );
 
-      const dayStart = currentDate.startOf("day");
-      const dayEnd = currentDate.endOf("day");
+      const dayStart = dayjs(currentDate).startOf("day");
+      const dayEnd = dayjs(currentDate).endOf("day");
 
       return (
         normalizedEventStart.isBefore(dayEnd) &&

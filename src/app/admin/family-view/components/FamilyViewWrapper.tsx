@@ -1,18 +1,20 @@
 "use client";
+
+import { useState } from "react";
+import dayjs from "dayjs";
+import Image from "next/image";
+
 import CalendarView from "@/app/admin/family-view/components/CalendarView";
 import CelebrationDisplayCard from "@/app/admin/family-view/components/CelebrationDisplayCard";
+import PMDisplayCard from "./PMDisplayCard";
+import ToggleThemeAndLogout from "./ToggleThemeAndLogout";
 
-import Image from "next/image";
 import mainIcon from "@/app/admin/assets/MyFamilii Brand Guide (1)-2 1.png";
 import dp from "@/app/admin/assets/try.jpg";
 
+import { useFetch } from "@/app/hooks/useFetch";
 import { FamilyResponse } from "@/app/types/familytypes";
 import { MemberResponse } from "@/app/types/familyMemberTypes";
-import { useFetch } from "@/app/hooks/useFetch";
-import PMDisplayCard from "./PMDisplayCard";
-import ToggleThemeAndLogout from "./ToggleThemeAndLogout";
-import { useState } from "react";
-import dayjs from "dayjs";
 
 export type FamilyData = {
   Family: FamilyResponse;
@@ -26,30 +28,21 @@ const FamilyViewWrapper = ({
   familyId: string;
   userId?: string;
 }) => {
-  const {
-    data: familyDetails,
-    loading,
-    error,
-  } = useFetch<FamilyData>(`Families/GetAllFamilies?familyId=${familyId}`);
-  console.log("familyDetails", familyDetails);
+  const { data: familyDetails } = useFetch<FamilyData>(
+    `Families/GetAllFamilies?familyId=${familyId}`
+  );
 
-  const memberLanguage = familyDetails?.Members.find(
-    (member) => member.MemberId === userId
-  )?.Locale;
-  console.log("userId", userId);
+  const [currentDate, setCurrentDate] = useState(new Date()); // ✅ store as native Date
 
-  console.log("memberLanguage", memberLanguage);
+  if (!familyDetails) return <div>No data available</div>;
 
-  const [currentDate, setCurrentDate] = useState(dayjs());
-  console.log("currentDate", currentDate);
+  // Filter unique special events
+  const mainEvents = familyDetails.Members.flatMap((member) =>
+    member.Events.filter((event) => event.IsSpecialEvent === 1)
+  );
 
-  const mainEvents =
-    familyDetails?.Members.flatMap((member: MemberResponse) =>
-      member.Events.filter((event: any) => event.IsSpecialEvent === 1)
-    ) ?? [];
-
-  const uniqueEvents = mainEvents.filter((event, index, self) => {
-    return (
+  const uniqueEvents = mainEvents.filter(
+    (event, index, self) =>
       index ===
       self.findIndex(
         (e) =>
@@ -58,27 +51,24 @@ const FamilyViewWrapper = ({
           e.EventPerson === event.EventPerson &&
           e.IsSpecialEvent === event.IsSpecialEvent
       )
-    );
+  );
+
+  // Filter events for selected day
+  const selectedDaysEvents = uniqueEvents.filter((event) => {
+    const eventStart = new Date(Number(event.Start));
+    const eventEnd = new Date(Number(event.End));
+
+    const dayStart = new Date(currentDate);
+    dayStart.setHours(0, 0, 0, 0);
+
+    const dayEnd = new Date(currentDate);
+    dayEnd.setHours(23, 59, 59, 999);
+
+    return eventStart <= dayEnd && eventEnd >= dayStart;
   });
 
-  const selectedDaysEvents =
-    uniqueEvents?.filter((event) => {
-      const eventStart = dayjs(Number(event.Start));
-      const eventEnd = dayjs(Number(event.End));
-
-      const normalizedEventStart = eventStart.year(currentDate.year());
-      const normalizedEventEnd = eventEnd.year(currentDate.year());
-
-      const dayStart = currentDate.startOf("day");
-      const dayEnd = currentDate.endOf("day");
-
-      return (
-        normalizedEventStart.isBefore(dayEnd) &&
-        normalizedEventEnd.isAfter(dayStart)
-      );
-    }) || [];
-
-  const imageUrls = familyDetails?.Members.reduce(
+  // Map member images
+  const imageUrls = familyDetails.Members.reduce(
     (acc: Record<string, string>, member) => {
       acc[member.FirstName] = member.ResourceUrl || dp.src;
       return acc;
@@ -87,21 +77,14 @@ const FamilyViewWrapper = ({
   );
 
   return (
-    <div className="sm:flex w-screen h-screen sm:py-3 sm:pr-3 sm:pl-3  bg-white dark:bg-gray-800 transition-colors">
+    <div className="sm:flex w-screen h-screen sm:py-3 sm:px-3 bg-white dark:bg-gray-800 transition-colors">
       {/* Sidebar */}
-      <div
-        className="
-          hidden sm:flex flex-col flex-shrink 
-          min-w-[140px] max-w-[300px] w-[30%] 
-          bg-white dark:bg-gray-800 border-r dark:border-gray-700
-          text-gray-800 dark:text-gray-100
-        "
-      >
-        {/* Logo */}
+      <div className="hidden sm:flex flex-col min-w-[140px] max-w-[300px] w-[30%] bg-white dark:bg-gray-800 border-r dark:border-gray-700 text-gray-800 dark:text-gray-100">
         <div className="border-b border-slate-100 dark:border-gray-700 pb-3 grid place-items-center">
-          <Image src={mainIcon.src} alt={"mainIcon"} width={120} height={48} />
+          <Image src={mainIcon.src} alt="mainIcon" width={120} height={48} />
         </div>
-        {/* Celebration Section */}(
+
+        {/* Celebrations */}
         <div className="flex-1 min-h-0 flex flex-col border-b border-slate-100 dark:border-gray-700">
           <div className="p-3 text-base font-semibold grid place-content-center border-b dark:border-gray-700">
             Celebration’s Today 🎉
@@ -113,7 +96,7 @@ const FamilyViewWrapper = ({
                   <CelebrationDisplayCard
                     key={i}
                     mainEvent={event}
-                    imageUrl={imageUrls?.[event.EventPerson]}
+                    imageUrl={imageUrls[event.EventPerson]}
                   />
                 ))}
               </div>
@@ -124,16 +107,15 @@ const FamilyViewWrapper = ({
             </div>
           )}
         </div>
-        ){/* Pocket Money Section */}
+
+        {/* Pocket Money */}
         <div className="flex-1 min-h-0 flex flex-col">
           <div className="p-3 text-base font-semibold grid place-content-center border-b dark:border-gray-700">
             Pocket Money 💸
           </div>
           <div className="flex-1 overflow-y-auto p-3">
             <div className="grid gap-2">
-              {familyDetails?.Members.filter(
-                (member) => member.PocketMoneyUser === true
-              )
+              {familyDetails.Members.filter((m) => m.PocketMoneyUser)
                 .sort((a, b) => b.AmountEarned - a.AmountEarned)
                 .map((member, i) => (
                   <PMDisplayCard key={i} memberDetails={member} />
@@ -141,30 +123,27 @@ const FamilyViewWrapper = ({
             </div>
           </div>
         </div>
+
         <ToggleThemeAndLogout />
       </div>
-      <div className="sm:hidden w-full  flex justify-between p-2">
-        <div className="  grid place-items-center  sm:px-0 sm:py-0 ">
-          <Image src={mainIcon.src} alt={"mainIcon"} width={120} height={48} />
+
+      <div className="sm:hidden w-full flex justify-between p-2">
+        <div className="grid place-items-center">
+          <Image src={mainIcon.src} alt="mainIcon" width={120} height={48} />
         </div>
         <ToggleThemeAndLogout />
       </div>
 
       {/* Calendar */}
       <div className="flex-1 min-w-0 sm:h-full">
-        {familyDetails ? (
-          <CalendarView
-            data={familyDetails}
-            currentDate={currentDate}
-            setCurrentDate={setCurrentDate}
-          />
-        ) : (
-          <div className="flex items-center justify-center h-full text-gray-500 text-xs">
-            No data available.
-          </div>
-        )}
+        <CalendarView
+          data={familyDetails}
+          currentDate={currentDate}
+          setCurrentDate={setCurrentDate}
+        />
       </div>
     </div>
   );
 };
+
 export default FamilyViewWrapper;
