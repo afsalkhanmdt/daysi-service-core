@@ -25,12 +25,12 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 const memberOrder: Record<number, number> = {
-  1: 0, // Family first
-  0: 1, // FamilyAdmin second
-  2: 2, // Member
-  3: 3, // Shared
-  4: 4, // SuperAdmin
-  5: 5, // SharedAdmin
+  1: 0,
+  0: 1,
+  2: 2,
+  3: 3,
+  4: 4,
+  5: 5,
 };
 
 export type ToDoTaskType = {
@@ -42,10 +42,10 @@ export type ToDoTaskType = {
   Description: string;
   Note: string;
   Private: boolean;
-  CreatedDate: string; // ISO timestamp string
-  ClosedDate: string | null; // can be null
-  Status: number; // likely an enum (e.g., 0 = open, 1 = closed, etc.)
-  UpdatedOn: string; // looks like a .NET ticks string
+  CreatedDate: string;
+  ClosedDate: string | null;
+  Status: number;
+  UpdatedOn: string;
   IsForAll: boolean;
 };
 
@@ -59,21 +59,16 @@ const CalendarView = ({
   setCurrentDate: Dispatch<SetStateAction<dayjs.Dayjs>>;
 }) => {
   const calendarRef = useRef<any>(null);
-
   const [selectedMember, setSelectedMember] = useState<number>();
   const searchParams = useSearchParams();
   const familyId = searchParams.get("familyId");
-  const {
-    data: PMTaskDetails,
-    loading: PMLoading,
-    error: PMError,
-  } = useFetch<PMData>(`PocketMoney/GetPMTasks?familyId=${familyId}`);
 
-  const {
-    data: todoData,
-    loading: todoLoading,
-    error: todoError,
-  } = useFetch<ToDoTaskType[]>(`ToDo/GetToDos?familyId=${familyId}`);
+  const { data: PMTaskDetails } = useFetch<PMData>(
+    `PocketMoney/GetPMTasks?familyId=${familyId}`
+  );
+  const { data: todoData } = useFetch<ToDoTaskType[]>(
+    `ToDo/GetToDos?familyId=${familyId}`
+  );
 
   const sortedMembers = [...data.Members].sort(
     (a, b) => memberOrder[a.MemberType] - memberOrder[b.MemberType]
@@ -83,12 +78,10 @@ const CalendarView = ({
     id: member.Id,
     title: member.FirstName,
     image: member.ResourceUrl,
-    sortOrder: index, // 👈 store the order explicitly
+    sortOrder: index,
   }));
 
-  console.log("resources", resources);
-
-  const imageUrls = data?.Members.map((member) => ({
+  const imageUrls = data.Members.map((member) => ({
     id: member.MemberId,
     name: member.FirstName,
     imageUrl: member.ResourceUrl || dp.src,
@@ -146,50 +139,48 @@ const CalendarView = ({
         currentDate={currentDate}
       />
 
-      {/* Calendar */}
       <div className="hidden sm:block flex-1 relative overflow-x-auto">
-        <div className=" absolute py-0.5 rounded-full left-1 top-4 w-10 flex items-center justify-center  text-xs bg-gradient-to-r from-emerald-400 to-sky-500 text-white">
+        <div className="absolute py-0.5 rounded-full left-1 top-4 w-10 flex items-center justify-center text-xs bg-gradient-to-r from-emerald-400 to-sky-500 text-white">
           Events
         </div>
+
         <FullCalendar
           ref={calendarRef}
           height="100%"
           contentHeight="100%"
-          expandRows={true}
+          expandRows
           resourceOrder="sortOrder"
           plugins={[resourceTimeGridPlugin]}
           initialView="resourceTimeGridDay"
           initialDate={currentDate.toDate()}
-          slotDuration="04:00:00" // each slot = 4 hours
+          slotDuration="04:00:00"
           slotLabelInterval="04:00"
           slotMinTime="08:00:00"
           slotMaxTime="24:00:00"
           allDaySlot={false}
-          weekends={true}
+          weekends
           nowIndicator={false}
-          timeZone="UTC"
+          timeZone={dayjs.tz.guess()}
           displayEventTime={false}
           eventOverlap={false}
           slotEventOverlap={false}
           headerToolbar={false}
           resources={resources}
           events={events}
-          resourceLabelContent={(arg) => {
-            return (
-              <div className="flex  gap-1.5 p-1.5">
-                <Image
-                  src={arg.resource._resource.extendedProps.image || dp.src}
-                  alt={arg.resource._resource.title || ""}
-                  width={28}
-                  height={28}
-                  className="rounded-full w-7 h-7 border"
-                />
-                <div className="text-sm grid justify-start items-center font-semibold truncate w-full">
-                  {arg.resource._resource.title || "Unknown"}
-                </div>
+          resourceLabelContent={(arg) => (
+            <div className="flex gap-1.5 p-1.5">
+              <Image
+                src={arg.resource._resource.extendedProps.image || dp.src}
+                alt={arg.resource._resource.title || ""}
+                width={28}
+                height={28}
+                className="rounded-full w-7 h-7 border"
+              />
+              <div className="text-sm grid justify-start items-center font-semibold truncate w-full">
+                {arg.resource._resource.title || "Unknown"}
               </div>
-            );
-          }}
+            </div>
+          )}
           eventContent={(eventInfo) => {
             const participants: EventParticipant[] =
               (eventInfo.event.extendedProps
@@ -198,11 +189,11 @@ const CalendarView = ({
             const participantImages = participants
               .map(
                 (p) =>
-                  imageUrls?.find(
+                  imageUrls.find(
                     (m) => String(m.id) === String(p.ParticipantId)
                   )?.imageUrl
               )
-              .filter((img): img is string => Boolean(img)); // keeps only strings
+              .filter((img): img is string => Boolean(img));
 
             return (
               <EventCardUI
@@ -213,6 +204,7 @@ const CalendarView = ({
           }}
         />
       </div>
+
       {PMTaskDetails && todoData && (
         <ToDoAndPMComponent
           todoDetails={todoData}
@@ -221,6 +213,7 @@ const CalendarView = ({
           selectedMember={selectedMember}
         />
       )}
+
       {data && (
         <SideBarMobileView familyDetails={data} currentDate={currentDate} />
       )}
