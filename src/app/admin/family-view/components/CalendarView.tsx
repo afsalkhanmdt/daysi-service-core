@@ -5,6 +5,8 @@ import resourceTimeGridPlugin from "@fullcalendar/resource-timegrid";
 import EventCardUI from "@/app/admin/family-view/components/EventCard";
 import { Dispatch, SetStateAction, useRef, useState } from "react";
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
 import Image from "next/image";
 import dp from "@/app/admin/assets/MyFamilii Brand Guide (1)-2 1.png";
 
@@ -18,6 +20,10 @@ import { FamilyData } from "./FamilyViewWrapper";
 import SideBarMobileView from "./SideBarMobileView";
 import MobileEventAndScrollBar from "./MobileEventAndScrollBar";
 import DateScrollAndDisplay from "./DateScrollAndDisplay";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
 const memberOrder: Record<number, number> = {
   1: 0, // Family first
   0: 1, // FamilyAdmin second
@@ -43,7 +49,7 @@ export type ToDoTaskType = {
   IsForAll: boolean;
 };
 
-const calendarView = ({
+const CalendarView = ({
   data,
   setCurrentDate,
   currentDate,
@@ -88,44 +94,44 @@ const calendarView = ({
     imageUrl: member.ResourceUrl || dp.src,
   }));
 
+  const allMemberIds = data.Members.map((m) => String(m.Id));
+
+  const userTz = dayjs.tz.guess();
+
   const events = data.Members.flatMap((member: any) =>
     member.Events.map((event: any) => {
-      let start = new Date(Number(event.Start));
-      let end = new Date(Number(event.End));
+      const start = dayjs.utc(Number(event.Start)).tz(userTz).format();
+      const end = dayjs.utc(Number(event.End)).tz(userTz).format();
 
-      if (event.IsAllDayEvent === 1) {
-        const dayStart = new Date(start);
-        dayStart.setHours(0, 0, 0, 0);
+      const participants = (event.EventParticipant || []).map((p: any) =>
+        String(p.ParticipantId)
+      );
 
-        const dayEnd = new Date(start);
-        dayEnd.setHours(23, 59, 59, 999);
+      const isAllMembersEvent =
+        participants.length === allMemberIds.length &&
+        allMemberIds.every((id) => participants.includes(id));
 
-        start = dayStart;
-        end = dayEnd;
-      }
+      if (isAllMembersEvent && member.MemberType !== 1) return null;
+      if (!isAllMembersEvent && member.MemberType === 1) return null;
 
-      if (event.IsSpecialEvent === 0) {
-        return {
-          id: event.Id,
-          resourceId: member.Id,
-          title: event.Title,
-          start,
-          end,
-          display: "block",
-          extendedProps: {
-            IsSpecialEvent: event.IsSpecialEvent,
-            IsAllDayEvent: event.IsAllDayEvent,
-            participants: event.EventParticipant,
-          },
-        };
-      }
-
-      return null;
+      return {
+        id: event.Id,
+        resourceId: member.Id,
+        title: event.Title,
+        start,
+        end,
+        display: "block",
+        extendedProps: {
+          IsSpecialEvent: event.IsSpecialEvent,
+          IsAllDayEvent: event.IsAllDayEvent,
+          participants: event.EventParticipant,
+        },
+      };
     })
   ).filter(Boolean);
 
   return (
-    <div className="sm:p-2.5 bg-slate-100 flex flex-col sm:h-full sm:rounded-xl ">
+    <div className="sm:p-2.5 bg-slate-100 flex flex-col sm:h-full sm:rounded-xl">
       <DateScrollAndDisplay
         calendarRef={calendarRef}
         currentDate={currentDate}
@@ -169,8 +175,6 @@ const calendarView = ({
           resources={resources}
           events={events}
           resourceLabelContent={(arg) => {
-            console.log(arg);
-
             return (
               <div className="flex  gap-1.5 p-1.5">
                 <Image
@@ -224,4 +228,4 @@ const calendarView = ({
   );
 };
 
-export default calendarView;
+export default CalendarView;

@@ -80,11 +80,12 @@ const DateScrollAndDisplay = ({
 
   useEffect(() => {
     scrollToDay(currentDate);
-  }, []);
+  }, [currentDate]);
+
   return (
     <div className="bg-white p-2 m-2 rounded-xl gap-2 sm:gap-4 grid sm:mb-4">
       {/* Month Navigation */}
-      <div className="first-letter:w-full flex justify-between gap-1 sm:gap-1.5 ">
+      <div className="w-full flex justify-between gap-1 sm:gap-1.5 ">
         <div className="flex gap-1 sm:gap-1.5  justify-center items-center">
           <Image
             src={calIcon.src}
@@ -94,7 +95,7 @@ const DateScrollAndDisplay = ({
             priority
             className="w-4 h-4 sm:w-6 sm:h-6 "
           />
-          <div className="grid  place-items-center text-lg sm:text-xl font-semibold">
+          <div className="grid place-items-center text-lg sm:text-xl font-semibold">
             family name
           </div>
         </div>
@@ -109,7 +110,7 @@ const DateScrollAndDisplay = ({
           <div className="flex items-center gap-1.5">
             <button
               onClick={handlePrevMonth}
-              className=" px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm font-semibold rounded bg-slate-100 text-zinc-600 hover:bg-slate-300"
+              className="px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm font-semibold rounded bg-slate-100 text-zinc-600 hover:bg-slate-300"
             >
               &lt;
             </button>
@@ -134,7 +135,7 @@ const DateScrollAndDisplay = ({
             ref={(el) => {
               dayRefs.current[day.format("YYYY-MM-DD")] = el;
             }}
-            className={`flex flex-col items-center justify-center px-0.5 py-1  sm:px-1.5 sm:py-2 rounded-xl min-w-20 sm:min-w-28 ${
+            className={`flex flex-col items-center justify-center px-0.5 py-1 sm:px-1.5 sm:py-2 rounded-xl min-w-20 sm:min-w-28 ${
               day.isSame(currentDate, "day")
                 ? "bg-blue-500 text-white"
                 : "bg-blue-100 hover:bg-blue-300"
@@ -144,14 +145,14 @@ const DateScrollAndDisplay = ({
             <div className="text-xs sm:text-sm font-normal">
               {day.format("dddd")}
             </div>
-            <div className="text-26xl sm:text-3xl font-bold">
+            <div className="text-2xl sm:text-3xl font-bold">
               {day.format("D")}
             </div>
           </button>
         ))}
       </div>
-      {/* Scrollable Days Bar */}
     </div>
   );
 };
+
 export default DateScrollAndDisplay;
