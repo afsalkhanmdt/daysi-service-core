@@ -22,11 +22,12 @@ const Login = () => {
     setLoading(true);
     try {
       const res = await AdminLoginCall(username, password);
-      console.log("Login success:", res);
 
       localStorage.setItem("access_token", res.access_token);
 
-      router.push(`/admin/family-view/?familyId=${res.familyId}`);
+      router.push(
+        `/admin/family-view/?familyId=${res.familyId}&memberId=${res.memberId}`
+      );
     } catch (err) {
       console.error("Login failed:", err);
       setError("Login failed. Please check your credentials.");

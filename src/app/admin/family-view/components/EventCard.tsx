@@ -8,20 +8,20 @@ const EventCardUI = ({
   eventInfo: any;
   participantImages: string[];
 }) => {
-  const start = eventInfo.event.start;
-  const end = eventInfo.event.end;
+  const start: Date = eventInfo.event.start;
+  const end: Date = eventInfo.event.end;
 
-  const formatTimeUTC = (date: Date) =>
-    date.toLocaleTimeString("en-GB", {
+  // Format using local timezone (browser locale)
+  const formatTime = (date: Date) =>
+    date.toLocaleTimeString("da-DK", {
       hour: "2-digit",
       minute: "2-digit",
-      timeZone: "UTC",
     });
 
   return (
     <div className="h-full border-t-4 rounded-xl border-sky-500 bg-white shadow-sm overflow-auto">
-      <div className="flex flex-col  sm:gap-1 p-1 h-full">
-        <div className="text-center py-0.5 px-1.5 md:py-1  md:px-2 bg-indigo-50 text-sky-500 w-fit text-[7px] text-xs rounded-2xl">
+      <div className="flex flex-col sm:gap-1 p-1 h-full">
+        <div className="text-center py-0.5 px-1.5 md:py-1 md:px-2 bg-indigo-50 text-sky-500 w-fit text-[7px] text-xs rounded-2xl">
           Event
         </div>
         <div className="grid">
@@ -30,7 +30,7 @@ const EventCardUI = ({
           </div>
           <div className="font-normal text-[9px] md:text-xs text-stone-500">
             <div className="text-[9px] md:text-xs text-stone-500">
-              {formatTimeUTC(start)} - {formatTimeUTC(end)} UTC
+              {formatTime(start)} - {formatTime(end)}
             </div>
           </div>
         </div>

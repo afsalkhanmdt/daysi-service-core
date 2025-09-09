@@ -1,14 +1,13 @@
 import Image from "next/image";
-
 import { useRef, useEffect } from "react";
 import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
 import { FamilyData } from "./FamilyViewWrapper";
 
 type resourcesType = {
   id: any;
   title: any;
   image: any;
+  sortOrder: number;
 }[];
 
 const MobileEventAndScrollBar = ({
@@ -20,29 +19,34 @@ const MobileEventAndScrollBar = ({
 }: {
   resources: resourcesType;
   familyData: FamilyData;
-  currentDate: dayjs.Dayjs;
+  currentDate: Date;
   selectedMember?: number;
   setSelectedMember: (id: number) => void;
 }) => {
-  // store refs for each member
   const memberRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const memberEvents = familyData.Members.find(
     (member) => member.Id === selectedMember
   )?.Events;
 
-  dayjs.extend(utc);
+  // Normalize events -> convert Start/End into Date type
+  const normalizedEvents =
+    memberEvents?.map((event) => ({
+      ...event,
+      Start: new Date(Number(event.Start)),
+      End: new Date(Number(event.End)),
+    })) || [];
 
-  const selectedDaysEvents =
-    memberEvents?.filter((event) => {
-      const eventStart = dayjs.utc(Number(event.Start));
-      const eventEnd = dayjs.utc(Number(event.End));
+  // Filter events for the selected day
+  const selectedDaysEvents = normalizedEvents.filter((event) => {
+    const eventStart = dayjs(event.Start);
+    const eventEnd = dayjs(event.End);
 
-      const dayStart = currentDate.utc().startOf("day");
-      const dayEnd = currentDate.utc().endOf("day");
+    const dayStart = dayjs(currentDate).startOf("day");
+    const dayEnd = dayjs(currentDate).endOf("day");
 
-      return eventStart.isBefore(dayEnd) && eventEnd.isAfter(dayStart);
-    }) || [];
+    return eventStart.isBefore(dayEnd) && eventEnd.isAfter(dayStart);
+  });
 
   // scroll selected member into view
   useEffect(() => {
@@ -61,7 +65,7 @@ const MobileEventAndScrollBar = ({
   return (
     <div>
       {/* Scrollable members bar */}
-      <div className="flex gap-2 p-3  sm:hidden overflow-x-auto scroll-smooth ">
+      <div className="flex gap-2 p-3 sm:hidden overflow-x-auto scroll-smooth">
         {resources.map((res) => (
           <div
             ref={(el) => {
@@ -71,7 +75,7 @@ const MobileEventAndScrollBar = ({
             key={res.id}
             className={`flex items-center gap-1 min-w-32 ${
               selectedMember == res.id ? "bg-sky-500 text-white" : "bg-white"
-            }  rounded-full shadow-md px-1 py-1 hover:shadow-lg transition`}
+            } rounded-full shadow-md px-1 py-1 hover:shadow-lg transition`}
           >
             <Image
               src={res.image || "/fallback.png"}
@@ -88,7 +92,6 @@ const MobileEventAndScrollBar = ({
       </div>
 
       {/* Selected member events */}
-
       <div className="sm:hidden grid gap-2 sm:gap-4 bg-blue-100">
         {!selectedMember ? (
           <div className="p-2 border-t-4 rounded-xl m-2 border-gray-300 bg-white shadow-sm flex items-center justify-center h-20 text-gray-500 italic">
@@ -96,8 +99,6 @@ const MobileEventAndScrollBar = ({
           </div>
         ) : selectedDaysEvents.length > 0 ? (
           <div className="grid gap-2 bg-blue-100 m-2">
-            {" "}
-            {/* 👈 parent container for all mapped events */}
             {selectedDaysEvents.map((event) => (
               <div
                 key={event.Id}
@@ -113,7 +114,8 @@ const MobileEventAndScrollBar = ({
                     </div>
                     <div className="font-normal text-[9px] md:text-xs text-stone-500">
                       <div className="text-sm text-stone-500">
-                        {event.Start} - {event.End}
+                        {dayjs(event.Start).format("HH:mm")} -{" "}
+                        {dayjs(event.End).format("HH:mm")}
                       </div>
                     </div>
                   </div>
@@ -132,7 +134,6 @@ const MobileEventAndScrollBar = ({
                         />
                       ))}
                     </div>
-
                     <div className="rounded-xs py-0.5 px-1 text-sky-500 text-[9px] font-semibold bg-slate-100 h-fit w-fit">
                       {event.Attendee?.length || 0}
                     </div>
@@ -150,4 +151,5 @@ const MobileEventAndScrollBar = ({
     </div>
   );
 };
+
 export default MobileEventAndScrollBar;

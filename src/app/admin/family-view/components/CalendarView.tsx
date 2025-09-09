@@ -4,12 +4,14 @@ import FullCalendar from "@fullcalendar/react";
 import resourceTimeGridPlugin from "@fullcalendar/resource-timegrid";
 import EventCardUI from "@/app/admin/family-view/components/EventCard";
 import { Dispatch, SetStateAction, useRef, useState } from "react";
-import dayjs from "dayjs";
 import Image from "next/image";
 import dp from "@/app/admin/assets/MyFamilii Brand Guide (1)-2 1.png";
 
 import ToDoAndPMComponent, { PMData } from "./ToDoAndPMComponent";
-import { EventParticipant } from "@/app/types/familyMemberTypes";
+import {
+  EventParticipant,
+  MemberResponse,
+} from "@/app/types/familyMemberTypes";
 
 import { useFetch } from "@/app/hooks/useFetch";
 import { useSearchParams } from "next/navigation";
@@ -18,6 +20,17 @@ import { FamilyData } from "./FamilyViewWrapper";
 import SideBarMobileView from "./SideBarMobileView";
 import MobileEventAndScrollBar from "./MobileEventAndScrollBar";
 import DateScrollAndDisplay from "./DateScrollAndDisplay";
+import { EventInput } from "@fullcalendar/core";
+
+const memberOrder: Record<number, number> = {
+  1: 0,
+  0: 1,
+  2: 2,
+  3: 3,
+  4: 4,
+  5: 5,
+};
+
 export type ToDoTaskType = {
   ToDoTaskId: number;
   FamilyId: number;
@@ -27,89 +40,88 @@ export type ToDoTaskType = {
   Description: string;
   Note: string;
   Private: boolean;
-  CreatedDate: string; // ISO timestamp string
-  ClosedDate: string | null; // can be null
-  Status: number; // likely an enum (e.g., 0 = open, 1 = closed, etc.)
-  UpdatedOn: string; // looks like a .NET ticks string
+  CreatedDate: string;
+  ClosedDate: string | null;
+  Status: number;
+  UpdatedOn: string;
   IsForAll: boolean;
 };
 
-const calendarView = ({
+const CalendarView = ({
   data,
-  setCurrentDate,
   currentDate,
+  setCurrentDate,
 }: {
   data: FamilyData;
-  currentDate: dayjs.Dayjs;
-  setCurrentDate: Dispatch<SetStateAction<dayjs.Dayjs>>;
+  currentDate: Date;
+  setCurrentDate: Dispatch<SetStateAction<Date>>;
 }) => {
   const calendarRef = useRef<any>(null);
-
   const [selectedMember, setSelectedMember] = useState<number>();
   const searchParams = useSearchParams();
   const familyId = searchParams.get("familyId");
-  const {
-    data: PMTaskDetails,
-    loading: PMLoading,
-    error: PMError,
-  } = useFetch<PMData>(`PocketMoney/GetPMTasks?familyId=${familyId}`);
 
-  const {
-    data: todoData,
-    loading: todoLoading,
-    error: todoError,
-  } = useFetch<ToDoTaskType[]>(`ToDo/GetToDos?familyId=${familyId}`);
+  const { data: PMTaskDetails } = useFetch<PMData>(
+    `PocketMoney/GetPMTasks?familyId=${familyId}`
+  );
+  const { data: todoData } = useFetch<ToDoTaskType[]>(
+    `ToDo/GetToDos?familyId=${familyId}`
+  );
 
-  const resources = data.Members.map((member: any) => ({
-    id: member.Id,
+  const sortedMembers = [...data.Members].sort(
+    (a, b) => memberOrder[a.MemberType] - memberOrder[b.MemberType]
+  );
+
+  const resources = sortedMembers.map((member, index) => ({
+    id: String(member.Id),
     title: member.FirstName,
     image: member.ResourceUrl,
+    sortOrder: index,
   }));
 
-  const imageUrls = data?.Members.map((member) => ({
+  const allMemberIds = data.Members.map((m) => String(m.Id));
+
+  const imageUrls = data.Members.map((member) => ({
     id: member.MemberId,
     name: member.FirstName,
     imageUrl: member.ResourceUrl || dp.src,
   }));
 
-  const events = data.Members.flatMap((member: any) =>
-    member.Events.map((event: any) => {
-      let start = new Date(Number(event.Start));
-      let end = new Date(Number(event.End));
+  const events: EventInput[] = data.Members.flatMap((member: MemberResponse) =>
+    member.Events.flatMap((event: any): EventInput[] => {
+      const start = new Date(Number(event.Start));
+      const end = new Date(Number(event.End));
 
-      if (event.IsAllDayEvent === 1) {
-        const dayStart = new Date(start);
-        dayStart.setHours(0, 0, 0, 0);
+      const participants = (event.EventParticipant || []).map((p: any) =>
+        String(p.ParticipantId)
+      );
 
-        const dayEnd = new Date(start);
-        dayEnd.setHours(23, 59, 59, 999);
+      const isAllMembersEvent =
+        participants.length === allMemberIds.length &&
+        allMemberIds.every((id) => participants.includes(id));
 
-        start = dayStart;
-        end = dayEnd;
-      }
+      if (isAllMembersEvent && member.MemberType !== 1) return [];
+      if (!isAllMembersEvent && member.MemberType === 1) return [];
 
-      if (event.IsSpecialEvent === 0) {
-        return {
+      return [
+        {
           id: event.Id,
-          resourceId: member.Id,
+          resourceId: String(member.Id),
           title: event.Title,
           start,
           end,
           display: "block",
           extendedProps: {
-            IsSpecialEvent: event.IsSpecialEvent,
-            IsAllDayEvent: event.IsAllDayEvent,
+            ...event,
             participants: event.EventParticipant,
           },
-        };
-      }
-
-      return null;
+        },
+      ];
     })
-  ).filter(Boolean);
+  );
 
   return (
-    <div className="sm:p-2.5 bg-slate-100 flex flex-col sm:h-full sm:rounded-xl ">
+    <div className="sm:p-2.5 bg-slate-100 flex flex-col sm:h-full sm:rounded-xl">
       <DateScrollAndDisplay
         calendarRef={calendarRef}
         currentDate={currentDate}
@@ -124,51 +136,48 @@ const calendarView = ({
         currentDate={currentDate}
       />
 
-      {/* Calendar */}
       <div className="hidden sm:block flex-1 relative overflow-x-auto">
-        <div className=" absolute py-0.5 rounded-full left-1 top-4 w-10 flex items-center justify-center  text-xs bg-gradient-to-r from-emerald-400 to-sky-500 text-white">
+        <div className="absolute py-0.5 rounded-full left-1 top-4 w-10 flex items-center justify-center text-xs bg-gradient-to-r from-emerald-400 to-sky-500 text-white">
           Events
         </div>
+
         <FullCalendar
           ref={calendarRef}
           height="100%"
           contentHeight="100%"
-          expandRows={true}
+          expandRows
+          resourceOrder="sortOrder"
           plugins={[resourceTimeGridPlugin]}
           initialView="resourceTimeGridDay"
-          initialDate={currentDate.toDate()}
-          slotDuration="04:00:00" // each slot = 4 hours
+          initialDate={currentDate}
+          slotDuration="04:00:00"
           slotLabelInterval="04:00"
           slotMinTime="08:00:00"
           slotMaxTime="24:00:00"
           allDaySlot={false}
-          weekends={true}
+          weekends
           nowIndicator={false}
-          timeZone="UTC"
+          timeZone="local"
           displayEventTime={false}
           eventOverlap={false}
           slotEventOverlap={false}
           headerToolbar={false}
           resources={resources}
           events={events}
-          resourceLabelContent={(arg) => {
-            console.log(arg);
-
-            return (
-              <div className="flex  gap-1.5 p-1.5">
-                <Image
-                  src={arg.resource._resource.extendedProps.image || dp.src}
-                  alt={arg.resource._resource.title || ""}
-                  width={28}
-                  height={28}
-                  className="rounded-full w-7 h-7 border"
-                />
-                <div className="text-sm grid justify-start items-center font-semibold truncate w-full">
-                  {arg.resource._resource.title || "Unknown"}
-                </div>
+          resourceLabelContent={(arg) => (
+            <div className="flex gap-1.5 p-1.5">
+              <Image
+                src={arg.resource._resource.extendedProps.image || dp.src}
+                alt={arg.resource._resource.title || ""}
+                width={28}
+                height={28}
+                className="rounded-full w-7 h-7 border"
+              />
+              <div className="text-sm grid justify-start items-center font-semibold truncate w-full">
+                {arg.resource._resource.title || "Unknown"}
               </div>
-            );
-          }}
+            </div>
+          )}
           eventContent={(eventInfo) => {
             const participants: EventParticipant[] =
               (eventInfo.event.extendedProps
@@ -177,11 +186,11 @@ const calendarView = ({
             const participantImages = participants
               .map(
                 (p) =>
-                  imageUrls?.find(
+                  imageUrls.find(
                     (m) => String(m.id) === String(p.ParticipantId)
                   )?.imageUrl
               )
-              .filter((img): img is string => Boolean(img)); // keeps only strings
+              .filter((img): img is string => Boolean(img));
 
             return (
               <EventCardUI
@@ -192,6 +201,7 @@ const calendarView = ({
           }}
         />
       </div>
+
       {PMTaskDetails && todoData && (
         <ToDoAndPMComponent
           todoDetails={todoData}
@@ -200,6 +210,7 @@ const calendarView = ({
           selectedMember={selectedMember}
         />
       )}
+
       {data && (
         <SideBarMobileView familyDetails={data} currentDate={currentDate} />
       )}
@@ -207,4 +218,4 @@ const calendarView = ({
   );
 };
 
-export default calendarView;
+export default CalendarView;
