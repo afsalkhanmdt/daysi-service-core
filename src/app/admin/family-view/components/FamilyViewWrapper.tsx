@@ -28,21 +28,27 @@ const FamilyViewWrapper = ({
   familyId: string;
   userId?: string;
 }) => {
-  const { data: familyDetails } = useFetch<FamilyData>(
+  const { data: familyDetails, reload } = useFetch<FamilyData>(
     `Families/GetAllFamilies?familyId=${familyId}`
   );
+
+  console.log(familyDetails, "familyDetails");
 
   const [currentDate, setCurrentDate] = useState(new Date()); // ✅ store as native Date
 
   if (!familyDetails) return <div>No data available</div>;
 
-  // Filter unique special events
-  const mainEvents = familyDetails.Members.flatMap((member) =>
-    member.Events.filter((event) => event.IsSpecialEvent === 1)
-  );
+  // Filter events for selected day
 
-  const uniqueEvents = mainEvents.filter(
-    (event, index, self) =>
+  // Map member images
+
+  const mainEvents =
+    familyDetails?.Members.flatMap((member: MemberResponse) =>
+      member.Events.filter((event: any) => event.IsSpecialEvent === 1)
+    ) ?? [];
+
+  const uniqueEvents = mainEvents.filter((event, index, self) => {
+    return (
       index ===
       self.findIndex(
         (e) =>
@@ -51,24 +57,31 @@ const FamilyViewWrapper = ({
           e.EventPerson === event.EventPerson &&
           e.IsSpecialEvent === event.IsSpecialEvent
       )
-  );
-
-  // Filter events for selected day
-  const selectedDaysEvents = uniqueEvents.filter((event) => {
-    const eventStart = new Date(Number(event.Start));
-    const eventEnd = new Date(Number(event.End));
-
-    const dayStart = new Date(currentDate);
-    dayStart.setHours(0, 0, 0, 0);
-
-    const dayEnd = new Date(currentDate);
-    dayEnd.setHours(23, 59, 59, 999);
-
-    return eventStart <= dayEnd && eventEnd >= dayStart;
+    );
   });
 
-  // Map member images
-  const imageUrls = familyDetails.Members.reduce(
+  const selectedDaysEvents =
+    uniqueEvents?.filter((event) => {
+      const eventStart = dayjs(Number(event.Start));
+      const eventEnd = dayjs(Number(event.End));
+
+      const normalizedEventStart = dayjs(event.Start).year(
+        dayjs(currentDate).year()
+      );
+      const normalizedEventEnd = dayjs(event.End).year(
+        dayjs(currentDate).year()
+      );
+
+      const dayStart = dayjs(currentDate).startOf("day");
+      const dayEnd = dayjs(currentDate).endOf("day");
+
+      return (
+        normalizedEventStart.isBefore(dayEnd) &&
+        normalizedEventEnd.isAfter(dayStart)
+      );
+    }) || [];
+
+  const imageUrls = familyDetails?.Members.reduce(
     (acc: Record<string, string>, member) => {
       acc[member.FirstName] = member.ResourceUrl || dp.src;
       return acc;
@@ -87,7 +100,7 @@ const FamilyViewWrapper = ({
         {/* Celebrations */}
         <div className="flex-1 min-h-0 flex flex-col border-b border-slate-100 dark:border-gray-700">
           <div className="p-3 text-base font-semibold grid place-content-center border-b dark:border-gray-700">
-            Celebration’s Today 🎉
+            Celebrations
           </div>
           {selectedDaysEvents.length > 0 ? (
             <div className="flex-1 overflow-y-auto p-3">
@@ -124,14 +137,14 @@ const FamilyViewWrapper = ({
           </div>
         </div>
 
-        <ToggleThemeAndLogout />
+        <ToggleThemeAndLogout reload={reload} />
       </div>
 
       <div className="sm:hidden w-full flex justify-between p-2">
         <div className="grid place-items-center">
           <Image src={mainIcon.src} alt="mainIcon" width={120} height={48} />
         </div>
-        <ToggleThemeAndLogout />
+        <ToggleThemeAndLogout reload={reload} />
       </div>
 
       {/* Calendar */}
