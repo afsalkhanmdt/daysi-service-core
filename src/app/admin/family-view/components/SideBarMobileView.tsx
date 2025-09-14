@@ -67,7 +67,7 @@ const SideBarMobileView = ({
     >
       <div className=" border-b border-slate-100 dark:border-gray-700">
         <div className="p-3 text-base font-semibold grid place-content-center border-b dark:border-gray-700">
-          Celebration’s Today 🎉
+          Celebrations
         </div>
         {selectedDaysEvents.length > 0 ? (
           <div className="flex-1 overflow-y-auto p-3 max-h-40">

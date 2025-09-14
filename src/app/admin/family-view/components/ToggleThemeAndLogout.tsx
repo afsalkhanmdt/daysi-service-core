@@ -4,9 +4,14 @@ import Image from "next/image";
 import SunIcon from "@/app/admin/assets/sun-2-svgrepo-com 1.svg";
 import { useRouter } from "next/navigation";
 
-export default function ToggleThemeAndLogout() {
+export default function ToggleThemeAndLogout({
+  reload,
+}: {
+  reload: () => void;
+}) {
   const router = useRouter();
   const [isDark, setIsDark] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem("access_token");
@@ -39,9 +44,33 @@ export default function ToggleThemeAndLogout() {
     }
   };
 
+  const handleRefresh = () => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 600); // Reset after animation
+    reload();
+  };
+
   return (
-    <div className="flex sm:grid border-t border-slate-100 dark:border-gray-700  sm:p-1.5 gap-1.5 place-items-center">
-      {/* Toggle Theme */}
+    <div className="flex sm:grid border-t border-slate-100 dark:border-gray-700 sm:p-1.5 gap-1.5 place-items-center">
+      {/* Refresh Button */}
+      <button
+        onClick={handleRefresh}
+        className={`sm:flex sm:justify-between sm:shadow-md sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full transform transition-all duration-150 active:scale-95 ${
+          refreshing ? "scale-90" : "scale-100"
+        }`}
+      >
+        <div className="sm:block hidden text-center font-semibold text-sm text-stone-500">
+          Refresh
+        </div>
+
+        <div
+          className={`w-4 h-4 rounded-full bg-green-600 transition-transform duration-500 ${
+            refreshing ? "animate-spin" : ""
+          }`}
+        ></div>
+      </button>
+
+      {/* Dark Mode Toggle */}
       <div
         className={`sm:flex sm:justify-between sm:shadow-md ${
           isDark ? `shadow-gray-900` : `shadow-gray-300`
@@ -95,7 +124,7 @@ export default function ToggleThemeAndLogout() {
         onClick={handleLogout}
         className={`sm:flex sm:justify-between shadow-md ${
           isDark ? `shadow-gray-900` : `shadow-gray-300`
-        }  px-1.5 sm:px-3 py-1.5  grid place-items-center sm:items-center gap-1.5 sm:w-full rounded-lg sm:rounded-full`}
+        } px-1.5 sm:px-3 py-1.5 grid place-items-center sm:items-center gap-1.5 sm:w-full rounded-lg sm:rounded-full`}
       >
         <div className="sm:block hidden text-center font-semibold text-sm text-stone-500">
           Logout

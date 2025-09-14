@@ -114,6 +114,7 @@ const CalendarView = ({
           extendedProps: {
             ...event,
             participants: event.EventParticipant,
+            externalCalender: event.ExternalCalendarName,
           },
         },
       ];
