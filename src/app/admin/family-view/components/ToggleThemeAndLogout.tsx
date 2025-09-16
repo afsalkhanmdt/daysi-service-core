@@ -3,12 +3,14 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import SunIcon from "@/app/admin/assets/sun-2-svgrepo-com 1.svg";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 
 export default function ToggleThemeAndLogout({
   reload,
 }: {
   reload: () => void;
 }) {
+  const { t } = useTranslation("common");
   const router = useRouter();
   const [isDark, setIsDark] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -60,7 +62,7 @@ export default function ToggleThemeAndLogout({
         }`}
       >
         <div className="sm:block hidden text-center font-semibold text-sm text-stone-500">
-          Refresh
+          {t("Refresh")}
         </div>
 
         <div
@@ -77,7 +79,7 @@ export default function ToggleThemeAndLogout({
         } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full`}
       >
         <div className="sm:block hidden text-center font-semibold text-sm text-stone-500">
-          DarkMode
+          {t("DarkMode")}
         </div>
 
         <button
@@ -127,7 +129,7 @@ export default function ToggleThemeAndLogout({
         } px-1.5 sm:px-3 py-1.5 grid place-items-center sm:items-center gap-1.5 sm:w-full rounded-lg sm:rounded-full`}
       >
         <div className="sm:block hidden text-center font-semibold text-sm text-stone-500">
-          Logout
+          {t("Logout")}
         </div>
         <svg
           width="20"

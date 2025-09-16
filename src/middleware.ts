@@ -25,16 +25,22 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl;
     let pathname = url.pathname;
 
-    // Skip static files and assets so styling works
-    if (
-        pathname.startsWith('/_next') ||
-        pathname.startsWith('/static') ||
-        pathname.startsWith('/favicon.ico') ||
-        pathname.startsWith('/images') ||
-        pathname.startsWith('/assets')
-    ) {
-        return NextResponse.next();
-    }
+  // Skip translation files
+  if (pathname.startsWith('/locales/')) {
+    console.log('Bypassing middleware for translation file:', pathname);
+    return NextResponse.next();
+  }
+
+  // Skip static files and assets
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/static') ||
+    pathname.startsWith('/favicon.ico') ||
+    pathname.startsWith('/images') ||
+    pathname.startsWith('/assets')
+  ) {
+    return NextResponse.next();
+  }
 
     // Force case-insensitive allowlist check
     if (allowlist.some((path) => pathname.toLowerCase() === path.toLowerCase())) {

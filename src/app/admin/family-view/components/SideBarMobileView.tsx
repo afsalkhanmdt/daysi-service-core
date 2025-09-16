@@ -5,6 +5,7 @@ import PMDisplayCard from "./PMDisplayCard";
 import dp from "@/app/admin/assets/try.jpg";
 import { FamilyData } from "./FamilyViewWrapper";
 import dayjs from "dayjs";
+import { useTranslation } from "react-i18next";
 
 const SideBarMobileView = ({
   familyDetails,
@@ -13,6 +14,7 @@ const SideBarMobileView = ({
   familyDetails: FamilyData;
   currentDate: Date;
 }) => {
+  const { t } = useTranslation("common");
   const mainEvents =
     familyDetails?.Members.flatMap((member: MemberResponse) =>
       member.Events.filter((event: any) => event.IsSpecialEvent === 1)
@@ -67,7 +69,7 @@ const SideBarMobileView = ({
     >
       <div className=" border-b border-slate-100 dark:border-gray-700">
         <div className="p-3 text-base font-semibold grid place-content-center border-b dark:border-gray-700">
-          Celebrations
+          {t("Celebrations")}
         </div>
         {selectedDaysEvents.length > 0 ? (
           <div className="flex-1 overflow-y-auto p-3 max-h-40">

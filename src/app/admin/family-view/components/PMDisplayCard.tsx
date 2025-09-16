@@ -1,11 +1,13 @@
+"use client";
 import { MemberResponse } from "@/app/types/familyMemberTypes";
-import dp from "../../assets/try.jpg";
+import { useTranslation } from "react-i18next";
 
 const PMDisplayCard = ({
   memberDetails,
 }: {
   memberDetails: MemberResponse;
 }) => {
+  const { t } = useTranslation("common");
   return (
     <div className="flex justify-between p-1.5 border rounded-lg border-slate-200">
       <div className="grid grid-flow-col place-items-center gap-2">
@@ -16,7 +18,9 @@ const PMDisplayCard = ({
         />
         <div className="grid gap-1">
           <div className="font-semibold text-xs">{memberDetails.FirstName}</div>
-          <div className="font-medium text-xs text-emerald-400">Paid</div>
+          <div className="font-medium text-xs text-emerald-400">
+            {t("Paid")}
+          </div>
         </div>
       </div>
       <div className="grid place-items-center">

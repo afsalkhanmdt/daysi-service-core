@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import { useTranslation } from "react-i18next";
 
 const EventCardUI = ({
   eventInfo,
@@ -10,7 +11,8 @@ const EventCardUI = ({
 }) => {
   const start: Date = eventInfo.event.start;
   const end: Date = eventInfo.event.end;
-  console.log(eventInfo, "eventInfo");
+
+  const { t } = useTranslation("common");
 
   // Format using local timezone (browser locale)
   const formatTime = (date: Date) =>
@@ -23,7 +25,7 @@ const EventCardUI = ({
     <div className="h-full border-t-4 rounded-xl border-sky-500 bg-white shadow-sm overflow-auto min-h-32">
       <div className="flex flex-col sm:gap-1 p-1 h-full">
         <div className="text-center py-0.5 px-1.5 md:py-1 md:px-2 bg-indigo-50 text-sky-500 w-fit text-[7px] text-xs rounded-2xl">
-          Event
+          {t("Event")}
         </div>
         <div className="grid">
           <div className="font-semibold text-[13px] md:text-sm text-black">

@@ -1,3 +1,4 @@
+"use client";
 import Image from "next/image";
 import calIcon from "@/app/admin/assets/calendar-minimalistic-svgrepo-com (4) 1.svg";
 import {
@@ -9,19 +10,30 @@ import {
   SetStateAction,
 } from "react";
 import dayjs from "dayjs";
+import "dayjs/locale/da"; // Import Danish (or any languages you need)
+import "dayjs/locale/sv";
+import "dayjs/locale/nb";
+import { useTranslation } from "react-i18next";
 
 const DateScrollAndDisplay = ({
+  familyName,
   calendarRef,
   currentDate,
   setCurrentDate,
 }: {
+  familyName: string;
   calendarRef: RefObject<any>;
   currentDate: Date;
   setCurrentDate: Dispatch<SetStateAction<Date>>;
 }) => {
+  const { t, i18n } = useTranslation("common");
   const dayRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
-  // Generate all days in month as plain Dates
+  // Sync dayjs locale with current i18n language
+  useEffect(() => {
+    dayjs.locale(i18n.language); // switches dayjs locale dynamically
+  }, [i18n.language]);
+
   const getDaysInMonth = (date: Date) => {
     const start = dayjs(date).startOf("month");
     const end = dayjs(date).endOf("month");
@@ -103,7 +115,7 @@ const DateScrollAndDisplay = ({
             className="w-4 h-4 sm:w-6 sm:h-6 "
           />
           <div className="grid place-items-center text-lg sm:text-xl font-semibold">
-            family name
+            {familyName}
           </div>
         </div>
 
@@ -112,7 +124,7 @@ const DateScrollAndDisplay = ({
             onClick={handleToday}
             className="hidden sm:block ml-2 px-3 py-1.5 rounded-lg bg-emerald-400 text-white hover:bg-emerald-600 text-sm font-semibold"
           >
-            Today
+            {t("Today")}
           </button>
           <div className="flex items-center gap-1.5">
             <button

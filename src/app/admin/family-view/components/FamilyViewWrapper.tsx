@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import dayjs from "dayjs";
 import Image from "next/image";
 
@@ -15,6 +15,10 @@ import dp from "@/app/admin/assets/try.jpg";
 import { useFetch } from "@/app/hooks/useFetch";
 import { FamilyResponse } from "@/app/types/familytypes";
 import { MemberResponse } from "@/app/types/familyMemberTypes";
+
+import { useTranslation } from "react-i18next";
+import i18next from "i18next";
+import "../../../../../i18n";
 
 export type FamilyData = {
   Family: FamilyResponse;
@@ -34,13 +38,32 @@ const FamilyViewWrapper = ({
 
   console.log(familyDetails, "familyDetails");
 
-  const [currentDate, setCurrentDate] = useState(new Date()); // ✅ store as native Date
+  // Example: Access language property if it exists in FamilyResponse
+  const userLanguage = familyDetails?.Members?.find(
+    (m) => m.MemberId === userId
+  )?.Locale;
 
-  if (!familyDetails) return <div>No data available</div>;
+  // const userLanguage = "en";
 
-  // Filter events for selected day
+  const [currentDate, setCurrentDate] = useState(new Date());
 
-  // Map member images
+  const { t } = useTranslation("common");
+
+  const [isLangReady, setIsLangReady] = useState(false);
+
+  useEffect(() => {
+    if (userLanguage) {
+      i18next.changeLanguage(userLanguage).then(() => setIsLangReady(true));
+    }
+  }, [userLanguage]);
+
+  if (!familyDetails || !isLangReady) {
+    return (
+      <div className="flex items-center justify-center h-screen text-gray-500">
+        Loading your data...
+      </div>
+    );
+  }
 
   const mainEvents =
     familyDetails?.Members.flatMap((member: MemberResponse) =>
@@ -62,9 +85,6 @@ const FamilyViewWrapper = ({
 
   const selectedDaysEvents =
     uniqueEvents?.filter((event) => {
-      const eventStart = dayjs(Number(event.Start));
-      const eventEnd = dayjs(Number(event.End));
-
       const normalizedEventStart = dayjs(event.Start).year(
         dayjs(currentDate).year()
       );
@@ -100,7 +120,7 @@ const FamilyViewWrapper = ({
         {/* Celebrations */}
         <div className="flex-1 min-h-0 flex flex-col border-b border-slate-100 dark:border-gray-700">
           <div className="p-3 text-base font-semibold grid place-content-center border-b dark:border-gray-700">
-            Celebrations
+            {t("Celebrations")}
           </div>
           {selectedDaysEvents.length > 0 ? (
             <div className="flex-1 overflow-y-auto p-3">
@@ -116,7 +136,7 @@ const FamilyViewWrapper = ({
             </div>
           ) : (
             <div className="p-2 border-t-4 rounded-xl m-2 border-gray-300 bg-white shadow-sm flex items-center justify-center h-20 text-gray-500 italic">
-              No special events today.
+              {t("NoSpecialEvents")}
             </div>
           )}
         </div>
@@ -124,7 +144,7 @@ const FamilyViewWrapper = ({
         {/* Pocket Money */}
         <div className="flex-1 min-h-0 flex flex-col">
           <div className="p-3 text-base font-semibold grid place-content-center border-b dark:border-gray-700">
-            Pocket Money 💸
+            {t("PocketMoney")}
           </div>
           <div className="flex-1 overflow-y-auto p-3">
             <div className="grid gap-2">
