@@ -2,6 +2,7 @@
 import Image from "next/image";
 import { PMTask } from "./ToDoAndPMComponent";
 import { FamilyData } from "./FamilyViewWrapper";
+import { useTranslation } from "react-i18next";
 
 const PocketMoneyEventUi = ({
   PMEventData,
@@ -10,12 +11,13 @@ const PocketMoneyEventUi = ({
   PMEventData: PMTask;
   familyDetails: FamilyData;
 }) => {
+  const { t } = useTranslation("common");
   return (
     <div className=" min-w-52 h-20 border-t-2 sm:border-t-4 shadow-gray-300 rounded-xl border-sky-800 bg-white shadow-md flex flex-col justify-between gap-1 p-1">
       <div>
         <div className="flex justify-between items-center">
           <div className="text-center py-0.5 px-1.5 bg-slate-200 text-sky-800 w-fit text-[7px] rounded-2xl">
-            PocketMoneyEvent
+            {t("Pocket Money Tasks")}
           </div>
           <input
             type="checkbox"

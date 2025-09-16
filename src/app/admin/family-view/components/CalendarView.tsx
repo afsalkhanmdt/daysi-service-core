@@ -21,6 +21,7 @@ import SideBarMobileView from "./SideBarMobileView";
 import MobileEventAndScrollBar from "./MobileEventAndScrollBar";
 import DateScrollAndDisplay from "./DateScrollAndDisplay";
 import { EventInput } from "@fullcalendar/core";
+import { useTranslation } from "react-i18next";
 
 const memberOrder: Record<number, number> = {
   1: 0,
@@ -56,6 +57,7 @@ const CalendarView = ({
   currentDate: Date;
   setCurrentDate: Dispatch<SetStateAction<Date>>;
 }) => {
+  const { t } = useTranslation("common");
   const calendarRef = useRef<any>(null);
   const [selectedMember, setSelectedMember] = useState<number>();
   const searchParams = useSearchParams();
@@ -124,6 +126,7 @@ const CalendarView = ({
   return (
     <div className="sm:p-2.5 bg-slate-100 flex flex-col sm:h-full sm:rounded-xl">
       <DateScrollAndDisplay
+        familyName={data.Family.Name}
         calendarRef={calendarRef}
         currentDate={currentDate}
         setCurrentDate={setCurrentDate}
@@ -138,8 +141,8 @@ const CalendarView = ({
       />
 
       <div className="hidden sm:block flex-1 relative overflow-x-auto">
-        <div className="absolute py-0.5 rounded-full left-1 top-4 w-10 flex items-center justify-center text-xs bg-gradient-to-r from-emerald-400 to-sky-500 text-white">
-          Events
+        <div className="absolute p-0.5 rounded-lg left-1 top-4 w-12 flex items-center justify-center text-xs bg-gradient-to-r from-emerald-400 to-sky-500 text-white break-all">
+          {t("Events")}
         </div>
 
         <FullCalendar
@@ -175,7 +178,7 @@ const CalendarView = ({
                 className="rounded-full w-7 h-7 border"
               />
               <div className="text-sm grid justify-start items-center font-semibold truncate w-full">
-                {arg.resource._resource.title || "Unknown"}
+                {arg.resource._resource.title || t("Unknown")}
               </div>
             </div>
           )}
