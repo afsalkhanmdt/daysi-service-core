@@ -85,20 +85,8 @@ const FamilyViewWrapper = ({
 
   const selectedDaysEvents =
     uniqueEvents?.filter((event) => {
-      const normalizedEventStart = dayjs(event.Start).year(
-        dayjs(currentDate).year()
-      );
-      const normalizedEventEnd = dayjs(event.End).year(
-        dayjs(currentDate).year()
-      );
-
-      const dayStart = dayjs(currentDate).startOf("day");
-      const dayEnd = dayjs(currentDate).endOf("day");
-
-      return (
-        normalizedEventStart.isBefore(dayEnd) &&
-        normalizedEventEnd.isAfter(dayStart)
-      );
+      const eventDate = dayjs(event.Start);
+      return eventDate.month() === dayjs(currentDate).month();
     }) || [];
 
   const imageUrls = familyDetails?.Members.reduce(

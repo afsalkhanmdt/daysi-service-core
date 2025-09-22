@@ -119,7 +119,7 @@ const DateScrollAndDisplay = ({
           </div>
         </div>
 
-        <div className="grid place-items-center sm:flex sm:items-center gap-1 sm:gap-1.5 ">
+        <div className="grid place-items-center sm:flex sm:items-center gap-2 sm:gap-1.5 ">
           <button
             onClick={handleToday}
             className="hidden sm:block ml-2 px-3 py-1.5 rounded-lg bg-emerald-400 text-white hover:bg-emerald-600 text-sm font-semibold"
@@ -133,7 +133,7 @@ const DateScrollAndDisplay = ({
             >
               &lt;
             </button>
-            <div className="font-semibold text-sm sm:text-lg text-center w-40">
+            <div className="font-semibold text-sm sm:text-lg text-center sm:w-40 w-32">
               {dayjs(currentDate).format("MMMM YYYY")}
             </div>
             <button

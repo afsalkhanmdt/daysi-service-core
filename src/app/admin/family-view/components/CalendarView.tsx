@@ -126,27 +126,28 @@ const CalendarView = ({
   const events: EventInput[] = useMemo(() => {
     return data.Members.flatMap((member: MemberResponse) =>
       member.Events.flatMap((event: any): EventInput[] => {
-        const start = new Date(Number(event.Start));
-        const end = new Date(Number(event.End));
+        // If member is type 1, only keep events where participants count matches members count
+        if (
+          member.MemberType === 1 &&
+          event.EventParticipant?.length !== data.Members.length - 1
+        ) {
+          return [];
+        }
 
-        const participants = (event.EventParticipant || []).map((p: any) =>
-          String(p.ParticipantId)
-        );
-
-        const isAllMembersEvent =
-          participants.length === allMemberIds.length &&
-          allMemberIds.every((id) => participants.includes(id));
-
-        if (isAllMembersEvent && member.MemberType !== 1) return [];
-        if (!isAllMembersEvent && member.MemberType === 1) return [];
+        if (
+          member.MemberType !== 1 &&
+          event.EventParticipant?.length === data.Members.length - 1
+        ) {
+          return [];
+        }
 
         return [
           {
             id: event.Id,
             resourceId: String(member.Id),
             title: event.Title,
-            start,
-            end,
+            start: new Date(Number(event.Start)),
+            end: new Date(Number(event.End)),
             display: "block",
             extendedProps: {
               ...event,
@@ -157,18 +158,19 @@ const CalendarView = ({
         ];
       })
     );
-  }, [data.Members, allMemberIds]);
+  }, [data.Members]);
 
-  // Ensure FullCalendar shows the new currentDate when it changes
+  console.log(events, "events in calendar view");
+
   useEffect(() => {
-    if (calendarRef.current?.getApi) {
-      try {
+    const timeout = setTimeout(() => {
+      if (calendarRef.current?.getApi) {
         const api = calendarRef.current.getApi();
         api.gotoDate(currentDate);
-      } catch {
-        // ignore if calendar not ready yet
       }
-    }
+    }, 0);
+
+    return () => clearTimeout(timeout);
   }, [currentDate]);
 
   // Compute slotMinTime/slotMaxTime based on events that intersect the selected day
