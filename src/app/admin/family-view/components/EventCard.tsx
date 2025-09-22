@@ -24,20 +24,20 @@ const EventCardUI = ({
   return (
     <div className="h-full border-t-4 rounded-xl border-sky-500 bg-white shadow-sm overflow-auto min-h-32">
       <div className="flex flex-col sm:gap-1 p-1 h-full">
-        <div className="text-center py-0.5 px-1.5 md:py-1 md:px-2 bg-indigo-50 text-sky-500 w-fit text-[7px] text-xs rounded-2xl">
+        <div className="text-center py-0.5 px-1.5 sm:py-1 sm:px-2 bg-indigo-50 text-sky-500 w-fit text-[7px] text-xs rounded-2xl">
           {t("Event")}
         </div>
         <div className="grid">
-          <div className="font-semibold text-[13px] md:text-sm text-black">
+          <div className="font-semibold text-[13px] sm:text-sm text-black">
             {eventInfo.event.title}
           </div>
-          <div className="font-normal text-[9px] md:text-xs text-stone-500">
-            <div className="text-[9px] md:text-xs text-stone-500">
+          <div className="font-normal text-[9px] sm:text-xs text-stone-500">
+            <div className="text-[9px] sm:text-xs text-stone-500">
               {formatTime(start)} - {formatTime(end)}
             </div>
           </div>
         </div>
-        <div className="flex flex-wrap justify-between max-w-full gap-1.5 md:gap-3">
+        <div className="flex flex-wrap justify-between max-w-full gap-1.5 sm:gap-3">
           <div className="flex -space-x-1.5">
             {participantImages.map((src, i) => (
               <Image

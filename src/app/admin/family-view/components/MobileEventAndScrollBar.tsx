@@ -93,7 +93,7 @@ const MobileEventAndScrollBar = ({
       </div>
 
       {/* Selected member events */}
-      <div className="sm:hidden grid gap-2 sm:gap-4 bg-blue-100">
+      <div className="sm:hidden grid gap-2 sm:gap-4 sm:bg-blue-100">
         {!selectedMember ? (
           <div className="p-2 border-t-4 rounded-xl m-2 border-gray-300 bg-white shadow-sm flex items-center justify-center h-20 text-gray-500 italic">
             No member selected.
@@ -113,7 +113,7 @@ const MobileEventAndScrollBar = ({
                     <div className="font-semibold text-md text-black">
                       {event.Title}
                     </div>
-                    <div className="font-normal text-[9px] md:text-xs text-stone-500">
+                    <div className="font-normal text-[9px] sm:text-xs text-stone-500">
                       <div className="text-sm text-stone-500">
                         {dayjs(event.Start).format("HH:mm")} -{" "}
                         {dayjs(event.End).format("HH:mm")}
@@ -144,8 +144,8 @@ const MobileEventAndScrollBar = ({
             ))}
           </div>
         ) : (
-          <div className="p-2 border-t-4 rounded-xl bg-blue-100 border-gray-300 shadow-sm flex items-center justify-center h-20 text-gray-500 italic">
-            No events for the selected day for the selected member.
+          <div className="p-3 my-2 sm:my-0 border-t-4 rounded-xl bg-blue-100 border-gray-300  flex items-center justify-center h-20 text-gray-500 italic shadow-md">
+            No events on the selected day for the selected member.
           </div>
         )}
       </div>
