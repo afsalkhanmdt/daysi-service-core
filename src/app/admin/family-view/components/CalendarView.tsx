@@ -3,7 +3,14 @@
 import FullCalendar from "@fullcalendar/react";
 import resourceTimeGridPlugin from "@fullcalendar/resource-timegrid";
 import EventCardUI from "@/app/admin/family-view/components/EventCard";
-import { Dispatch, SetStateAction, useRef, useState } from "react";
+import {
+  Dispatch,
+  SetStateAction,
+  useRef,
+  useState,
+  useMemo,
+  useEffect,
+} from "react";
 import Image from "next/image";
 import dp from "@/app/admin/assets/MyFamilii Brand Guide (1)-2 1.png";
 
@@ -48,6 +55,16 @@ export type ToDoTaskType = {
   IsForAll: boolean;
 };
 
+const pad = (n: number) => String(n).padStart(2, "0");
+
+// convert minutes-from-day-start to "HH:MM:SS"; allow 1440 -> "24:00:00"
+const formatMinutesToTime = (mins: number) => {
+  if (mins >= 1440) return "24:00:00";
+  const h = Math.floor(mins / 60);
+  const m = Math.floor(mins % 60);
+  return `${pad(h)}:${pad(m)}:00`;
+};
+
 const CalendarView = ({
   data,
   currentDate,
@@ -57,6 +74,8 @@ const CalendarView = ({
   currentDate: Date;
   setCurrentDate: Dispatch<SetStateAction<Date>>;
 }) => {
+  console.log(data, "data in calendar view");
+
   const { t } = useTranslation("common");
   const calendarRef = useRef<any>(null);
   const [selectedMember, setSelectedMember] = useState<number>();
@@ -70,58 +89,148 @@ const CalendarView = ({
     `ToDo/GetToDos?familyId=${familyId}`
   );
 
-  const sortedMembers = [...data.Members].sort(
-    (a, b) => memberOrder[a.MemberType] - memberOrder[b.MemberType]
+  const sortedMembers = useMemo(
+    () =>
+      [...data.Members].sort(
+        (a, b) => memberOrder[a.MemberType] - memberOrder[b.MemberType]
+      ),
+    [data.Members]
   );
 
-  const resources = sortedMembers.map((member, index) => ({
-    id: String(member.Id),
-    title: member.FirstName,
-    image: member.ResourceUrl,
-    sortOrder: index,
-  }));
+  const resources = useMemo(
+    () =>
+      sortedMembers.map((member, index) => ({
+        id: String(member.Id),
+        title: member.FirstName,
+        image: member.ResourceUrl,
+        sortOrder: index,
+      })),
+    [sortedMembers]
+  );
 
-  const allMemberIds = data.Members.map((m) => String(m.Id));
+  const allMemberIds = useMemo(
+    () => data.Members.map((m) => String(m.Id)),
+    [data.Members]
+  );
 
-  const imageUrls = data.Members.map((member) => ({
-    id: member.MemberId,
-    name: member.FirstName,
-    imageUrl: member.ResourceUrl || dp.src,
-  }));
+  const imageUrls = useMemo(
+    () =>
+      data.Members.map((member) => ({
+        id: member.MemberId,
+        name: member.FirstName,
+        imageUrl: member.ResourceUrl || dp.src,
+      })),
+    [data.Members]
+  );
 
-  const events: EventInput[] = data.Members.flatMap((member: MemberResponse) =>
-    member.Events.flatMap((event: any): EventInput[] => {
-      const start = new Date(Number(event.Start));
-      const end = new Date(Number(event.End));
+  const events: EventInput[] = useMemo(() => {
+    return data.Members.flatMap((member: MemberResponse) =>
+      member.Events.flatMap((event: any): EventInput[] => {
+        // If member is type 1, only keep events where participants count matches members count
+        if (
+          member.MemberType === 1 &&
+          event.EventParticipant?.length !== data.Members.length - 1
+        ) {
+          return [];
+        }
 
-      const participants = (event.EventParticipant || []).map((p: any) =>
-        String(p.ParticipantId)
-      );
+        if (
+          member.MemberType !== 1 &&
+          event.EventParticipant?.length === data.Members.length - 1
+        ) {
+          return [];
+        }
 
-      const isAllMembersEvent =
-        participants.length === allMemberIds.length &&
-        allMemberIds.every((id) => participants.includes(id));
-
-      if (isAllMembersEvent && member.MemberType !== 1) return [];
-      if (!isAllMembersEvent && member.MemberType === 1) return [];
-
-      return [
-        {
-          id: event.Id,
-          resourceId: String(member.Id),
-          title: event.Title,
-          start,
-          end,
-          display: "block",
-          extendedProps: {
-            ...event,
-            participants: event.EventParticipant,
-            externalCalender: event.ExternalCalendarName,
+        return [
+          {
+            id: event.Id,
+            resourceId: String(member.Id),
+            title: event.Title,
+            start: new Date(Number(event.Start)),
+            end: new Date(Number(event.End)),
+            display: "block",
+            extendedProps: {
+              ...event,
+              participants: event.EventParticipant,
+              externalCalender: event.ExternalCalendarName,
+            },
           },
-        },
-      ];
-    })
-  );
+        ];
+      })
+    );
+  }, [data.Members]);
+
+  console.log(events, "events in calendar view");
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (calendarRef.current?.getApi) {
+        const api = calendarRef.current.getApi();
+        api.gotoDate(currentDate);
+      }
+    }, 0);
+
+    return () => clearTimeout(timeout);
+  }, [currentDate]);
+
+  // Compute slotMinTime/slotMaxTime based on events that intersect the selected day
+  const { slotMinTime, slotMaxTime } = useMemo(() => {
+    // day start (local) and next day start
+    const dayStart = new Date(currentDate);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(dayStart);
+    dayEnd.setDate(dayEnd.getDate() + 1);
+
+    // find events that intersect [dayStart, dayEnd)
+    const intersecting = events
+      .map((ev) => {
+        const evStart =
+          ev.start instanceof Date ? ev.start : new Date(ev.start as any);
+        const evEnd = ev.end instanceof Date ? ev.end : new Date(ev.end as any);
+
+        if (evEnd <= dayStart || evStart >= dayEnd) return null; // no intersection
+
+        // clamp to the day bounds so we measure times inside the day only
+        const startInDay = evStart < dayStart ? dayStart : evStart;
+        const endInDay = evEnd > dayEnd ? dayEnd : evEnd;
+        return { startInDay, endInDay };
+      })
+      .filter(Boolean) as { startInDay: Date; endInDay: Date }[];
+
+    // fallback if no events that day
+    if (intersecting.length === 0) {
+      return { slotMinTime: "08:00:00", slotMaxTime: "24:00:00" };
+    }
+
+    // convert to minutes from day start
+    const minutesFromDayStart = (d: Date) =>
+      Math.round((d.getTime() - dayStart.getTime()) / 60000);
+
+    let earliestMin = Math.min(
+      ...intersecting.map((x) => minutesFromDayStart(x.startInDay))
+    );
+    let latestMin = Math.max(
+      ...intersecting.map((x) => minutesFromDayStart(x.endInDay))
+    );
+
+    // ensure values are within [0, 1440]
+    earliestMin = Math.max(0, Math.min(1440, earliestMin));
+    latestMin = Math.max(0, Math.min(1440, latestMin));
+
+    // ensure a minimum visible range (so calendar doesn't render zero-height range)
+    const MIN_RANGE_MINUTES = 60; // 1 hour minimum
+    let range = latestMin - earliestMin;
+    if (range < MIN_RANGE_MINUTES) {
+      const pad = Math.ceil((MIN_RANGE_MINUTES - range) / 2);
+      earliestMin = Math.max(0, earliestMin - pad);
+      latestMin = Math.min(1440, latestMin + pad);
+    }
+
+    const minTimeStr = formatMinutesToTime(earliestMin);
+    const maxTimeStr = formatMinutesToTime(latestMin);
+
+    return { slotMinTime: minTimeStr, slotMaxTime: maxTimeStr };
+  }, [events, currentDate]);
 
   return (
     <div className="sm:p-2.5 bg-slate-100 flex flex-col sm:h-full sm:rounded-xl">
@@ -154,10 +263,10 @@ const CalendarView = ({
           plugins={[resourceTimeGridPlugin]}
           initialView="resourceTimeGridDay"
           initialDate={currentDate}
-          slotDuration="04:00:00"
-          slotLabelInterval="04:00"
-          slotMinTime="08:00:00"
+          slotMinTime={slotMinTime}
           slotMaxTime="24:00:00"
+          slotDuration="06:00:00"
+          slotLabelInterval="01:00"
           allDaySlot={false}
           weekends
           nowIndicator={false}

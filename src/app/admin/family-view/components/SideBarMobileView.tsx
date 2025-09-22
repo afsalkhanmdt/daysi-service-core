@@ -20,6 +20,8 @@ const SideBarMobileView = ({
       member.Events.filter((event: any) => event.IsSpecialEvent === 1)
     ) ?? [];
 
+  console.log(mainEvents, "mainevents");
+
   const uniqueEvents = mainEvents.filter((event, index, self) => {
     return (
       index ===
@@ -35,24 +37,11 @@ const SideBarMobileView = ({
 
   const selectedDaysEvents =
     uniqueEvents?.filter((event) => {
-      const eventStart = dayjs(Number(event.Start));
-      const eventEnd = dayjs(Number(event.End));
-
-      const normalizedEventStart = dayjs(event.Start).year(
-        dayjs(currentDate).year()
-      );
-      const normalizedEventEnd = dayjs(event.End).year(
-        dayjs(currentDate).year()
-      );
-
-      const dayStart = dayjs(currentDate).startOf("day");
-      const dayEnd = dayjs(currentDate).endOf("day");
-
-      return (
-        normalizedEventStart.isBefore(dayEnd) &&
-        normalizedEventEnd.isAfter(dayStart)
-      );
+      const eventDate = dayjs(event.Start);
+      return eventDate.month() === dayjs(currentDate).month();
     }) || [];
+
+  console.log(selectedDaysEvents, "selectedDaysEvents");
 
   const imageUrls = familyDetails?.Members.reduce(
     (acc: Record<string, string>, member) => {
