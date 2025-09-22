@@ -13,7 +13,7 @@ export type PMMember = {
   MemberId: string;
   MemberName: string;
   FirstName: string;
-  MemberType: number; // maybe enum later (1 = child, 2 = parent?)
+  MemberType: number;
   CanApprovePMTask: boolean;
   CanCreatePMTask: boolean;
   IsPocketMoneyUser: boolean;
@@ -28,7 +28,6 @@ export type PMFamily = {
   EveryoneCreatePMTask: boolean;
 };
 
-//  Each family member assigned to a task
 export type FamilyMemberPlanned = {
   MemberId: string;
   FinishedDate: string | null;
@@ -46,8 +45,8 @@ export type PMTask = {
   Note: string;
   FamilyMembersPlanned: FamilyMemberPlanned[];
   CreatedBy: string;
-  CreatedOn: string; // ISO date string
-  ActivityDate: string; // ISO date string
+  CreatedOn: string;
+  ActivityDate: string;
   Interval: number;
   Repeat: number;
   Status: number;
@@ -83,12 +82,10 @@ const ToDoAndPMComponent = ({
     return () => window.removeEventListener("resize", checkScreenSize);
   }, []);
 
-  // helpers to be robust with Id fields
   const memberResourceId = (member: any) =>
     String(member.MemberId ?? member.Id);
   const normalizeId = (id: any) => String(id ?? "");
 
-  // members to show (filter by selectedMember if present)
   const members = useMemo(() => {
     if (!familyDetails?.Members) return [];
     return selectedMember
@@ -98,16 +95,14 @@ const ToDoAndPMComponent = ({
       : familyDetails.Members;
   }, [familyDetails?.Members, selectedMember]);
 
-  // safe arrays
   const todosArr: ToDoTaskType[] = todoDetails
     ? Array.isArray(todoDetails)
       ? todoDetails
-      : [todoDetails] // wrap single object in array
+      : [todoDetails]
     : [];
 
   const pmTasksArr: PMTask[] = PMTaskDetails?.PMTasks ?? [];
 
-  // group PM tasks by assigned MemberId (use FamilyMembersPlanned)
   const pmTasksByMember = useMemo(() => {
     const map = new Map<string, PMTask[]>();
     for (const pm of pmTasksArr) {
@@ -123,7 +118,6 @@ const ToDoAndPMComponent = ({
     return map;
   }, [pmTasksArr]);
 
-  // group todos by AssignedTo
   const todosByMember = useMemo(() => {
     const map = new Map<string, ToDoTaskType[]>();
     for (const t of todosArr) {
@@ -134,12 +128,11 @@ const ToDoAndPMComponent = ({
     return map;
   }, [todosArr]);
 
-  // UI for resource header (matches CalendarView)
   const ResourceHeader = ({ member }: { member: any }) => {
     const img = member.ResourceUrl || dp.src;
     const title = member.FirstName || member.MemberName || "Unknown";
     return (
-      <div className="flex items-center gap-2 p-1">
+      <div className="hidden sm:flex items-center gap-2 p-2 bg-white rounded-full w-60">
         <Image
           src={img}
           alt={title}
@@ -153,10 +146,9 @@ const ToDoAndPMComponent = ({
   };
 
   return (
-    <div className="relative">
-      {/* Pull-up button only on larger screens */}
+    <div className="relative overflow-auto">
       {!isSmallScreen && (
-        <div className="sticky top-0 left-0 z-10 flex justify-center mb-2">
+        <div className="sticky top-0 left-0 z-10 flex justify-center bg-slate-100">
           <button
             onClick={() => setIsTasksOpen((s) => !s)}
             className="px-4 py-1 bg-gradient-to-r from-emerald-400 to-sky-500 text-white text-xs rounded-t-lg shadow-md w-28"
@@ -166,119 +158,145 @@ const ToDoAndPMComponent = ({
         </div>
       )}
 
-      <div
-        className={`flex flex-col gap-4 transition-all duration-300 ${
-          isSmallScreen
-            ? "max-h-[60rem]"
-            : isTasksOpen
-            ? "max-h-[60rem]"
-            : "max-h-0 overflow-hidden"
-        }`}
-      >
-        {/* Pocket Money Columns */}
-        <section className="bg-blue-100 rounded-xl p-3 shadow-md">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-xs font-semibold text-sky-700">
-              {t("Pocket Money Tasks")}
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <div className="flex gap-4 items-start">
-              {members.length === 0 && (
-                <div className="py-6 px-4 text-sm text-gray-500 italic">
-                  {t("No members")}
+      {(!isSmallScreen || (isSmallScreen && selectedMember)) && (
+        <div
+          className={`flex flex-col gap-4 transition-all duration-300 ${
+            isSmallScreen
+              ? "max-h-[80rem]"
+              : isTasksOpen
+              ? "max-h-[80rem]"
+              : "max-h-0 overflow-hidden"
+          }`}
+        >
+          {/* Pocket Money Section */}
+          <section className="bg-blue-100 rounded-xl sm:p-1 shadow-md">
+            <div className="flex overflow-auto min-h-28 sm:min-h-0 ">
+              {(!isSmallScreen ||
+                members.some(
+                  (m) =>
+                    (pmTasksByMember.get(memberResourceId(m)) ?? []).length > 0
+                )) && (
+                <div className="flex sm:items-center  justify-between sm:pr-1">
+                  <div className="font-semibold w-min sm:w-11 rounded-lg p-1 sm:flex sm:items-center sm:justify-center text-xs bg-gradient-to-r from-emerald-400 to-sky-500 text-white text-center [writing-mode:vertical-rl] [transform:rotate(180deg)] sm:[writing-mode:horizontal-tb] sm:[transform:none]">
+                    {t("Pocket Money Tasks")}
+                  </div>
                 </div>
               )}
 
-              {members.map((member) => {
-                const rid = memberResourceId(member);
-                const pmForThis = pmTasksByMember.get(rid) ?? [];
-                return (
-                  <div
-                    key={rid}
-                    className="min-w-[220px] border-r border-dashed flex-shrink-0 bg-white rounded-lg p-3"
-                  >
-                    <ResourceHeader member={member} />
-
-                    <div className="mt-3 flex flex-col gap-3">
-                      {pmForThis.length === 0 ? (
-                        <div className="text-sm text-gray-500 italic">
-                          {t("No PM tasks")}
-                        </div>
-                      ) : (
-                        pmForThis.map((pm) => (
-                          <div
-                            key={`${pm.PMTransId}-${rid}`}
-                            className="w-full"
-                          >
-                            <PocketMoneyEventUi
-                              PMEventData={pm}
-                              familyDetails={familyDetails}
-                            />
-                          </div>
-                        ))
-                      )}
+              <div className="sm:overflow-x-auto pl-2 sm:pl-0 flex flex-col overflow-auto">
+                <div className="sm:flex sm:items-start my-auto sm:h-full">
+                  {members.length === 0 && (
+                    <div className="py-6 px-4 text-sm text-gray-500 italic">
+                      {t("No members")}
                     </div>
+                  )}
+                  {members.map((member) => {
+                    const rid = memberResourceId(member);
+                    const pmForThis = pmTasksByMember.get(rid) ?? [];
+
+                    return (
+                      <div
+                        key={`pm-${rid}`}
+                        className="my-auto border-dashed sm:border-l-2 border-gray-400 h-full"
+                      >
+                        <div className="w-full sm:min-w-[220px] flex-shrink-0 bg-blue-100 rounded-lg sm:p-3 h-full">
+                          <ResourceHeader member={member} />
+                          <div className="sm:mt-3 flex sm:flex-col gap-3 flex-1 max-h-44 overflow-auto h-full ">
+                            {pmForThis.length === 0 ? (
+                              <div className="text-sm text-gray-500 italic text-center w-full h-full">
+                                {t("No PM tasks")}
+                              </div>
+                            ) : (
+                              pmForThis.map((pm) => (
+                                <div
+                                  key={`${pm.PMTransId}-${rid}`}
+                                  className="w-full my-auto sm:my-0"
+                                >
+                                  <PocketMoneyEventUi
+                                    PMEventData={pm}
+                                    familyDetails={familyDetails}
+                                  />
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* To-Do Section */}
+          <section className="bg-blue-100 rounded-xl sm:p-1 shadow-md">
+            <div className="flex overflow-auto min-h-28 sm:min-h-0">
+              {(!isSmallScreen ||
+                members.some(
+                  (m) =>
+                    (todosByMember.get(memberResourceId(m)) ?? []).length > 0
+                )) && (
+                <div className="flex sm:items-center justify-between sm:pr-1">
+                  <div className="font-semibold w-min sm:w-11 rounded-lg p-1 sm:flex sm:items-center sm:justify-center text-xs bg-gradient-to-r from-emerald-400 to-sky-500 text-white text-center [writing-mode:vertical-rl] [transform:rotate(180deg)] sm:[writing-mode:horizontal-tb] sm:[transform:none]">
+                    {t("To-Do Tasks")}
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        {/* To-Do Columns */}
-        <section className="bg-blue-100 rounded-xl p-3 shadow-md">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-xs font-semibold text-emerald-700">
-              {t("To-Do Tasks")}
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <div className="flex gap-4 items-start">
-              {members.length === 0 && (
-                <div className="py-6 px-4 text-sm text-gray-500 italic">
-                  {t("No members")}
                 </div>
               )}
 
-              {members.map((member) => {
-                const rid = memberResourceId(member);
-                const todosForThis = todosByMember.get(rid) ?? [];
-                return (
-                  <div
-                    key={rid}
-                    className="min-w-[220px] flex-shrink-0 bg-white rounded-lg p-3 "
-                  >
-                    <ResourceHeader member={member} />
+              {todosByMember ? (
+                <div className="sm:overflow-x-auto pl-2 sm:pl-0 flex flex-col overflow-auto">
+                  <div className="sm:flex sm:items-start my-auto sm:h-full">
+                    {members.length === 0 && (
+                      <div className="py-6 px-4 text-sm text-gray-500 italic">
+                        {t("No members")}
+                      </div>
+                    )}
+                    {members.map((member) => {
+                      const rid = memberResourceId(member);
+                      const todosForThis = todosByMember.get(rid) ?? [];
 
-                    <div className="mt-3 flex flex-col gap-3">
-                      {todosForThis.length === 0 ? (
-                        <div className="text-sm text-gray-500 italic">
-                          {t("No To-dos")}
-                        </div>
-                      ) : (
-                        todosForThis.map((todo) => (
-                          <div
-                            key={`${todo.ToDoTaskId}-${rid}`}
-                            className="w-full"
-                          >
-                            <TodoEventUi
-                              ToDoData={todo}
-                              familyDetails={familyDetails}
-                            />
+                      return (
+                        <div
+                          key={`todo-${rid}`}
+                          className="my-auto border-dashed sm:border-l-2 border-gray-400 h-full"
+                        >
+                          <div className="w-full sm:min-w-[220px] flex-shrink-0 bg-blue-100 rounded-lg sm:p-3 h-full">
+                            <ResourceHeader member={member} />
+                            <div className="sm:mt-3 flex sm:flex-col gap-3 flex-1 max-h-44 overflow-auto h-full ">
+                              {todosForThis.length === 0 ? (
+                                <div className="text-sm text-gray-500 italic text-center w-full h-full">
+                                  {t("No To-dos")}
+                                </div>
+                              ) : (
+                                todosForThis.map((todo) => (
+                                  <div
+                                    key={`${todo.ToDoTaskId}-${rid}`}
+                                    className="w-full my-auto sm:my-0"
+                                  >
+                                    <TodoEventUi
+                                      ToDoData={todo}
+                                      familyDetails={familyDetails}
+                                    />
+                                  </div>
+                                ))
+                              )}
+                            </div>
                           </div>
-                        ))
-                      )}
-                    </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
+                </div>
+              ) : (
+                <div className="text-sm text-gray-500 italic text-center w-full">
+                  {t("No To-dos")}
+                </div>
+              )}
             </div>
-          </div>
-        </section>
-      </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 };
