@@ -26,19 +26,20 @@ const MobileEventAndScrollBar = ({
 }) => {
   const memberRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  const memberEvents = familyData.Members.find(
-    (member) => member.Id === selectedMember
-  )?.Events;
+  const member = familyData.Members.find(
+    (member) => member.Id == selectedMember
+  );
 
   // Normalize events -> convert Start/End into Date type
-  const normalizedEvents =
-    memberEvents?.map((event) => ({
+  // Normalize events -> convert Start/End into Date type
+  let normalizedEvents =
+    member?.Events?.map((event) => ({
       ...event,
       Start: new Date(Number(event.Start)),
       End: new Date(Number(event.End)),
     })) || [];
 
-  // Filter events for the selected day
+  // Filter events for the selected day + check for full participation if MemberType===1
   const selectedDaysEvents = normalizedEvents.filter((event) => {
     const eventStart = dayjs(event.Start);
     const eventEnd = dayjs(event.End);
@@ -46,7 +47,17 @@ const MobileEventAndScrollBar = ({
     const dayStart = dayjs(currentDate).startOf("day");
     const dayEnd = dayjs(currentDate).endOf("day");
 
-    return eventStart.isBefore(dayEnd) && eventEnd.isAfter(dayStart);
+    const isSameDay = eventStart.isBefore(dayEnd) && eventEnd.isAfter(dayStart);
+
+    //  If member.MemberType === 1 -> only include events where all members participate
+    if (member?.MemberType === 1) {
+      return (
+        isSameDay && event.Attendee?.length === familyData.Members.length - 1
+      );
+    }
+
+    // Otherwise, just return events for that day
+    return isSameDay;
   });
 
   // scroll selected member into view

@@ -36,8 +36,6 @@ const FamilyViewWrapper = ({
     `Families/GetAllFamilies?familyId=${familyId}`
   );
 
-  console.log(familyDetails, "familyDetails");
-
   // Example: Access language property if it exists in FamilyResponse
   const userLanguage = familyDetails?.Members?.find(
     (m) => m.MemberId === userId

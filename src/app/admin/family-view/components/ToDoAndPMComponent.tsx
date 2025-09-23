@@ -177,14 +177,14 @@ const ToDoAndPMComponent = ({
                     (pmTasksByMember.get(memberResourceId(m)) ?? []).length > 0
                 )) && (
                 <div className="flex sm:items-center  justify-between sm:pr-1">
-                  <div className="font-semibold w-min sm:w-11 rounded-lg p-1 sm:flex sm:items-center sm:justify-center text-xs bg-gradient-to-r from-emerald-400 to-sky-500 text-white text-center [writing-mode:vertical-rl] [transform:rotate(180deg)] sm:[writing-mode:horizontal-tb] sm:[transform:none]">
+                  <div className="font-semibold break-all w-min sm:w-11 rounded-lg p-1 sm:flex sm:items-center sm:justify-center text-xs bg-gradient-to-r from-emerald-400 to-sky-500 text-white text-center [writing-mode:vertical-rl] [transform:rotate(180deg)] sm:[writing-mode:horizontal-tb] sm:[transform:none]">
                     {t("Pocket Money Tasks")}
                   </div>
                 </div>
               )}
 
-              <div className="sm:overflow-x-auto pl-2 sm:pl-0 flex flex-col overflow-auto">
-                <div className="sm:flex sm:items-start my-auto sm:h-full">
+              <div className="sm:overflow-x-auto pl-2 sm:pl-0 flex flex-col overflow-auto flex-1">
+                <div className="sm:grid grid-flow-col sm:items-start my-auto sm:h-full">
                   {members.length === 0 && (
                     <div className="py-6 px-4 text-sm text-gray-500 italic">
                       {t("No members")}
@@ -238,15 +238,15 @@ const ToDoAndPMComponent = ({
                     (todosByMember.get(memberResourceId(m)) ?? []).length > 0
                 )) && (
                 <div className="flex sm:items-center justify-between sm:pr-1">
-                  <div className="font-semibold w-min sm:w-11 rounded-lg p-1 sm:flex sm:items-center sm:justify-center text-xs bg-gradient-to-r from-emerald-400 to-sky-500 text-white text-center [writing-mode:vertical-rl] [transform:rotate(180deg)] sm:[writing-mode:horizontal-tb] sm:[transform:none]">
+                  <div className="font-semibold break-all w-min sm:w-11 rounded-lg p-1 sm:flex sm:items-center sm:justify-center text-xs bg-gradient-to-r from-emerald-400 to-sky-500 text-white text-center [writing-mode:vertical-rl] [transform:rotate(180deg)] sm:[writing-mode:horizontal-tb] sm:[transform:none]">
                     {t("To-Do Tasks")}
                   </div>
                 </div>
               )}
 
               {todosByMember ? (
-                <div className="sm:overflow-x-auto pl-2 sm:pl-0 flex flex-col overflow-auto">
-                  <div className="sm:flex sm:items-start my-auto sm:h-full">
+                <div className="sm:overflow-x-auto pl-2 sm:pl-0 flex flex-col overflow-auto flex-1">
+                  <div className="sm:grid grid-flow-col sm:items-start my-auto sm:h-full">
                     {members.length === 0 && (
                       <div className="py-6 px-4 text-sm text-gray-500 italic">
                         {t("No members")}
