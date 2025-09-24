@@ -146,9 +146,9 @@ const ToDoAndPMComponent = ({
   };
 
   return (
-    <div className="relative">
+    <div className="relative ">
       {!isSmallScreen && (
-        <div className="sticky top-0 left-0 z-10 flex justify-center bg-slate-100">
+        <div className="sticky top-0 left-0 z-10 flex justify-center bg-transparent">
           <button
             onClick={() => setIsTasksOpen((s) => !s)}
             className="px-4 py-1 bg-gradient-to-r from-emerald-400 to-sky-500 text-white text-xs rounded-t-lg shadow-md w-28"
@@ -169,7 +169,7 @@ const ToDoAndPMComponent = ({
           }`}
         >
           {/* Pocket Money Section */}
-          <section className="bg-blue-100 rounded-xl sm:p-1 shadow-md">
+          <section className="bg-blue-100  sm:p-1 shadow-md w-fit">
             <div className="flex  min-h-28 sm:min-h-0 ">
               {(!isSmallScreen ||
                 members.some(
@@ -200,7 +200,7 @@ const ToDoAndPMComponent = ({
                         className="my-auto border-dashed sm:border-l-2 border-gray-400 h-full"
                       >
                         <div className="w-full sm:min-w-[264px] flex-shrink-0 bg-blue-100 rounded-lg sm:p-3 h-full">
-                          <ResourceHeader member={member} />
+                          {/* <ResourceHeader member={member} /> */}
                           <div className="sm:mt-3 flex sm:flex-col gap-3 flex-1 max-h-44 overflow-auto h-full ">
                             {pmForThis.length === 0 ? (
                               <div className="text-sm text-gray-500 italic text-center w-full h-full">
@@ -230,7 +230,7 @@ const ToDoAndPMComponent = ({
           </section>
 
           {/* To-Do Section */}
-          <section className="bg-blue-100 rounded-xl sm:p-1 shadow-md">
+          <section className="bg-blue-100 rounded-xl sm:p-1 shadow-md w-fit">
             <div className="flex  min-h-28 sm:min-h-0 ">
               {(!isSmallScreen ||
                 members.some(
