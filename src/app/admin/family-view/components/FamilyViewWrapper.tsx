@@ -8,6 +8,9 @@ import CalendarView from "@/app/admin/family-view/components/CalendarView";
 import CelebrationDisplayCard from "@/app/admin/family-view/components/CelebrationDisplayCard";
 import PMDisplayCard from "./PMDisplayCard";
 import ToggleThemeAndLogout from "./ToggleThemeAndLogout";
+import danishAndNorwegianLogo from "@/app/admin/assets/DaysiDanishLogo.png";
+import enLogo from "@/app/admin/assets/DaysiEnLogo.png";
+import swedishLogo from "@/app/admin/assets/DaysiSwedishLogo.png";
 
 import mainIcon from "@/app/admin/assets/MyFamilii Brand Guide (1)-2 1.png";
 import dp from "@/app/admin/assets/try.jpg";
@@ -100,7 +103,19 @@ const FamilyViewWrapper = ({
       {/* Sidebar */}
       <div className="hidden sm:flex flex-col min-w-[140px] max-w-[300px] w-[30%] bg-white dark:bg-gray-800 border-r dark:border-gray-700 text-gray-800 dark:text-gray-100">
         <div className="border-b border-slate-100 dark:border-gray-700 pb-3 grid place-items-center">
-          <Image src={mainIcon.src} alt="mainIcon" width={120} height={48} />
+          <Image
+            src={
+              userLanguage === "en"
+                ? enLogo.src
+                : userLanguage === "sv"
+                ? swedishLogo.src
+                : danishAndNorwegianLogo.src
+            }
+            alt="mainIcon"
+            width={1200}
+            height={200}
+            className="w-72 h-10"
+          />
         </div>
 
         {/* Celebrations */}
