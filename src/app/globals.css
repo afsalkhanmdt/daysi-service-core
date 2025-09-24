@@ -86,11 +86,18 @@
 /* Let resource columns expand but still have a min width */
 .fc .fc-resource,
 .fc .fc-timegrid-col {
-  min-width: 250px !important;
-  width: 250px !important;
+  min-width: 266px !important;
+  width: 266px !important;
   max-width: none !important; /* remove the cap */
 }
 
 .fc-resourceTimeGridDay-view fc-view fc-timegrid {
   overflow-x: auto !important;
+}
+/* Increase font size of time labels */
+.fc .fc-timegrid-slot-label {
+  font-size: 1rem !important;
+  font-weight: 600;
+  color: #1f2937;
+  padding-right: 10px !important;
 }

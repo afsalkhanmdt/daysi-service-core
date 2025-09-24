@@ -104,6 +104,9 @@ const CalendarView = ({
         title: member.FirstName,
         image: member.ResourceUrl,
         sortOrder: index,
+        color: member.ColorCode
+          ? member.ColorCode.slice(-6) // take last 6 chars
+          : "000000",
       })),
     [sortedMembers]
   );
@@ -153,14 +156,13 @@ const CalendarView = ({
               ...event,
               participants: event.EventParticipant,
               externalCalender: event.ExternalCalendarName,
+              userColorCode: member.ColorCode || "000000",
             },
           },
         ];
       })
     );
   }, [data.Members]);
-
-  console.log(events, "events in calendar view");
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -173,63 +175,50 @@ const CalendarView = ({
     return () => clearTimeout(timeout);
   }, [currentDate]);
 
-  // Compute slotMinTime/slotMaxTime based on events that intersect the selected day
   const { slotMinTime, slotMaxTime } = useMemo(() => {
-    // day start (local) and next day start
     const dayStart = new Date(currentDate);
     dayStart.setHours(0, 0, 0, 0);
     const dayEnd = new Date(dayStart);
     dayEnd.setDate(dayEnd.getDate() + 1);
 
-    // find events that intersect [dayStart, dayEnd)
     const intersecting = events
       .map((ev) => {
         const evStart =
           ev.start instanceof Date ? ev.start : new Date(ev.start as any);
         const evEnd = ev.end instanceof Date ? ev.end : new Date(ev.end as any);
 
-        if (evEnd <= dayStart || evStart >= dayEnd) return null; // no intersection
+        if (evEnd <= dayStart || evStart >= dayEnd) return null;
 
-        // clamp to the day bounds so we measure times inside the day only
         const startInDay = evStart < dayStart ? dayStart : evStart;
         const endInDay = evEnd > dayEnd ? dayEnd : evEnd;
         return { startInDay, endInDay };
       })
       .filter(Boolean) as { startInDay: Date; endInDay: Date }[];
 
-    // fallback if no events that day
     if (intersecting.length === 0) {
       return { slotMinTime: "08:00:00", slotMaxTime: "24:00:00" };
     }
 
-    // convert to minutes from day start
     const minutesFromDayStart = (d: Date) =>
       Math.round((d.getTime() - dayStart.getTime()) / 60000);
 
-    let earliestMin = Math.min(
-      ...intersecting.map((x) => minutesFromDayStart(x.startInDay))
+    const allStartMins = intersecting.map((x) =>
+      minutesFromDayStart(x.startInDay)
     );
-    let latestMin = Math.max(
-      ...intersecting.map((x) => minutesFromDayStart(x.endInDay))
-    );
+    const allEndMins = intersecting.map((x) => minutesFromDayStart(x.endInDay));
 
-    // ensure values are within [0, 1440]
-    earliestMin = Math.max(0, Math.min(1440, earliestMin));
-    latestMin = Math.max(0, Math.min(1440, latestMin));
+    let earliestMin = Math.min(...allStartMins);
+    let latestMin = Math.max(...allEndMins);
 
-    // ensure a minimum visible range (so calendar doesn't render zero-height range)
-    const MIN_RANGE_MINUTES = 60; // 1 hour minimum
-    let range = latestMin - earliestMin;
-    if (range < MIN_RANGE_MINUTES) {
-      const pad = Math.ceil((MIN_RANGE_MINUTES - range) / 2);
-      earliestMin = Math.max(0, earliestMin - pad);
-      latestMin = Math.min(1440, latestMin + pad);
-    }
+    // Round earliestMin down to nearest 4-hour slot (240 minutes)
+    const slotSize = 240; // 4 hours = 240 minutes
+    earliestMin = Math.floor(earliestMin / slotSize) * slotSize;
 
-    const minTimeStr = formatMinutesToTime(earliestMin);
-    const maxTimeStr = formatMinutesToTime(latestMin);
-
-    return { slotMinTime: minTimeStr, slotMaxTime: maxTimeStr };
+    // We do NOT round latestMin — we keep it as is (so all later slots are still visible)
+    return {
+      slotMinTime: formatMinutesToTime(earliestMin),
+      slotMaxTime: "24:00:00", // keep showing until end of day
+    };
   }, [events, currentDate]);
 
   return (
@@ -250,7 +239,7 @@ const CalendarView = ({
       />
 
       <div className="hidden sm:block flex-1 relative overflow-x-auto">
-        <div className="absolute p-0.5 rounded-lg left-1 top-4 w-12 flex items-center justify-center text-xs bg-gradient-to-r from-emerald-400 to-sky-500 text-white break-all">
+        <div className="absolute p-0.5 rounded-lg left-1 top-4 w-12 flex items-center justify-center text-[13px] font-medium bg-gradient-to-r from-emerald-400 to-sky-500 text-white break-all">
           {t("Events")}
         </div>
 
@@ -264,7 +253,7 @@ const CalendarView = ({
           initialView="resourceTimeGridDay"
           initialDate={currentDate}
           slotMinTime={slotMinTime}
-          slotMaxTime="24:00:00"
+          slotMaxTime={slotMaxTime}
           slotDuration="06:00:00"
           slotLabelInterval="01:00"
           allDaySlot={false}
@@ -278,16 +267,27 @@ const CalendarView = ({
           resources={resources}
           events={events}
           resourceLabelContent={(arg) => (
-            <div className="flex gap-1.5 p-1.5">
-              <Image
-                src={arg.resource._resource.extendedProps.image || dp.src}
-                alt={arg.resource._resource.title || ""}
-                width={28}
-                height={28}
-                className="rounded-full w-7 h-7 border"
-              />
-              <div className="text-sm grid justify-start items-center font-semibold truncate w-full">
-                {arg.resource._resource.title || t("Unknown")}
+            <div className="flex justify-between items-center w-full">
+              <div className="flex gap-1.5 items-center">
+                <Image
+                  src={arg.resource._resource.extendedProps.image || dp.src}
+                  alt={arg.resource._resource.title || ""}
+                  width={28}
+                  height={28}
+                  className="rounded-full w-7 h-7 border"
+                />
+                <div className="text-sm font-semibold truncate w-40">
+                  {arg.resource._resource.title || t("Unknown")}
+                </div>
+              </div>
+
+              <div className="w-6 h-6 rounded-full border border-black shrink-0 flex items-center justify-center bg-white">
+                <div
+                  className="w-5 h-5 rounded-full"
+                  style={{
+                    backgroundColor: `#${arg.resource._resource.extendedProps.color}`,
+                  }}
+                />
               </div>
             </div>
           )}
@@ -313,15 +313,27 @@ const CalendarView = ({
             );
           }}
         />
+        {PMTaskDetails && todoData && (
+          <div className="absolute bottom-0  hidden sm:block w-full z-20">
+            <ToDoAndPMComponent
+              todoDetails={todoData}
+              PMTaskDetails={PMTaskDetails}
+              familyDetails={data}
+              selectedMember={selectedMember}
+            />
+          </div>
+        )}
       </div>
 
       {PMTaskDetails && todoData && (
-        <ToDoAndPMComponent
-          todoDetails={todoData}
-          PMTaskDetails={PMTaskDetails}
-          familyDetails={data}
-          selectedMember={selectedMember}
-        />
+        <div className="sm:hidden ">
+          <ToDoAndPMComponent
+            todoDetails={todoData}
+            PMTaskDetails={PMTaskDetails}
+            familyDetails={data}
+            selectedMember={selectedMember}
+          />
+        </div>
       )}
 
       {data && (
