@@ -267,7 +267,7 @@ const CalendarView = ({
           resources={resources}
           events={events}
           resourceLabelContent={(arg) => (
-            <div className="flex justify-between items-center w-full">
+            <div className="flex justify-between items-center w-full ">
               <div className="flex gap-1.5 items-center">
                 <Image
                   src={arg.resource._resource.extendedProps.image || dp.src}
@@ -281,14 +281,12 @@ const CalendarView = ({
                 </div>
               </div>
 
-              <div className="w-6 h-6 rounded-full border border-black shrink-0 flex items-center justify-center bg-white">
-                <div
-                  className="w-5 h-5 rounded-full"
-                  style={{
-                    backgroundColor: `#${arg.resource._resource.extendedProps.color}`,
-                  }}
-                />
-              </div>
+              <div
+                className="w-6 h-6 rounded-full shadow-md shadow-slate-500 "
+                style={{
+                  backgroundColor: `#${arg.resource._resource.extendedProps.color}`,
+                }}
+              />
             </div>
           )}
           eventContent={(eventInfo) => {

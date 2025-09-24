@@ -4,7 +4,6 @@ import eventIcon from "../../assets/cake-svgrepo-com 1.svg";
 import cakeIcon from "../../assets/birthdayeventdefaulticon.png";
 import balloonIcon from "../../assets/anniversarydefault.png";
 import dayjs from "dayjs";
-import i18next from "i18next";
 import { useTranslation } from "react-i18next";
 
 const CelebrationDisplayCard = ({
@@ -19,8 +18,6 @@ const CelebrationDisplayCard = ({
   const endDate = dayjs(Number(mainEvent.End));
 
   // Format times and date based on current language
-  const startTime = startDate.locale(i18next.language).format("LT");
-  const endTime = endDate.locale(i18next.language).format("LT");
 
   const displayDate = startDate.year(dayjs().year()).format("DD/MM/YYYY");
   // Calculate age correctly
@@ -58,7 +55,8 @@ const CelebrationDisplayCard = ({
 
       <div className="flex justify-between items-end">
         <div className="text-stone-500 italic text-[10px]">
-          {t("YearsOld", { count: yearsOld })}
+          {yearsOld}
+          {t(`YearsOld`)}
         </div>
         <img className="w-6 h-6" src={eventIcon.src} alt="" />
       </div>

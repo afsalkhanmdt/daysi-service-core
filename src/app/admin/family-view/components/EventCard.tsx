@@ -22,7 +22,13 @@ const EventCardUI = ({
     });
 
   return (
-    <div className="h-full border-t-4 rounded-xl border-sky-500 bg-white shadow-sm overflow-auto min-h-32">
+    <div
+      className={`h-full border-t-4 rounded-xl border-sky-500 ${
+        eventInfo.event.extendedProps.ExternalCalendarName
+          ? "bg-slate-200"
+          : "bg-white"
+      }  shadow-sm overflow-auto min-h-32`}
+    >
       <div className="flex flex-col sm:gap-1 p-1 h-full">
         <div className="text-center py-0.5 px-1.5 sm:py-1 sm:px-2 bg-indigo-50 text-sky-500 w-fit text-[7px] text-xs rounded-2xl">
           {t("Event")}
