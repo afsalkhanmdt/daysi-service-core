@@ -146,7 +146,7 @@ const ToDoAndPMComponent = ({
   };
 
   return (
-    <div className="relative overflow-auto">
+    <div className="relative">
       {!isSmallScreen && (
         <div className="sticky top-0 left-0 z-10 flex justify-center bg-slate-100">
           <button
@@ -160,7 +160,7 @@ const ToDoAndPMComponent = ({
 
       {(!isSmallScreen || (isSmallScreen && selectedMember)) && (
         <div
-          className={`flex flex-col gap-4 transition-all duration-300 ${
+          className={`sticky flex flex-col gap-4 transition-all duration-300 bg-white ${
             isSmallScreen
               ? "max-h-[80rem]"
               : isTasksOpen
@@ -170,7 +170,7 @@ const ToDoAndPMComponent = ({
         >
           {/* Pocket Money Section */}
           <section className="bg-blue-100 rounded-xl sm:p-1 shadow-md">
-            <div className="flex overflow-auto min-h-28 sm:min-h-0 ">
+            <div className="flex  min-h-28 sm:min-h-0 ">
               {(!isSmallScreen ||
                 members.some(
                   (m) =>
@@ -183,7 +183,7 @@ const ToDoAndPMComponent = ({
                 </div>
               )}
 
-              <div className="sm:overflow-x-auto pl-2 sm:pl-0 flex flex-col overflow-auto flex-1">
+              <div className="overflow-x-auto sm:overflow-x-visible pl-2 sm:pl-0 flex flex-col flex-1">
                 <div className="sm:grid grid-flow-col sm:items-start my-auto sm:h-full">
                   {members.length === 0 && (
                     <div className="py-6 px-4 text-sm text-gray-500 italic">
@@ -199,7 +199,7 @@ const ToDoAndPMComponent = ({
                         key={`pm-${rid}`}
                         className="my-auto border-dashed sm:border-l-2 border-gray-400 h-full"
                       >
-                        <div className="w-full sm:min-w-[220px] flex-shrink-0 bg-blue-100 rounded-lg sm:p-3 h-full">
+                        <div className="w-full sm:min-w-[264px] flex-shrink-0 bg-blue-100 rounded-lg sm:p-3 h-full">
                           <ResourceHeader member={member} />
                           <div className="sm:mt-3 flex sm:flex-col gap-3 flex-1 max-h-44 overflow-auto h-full ">
                             {pmForThis.length === 0 ? (
@@ -231,7 +231,7 @@ const ToDoAndPMComponent = ({
 
           {/* To-Do Section */}
           <section className="bg-blue-100 rounded-xl sm:p-1 shadow-md">
-            <div className="flex overflow-auto min-h-28 sm:min-h-0">
+            <div className="flex  min-h-28 sm:min-h-0 ">
               {(!isSmallScreen ||
                 members.some(
                   (m) =>
@@ -245,7 +245,7 @@ const ToDoAndPMComponent = ({
               )}
 
               {todosByMember ? (
-                <div className="sm:overflow-x-auto pl-2 sm:pl-0 flex flex-col overflow-auto flex-1">
+                <div className="overflow-x-auto sm:overflow-x-visible pl-2 sm:pl-0 flex flex-col flex-1">
                   <div className="sm:grid grid-flow-col sm:items-start my-auto sm:h-full">
                     {members.length === 0 && (
                       <div className="py-6 px-4 text-sm text-gray-500 italic">
@@ -261,8 +261,8 @@ const ToDoAndPMComponent = ({
                           key={`todo-${rid}`}
                           className="my-auto border-dashed sm:border-l-2 border-gray-400 h-full"
                         >
-                          <div className="w-full sm:min-w-[220px] flex-shrink-0 bg-blue-100 rounded-lg sm:p-3 h-full">
-                            <ResourceHeader member={member} />
+                          <div className="w-full sm:min-w-[264px] flex-shrink-0 bg-blue-100 rounded-lg sm:p-3 h-full">
+                            {/* <ResourceHeader member={member} /> */}
                             <div className="sm:mt-3 flex sm:flex-col gap-3 flex-1 max-h-44 overflow-auto h-full ">
                               {todosForThis.length === 0 ? (
                                 <div className="text-sm text-gray-500 italic text-center w-full h-full">

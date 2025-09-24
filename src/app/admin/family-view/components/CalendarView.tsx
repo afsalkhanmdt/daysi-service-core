@@ -313,15 +313,27 @@ const CalendarView = ({
             );
           }}
         />
+        {PMTaskDetails && todoData && (
+          <div className="absolute bottom-0  hidden sm:block w-full z-20">
+            <ToDoAndPMComponent
+              todoDetails={todoData}
+              PMTaskDetails={PMTaskDetails}
+              familyDetails={data}
+              selectedMember={selectedMember}
+            />
+          </div>
+        )}
       </div>
 
       {PMTaskDetails && todoData && (
-        <ToDoAndPMComponent
-          todoDetails={todoData}
-          PMTaskDetails={PMTaskDetails}
-          familyDetails={data}
-          selectedMember={selectedMember}
-        />
+        <div className="sm:hidden ">
+          <ToDoAndPMComponent
+            todoDetails={todoData}
+            PMTaskDetails={PMTaskDetails}
+            familyDetails={data}
+            selectedMember={selectedMember}
+          />
+        </div>
       )}
 
       {data && (
