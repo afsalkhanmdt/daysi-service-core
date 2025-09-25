@@ -53,7 +53,7 @@ export default function ToggleThemeAndLogout({
   };
 
   return (
-    <div className="flex sm:grid border-t border-slate-100 dark:border-gray-700 sm:p-1.5 gap-1.5 place-items-center">
+    <div className="grid grid-flow-col sm:grid-flow-row border-t border-slate-100 dark:border-gray-700 sm:p-1.5 gap-1.5 place-items-center">
       {/* Refresh Button */}
       <button
         onClick={handleRefresh}

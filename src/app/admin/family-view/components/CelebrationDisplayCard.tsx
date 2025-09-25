@@ -14,18 +14,23 @@ const CelebrationDisplayCard = ({
   imageUrl: string | undefined;
 }) => {
   const { t } = useTranslation("common");
+  const today = dayjs();
   const startDate = dayjs(Number(mainEvent.Start));
-  const endDate = dayjs(Number(mainEvent.End));
 
-  // Format times and date based on current language
+  // Normalize event date to this year or next year
+  let normalizedDate = startDate.year(today.year());
+  if (normalizedDate.isBefore(today, "day")) {
+    normalizedDate = normalizedDate.add(1, "year");
+  }
 
-  const displayDate = startDate.year(dayjs().year()).format("DD/MM/YYYY");
-  // Calculate age correctly
-  let yearsOld = dayjs().year() - startDate.year();
-  const hasBirthdayPassed = dayjs().isAfter(
-    startDate.month(dayjs().month()).date(startDate.date())
-  );
-  if (!hasBirthdayPassed) yearsOld -= 1;
+  const displayDate = normalizedDate.format("DD/MM/YYYY");
+
+  // Calculate age (only for birthdays)
+  let yearsOld = today.year() - startDate.year();
+  const birthdayThisYear = startDate.year(today.year());
+  if (birthdayThisYear.isAfter(today, "day")) {
+    yearsOld -= 1;
+  }
 
   const fallbackIcon =
     mainEvent.SpecialEvent === 0 ? cakeIcon.src : balloonIcon.src;
@@ -44,10 +49,6 @@ const CelebrationDisplayCard = ({
               {mainEvent.Title}{" "}
               {mainEvent.SpecialEvent === 0 ? t("Birthday") : t("Anniversary")}
             </div>
-            {/* Uncomment if you want to show times */}
-            {/* <div className="font-normal text-[10px] text-stone-500">
-              {startTime} - {endTime}
-            </div> */}
           </div>
           <div className="font-semibold">{displayDate}</div>
         </div>

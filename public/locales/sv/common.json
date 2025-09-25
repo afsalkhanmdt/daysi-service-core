@@ -20,5 +20,10 @@
   "No To-dos": "Inga att göra",
   "Today": "Idag",
   "Events": "Händelser",
-  "Event": "Händelse"
+  "Event": "Händelse",
+  "No special events today.": "Inga speciella händelser idag.",
+  "Loading your data...": "Laddar dina data...",
+  "Pocket Money": "Fickpengar",
+  "No member selected.": "Ingen medlem vald.",
+  "No events on the selected day for the selected member.": "Inga händelser på den valda dagen för den valda medlemmen."
 }

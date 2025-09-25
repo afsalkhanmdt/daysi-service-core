@@ -3,6 +3,8 @@ import Image from "next/image";
 import { useRef, useEffect } from "react";
 import dayjs from "dayjs";
 import { FamilyData } from "./FamilyViewWrapper";
+import { useTranslation } from "react-i18next";
+import lockIcon from "@/app/admin/assets/EventPrivateIcon.jpg";
 
 type resourcesType = {
   id: any;
@@ -24,6 +26,14 @@ const MobileEventAndScrollBar = ({
   selectedMember?: number;
   setSelectedMember: (id: number) => void;
 }) => {
+  const { t } = useTranslation("common");
+
+  const formatTime = (date: Date) =>
+    date.toLocaleTimeString("da-DK", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
   const memberRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const member = familyData.Members.find(
@@ -107,7 +117,7 @@ const MobileEventAndScrollBar = ({
       <div className="sm:hidden grid gap-2 sm:gap-4 sm:bg-blue-100">
         {!selectedMember ? (
           <div className="p-2 border-t-4 rounded-xl m-2 border-gray-300 bg-white shadow-sm flex items-center justify-center h-20 text-gray-500 italic">
-            No member selected.
+            {t("No member selected.")}
           </div>
         ) : selectedDaysEvents.length > 0 ? (
           <div className="grid gap-2 bg-blue-100 m-2">
@@ -117,18 +127,34 @@ const MobileEventAndScrollBar = ({
                 className="border-t-4 rounded-xl border-sky-500 bg-white shadow-sm overflow-auto"
               >
                 <div className="flex flex-col p-3 h-full w-full">
-                  <div className="text-center py-0.5 px-1.5 bg-indigo-50 text-sky-500 w-fit text-[7px] text-xs rounded-2xl">
-                    Event
+                  <div className="flex justify-between items-center">
+                    <div className="text-center py-0.5 px-1.5 sm:py-1 sm:px-2 bg-indigo-50 text-sky-500 w-fit text-[7px] text-xs rounded-2xl">
+                      {t("Event")}
+                    </div>
+                    {event.IsPrivateEvent === 1 && (
+                      <Image
+                        src={lockIcon.src}
+                        width={22}
+                        height={22}
+                        className="rounded-full w-6 h-6 "
+                        alt={"lockIcon"}
+                      />
+                    )}
                   </div>
                   <div className="grid">
-                    <div className="font-semibold text-md text-black">
+                    <div className="font-semibold text-base text-black">
                       {event.Title}
                     </div>
-                    <div className="font-normal text-[9px] sm:text-xs text-stone-500">
-                      <div className="text-sm text-stone-500">
-                        {dayjs(event.Start).format("HH:mm")} -{" "}
-                        {dayjs(event.End).format("HH:mm")}
+                    <div className="flex sm:gap-2 items-center">
+                      <div className=" text-sm text-stone-500 font-medium">
+                        {formatTime(event.Start)} - {formatTime(event.End)}
                       </div>
+                      <div className=" text-xs text-black break-all ">
+                        {event.Location}
+                      </div>
+                    </div>
+                    <div className="text-[9px] sm:text-xs font-medium text-black line-clamp-1  break-all truncate">
+                      {event.Description}
                     </div>
                   </div>
                   <div className="flex flex-wrap justify-between max-w-full gap-2">
@@ -142,12 +168,12 @@ const MobileEventAndScrollBar = ({
                           alt={participant.MemberName}
                           width={22}
                           height={22}
-                          className="rounded-full border-2 border-white"
+                          className="rounded-full w-8 h-8 border-2 border-white"
                         />
                       ))}
                     </div>
-                    <div className="rounded-xs py-0.5 px-1 text-sky-500 text-[9px] font-semibold bg-slate-100 h-fit w-fit">
-                      {event.Attendee?.length || 0}
+                    <div className="text-black text-xs font-semibold grid place-items-center truncate">
+                      {event.ExternalCalendarName}
                     </div>
                   </div>
                 </div>
@@ -156,7 +182,7 @@ const MobileEventAndScrollBar = ({
           </div>
         ) : (
           <div className="p-3 my-2 sm:my-0 border-t-4 rounded-xl bg-blue-100 border-gray-300  flex items-center justify-center h-20 text-gray-500 italic shadow-md">
-            No events on the selected day for the selected member.
+            {t("No events on the selected day for the selected member.")}
           </div>
         )}
       </div>

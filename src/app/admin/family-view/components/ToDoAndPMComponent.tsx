@@ -169,7 +169,7 @@ const ToDoAndPMComponent = ({
           }`}
         >
           {/* Pocket Money Section */}
-          <section className="bg-blue-100  sm:p-1 shadow-md w-fit">
+          <section className="bg-blue-100  sm:p-1 shadow-md sm:w-fit">
             <div className="flex  min-h-28 sm:min-h-0 ">
               {(!isSmallScreen ||
                 members.some(
@@ -230,7 +230,7 @@ const ToDoAndPMComponent = ({
           </section>
 
           {/* To-Do Section */}
-          <section className="bg-blue-100 rounded-xl sm:p-1 shadow-md w-fit">
+          <section className="bg-blue-100 rounded-xl sm:p-1 shadow-md sm:w-fit">
             <div className="flex  min-h-28 sm:min-h-0 ">
               {(!isSmallScreen ||
                 members.some(
