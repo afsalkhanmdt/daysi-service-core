@@ -20,5 +20,10 @@
   "No To-dos": "Ingen gjøremål",
   "Today": "I dag",
   "Events": "Hendelser",
-  "Event": "Hendelse"
+  "Event": "Hendelse",
+  "No special events today.": "Ingen spesielle hendelser i dag.",
+  "Loading your data...": "Laster dine data...",
+  "Pocket Money": "Lommepenger",
+  "No member selected.": "Ingen medlem valgt.",
+  "No events on the selected day for the selected member.": "Ingen hendelser på den valgte dagen for det valgte medlemmet."
 }

@@ -61,7 +61,7 @@ const FamilyViewWrapper = ({
   if (!familyDetails || !isLangReady) {
     return (
       <div className="flex items-center justify-center h-screen text-gray-500">
-        Loading your data...
+        {t("Loading your data...")}
       </div>
     );
   }
@@ -84,11 +84,25 @@ const FamilyViewWrapper = ({
     );
   });
 
+  const today = dayjs();
+
   const selectedDaysEvents =
-    uniqueEvents?.filter((event) => {
-      const eventDate = dayjs(event.Start);
-      return eventDate.month() === dayjs(currentDate).month();
-    }) || [];
+    uniqueEvents
+      ?.map((event) => {
+        let eventDate = dayjs(Number(event.Start)); // convert timestamp properly
+
+        // Put the event in the current year
+        eventDate = eventDate.year(today.year());
+
+        // If it already happened this year, push to next year
+        if (eventDate.isBefore(today, "day")) {
+          eventDate = eventDate.add(1, "year");
+        }
+
+        return { ...event, normalizedDate: eventDate };
+      })
+      .sort((a, b) => a.normalizedDate.valueOf() - b.normalizedDate.valueOf()) // sort ascending
+      .slice(0, 5) || [];
 
   const imageUrls = familyDetails?.Members.reduce(
     (acc: Record<string, string>, member) => {

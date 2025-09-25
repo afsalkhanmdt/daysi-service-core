@@ -157,6 +157,8 @@ const CalendarView = ({
               participants: event.EventParticipant,
               externalCalender: event.ExternalCalendarName,
               userColorCode: member.ColorCode || "000000",
+              description: event.Description || "",
+              location: event.Location || "",
             },
           },
         ];

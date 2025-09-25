@@ -33,11 +33,25 @@ const SideBarMobileView = ({
     );
   });
 
+  const today = dayjs();
+
   const selectedDaysEvents =
-    uniqueEvents?.filter((event) => {
-      const eventDate = dayjs(event.Start);
-      return eventDate.month() === dayjs(currentDate).month();
-    }) || [];
+    uniqueEvents
+      ?.map((event) => {
+        let eventDate = dayjs(Number(event.Start)); // convert timestamp properly
+
+        // Put the event in the current year
+        eventDate = eventDate.year(today.year());
+
+        // If it already happened this year, push to next year
+        if (eventDate.isBefore(today, "day")) {
+          eventDate = eventDate.add(1, "year");
+        }
+
+        return { ...event, normalizedDate: eventDate };
+      })
+      .sort((a, b) => a.normalizedDate.valueOf() - b.normalizedDate.valueOf()) // sort ascending
+      .slice(0, 5) || [];
 
   const imageUrls = familyDetails?.Members.reduce(
     (acc: Record<string, string>, member) => {
@@ -70,7 +84,7 @@ const SideBarMobileView = ({
           </div>
         ) : (
           <div className="p-2 border-t-4 rounded-xl m-2 border-gray-300 bg-white shadow-sm flex items-center justify-center h-20 text-gray-500 italic">
-            No special events today.
+            {t("No special events today.")}
           </div>
         )}
       </div>
@@ -78,7 +92,7 @@ const SideBarMobileView = ({
       {/* Pocket Money Section */}
       <div className="flex-1 min-h-0 flex flex-col">
         <div className="p-3 text-base font-semibold grid place-content-center border-b dark:border-gray-700">
-          Pocket Money 💸
+          {t("Pocket Money")}
         </div>
         <div className="flex-1 overflow-y-auto p-3">
           <div className="grid gap-2">
