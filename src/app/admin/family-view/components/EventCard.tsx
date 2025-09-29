@@ -28,7 +28,7 @@ const EventCardUI = ({
         eventInfo.event.extendedProps.ExternalCalendarName
           ? "bg-slate-200"
           : "bg-white"
-      }  shadow-sm overflow-auto min-h-32`}
+      }  shadow-sm overflow-auto min-h-32 w-full max-w-96`}
     >
       <div className="flex flex-col sm:gap-1 p-1 h-full">
         <div className="flex justify-between items-center">
