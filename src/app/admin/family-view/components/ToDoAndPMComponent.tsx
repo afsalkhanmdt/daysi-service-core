@@ -160,7 +160,7 @@ const ToDoAndPMComponent = ({
 
       {(!isSmallScreen || (isSmallScreen && selectedMember)) && (
         <div
-          className={`sticky flex flex-col gap-4 transition-all duration-300 bg-white ${
+          className={`sticky grid gap-4 transition-all duration-300 bg-white ${
             isSmallScreen
               ? "max-h-[80rem]"
               : isTasksOpen
@@ -169,7 +169,7 @@ const ToDoAndPMComponent = ({
           }`}
         >
           {/* Pocket Money Section */}
-          <section className="bg-blue-100  sm:p-1 shadow-md sm:w-fit">
+          <section className="bg-blue-100  sm:p-1 shadow-md ">
             <div className="flex  min-h-28 sm:min-h-0 ">
               {(!isSmallScreen ||
                 members.some(
@@ -199,7 +199,7 @@ const ToDoAndPMComponent = ({
                         key={`pm-${rid}`}
                         className="my-auto border-dashed sm:border-l-2 border-gray-400 h-full"
                       >
-                        <div className="w-full sm:min-w-[264px] flex-shrink-0 bg-blue-100 rounded-lg sm:p-3 h-full">
+                        <div className="w-full sm:min-w-[200px] flex-shrink-0 bg-blue-100 rounded-lg sm:p-3 h-full">
                           {/* <ResourceHeader member={member} /> */}
                           <div className="sm:mt-3 flex sm:flex-col gap-3 flex-1 max-h-44 overflow-auto h-full ">
                             {pmForThis.length === 0 ? (
@@ -230,7 +230,7 @@ const ToDoAndPMComponent = ({
           </section>
 
           {/* To-Do Section */}
-          <section className="bg-blue-100 rounded-xl sm:p-1 shadow-md sm:w-fit">
+          <section className="bg-blue-100 rounded-xl sm:p-1 shadow-md ">
             <div className="flex  min-h-28 sm:min-h-0 ">
               {(!isSmallScreen ||
                 members.some(

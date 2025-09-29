@@ -44,11 +44,14 @@
 
 /* Style resource labels (left-side names) */
 .fc-scrollgrid-sync-inner {
+  max-width: 500px !important;
   margin: 10px;
   background-color: #ffffff;
-  display: flex !important;
-  align-items: flex-start !important;
-  justify-content: flex-start !important;
+  display: block !important; /* instead of flex */
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 400px;
+
   border-radius: 62px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
   padding: 4px;
@@ -86,9 +89,10 @@
 /* Let resource columns expand but still have a min width */
 .fc .fc-resource,
 .fc .fc-timegrid-col {
-  min-width: 266px !important;
-  width: 266px !important;
-  max-width: none !important; /* remove the cap */
+  min-width: 266px !important; /* don’t go smaller than this */
+  width: auto !important; /* let them auto-size */
+  flex: 1 1 auto !important; /* allow them to grow/shrink evenly */
+  max-width: none !important;
 }
 
 .fc-resourceTimeGridDay-view fc-view fc-timegrid {
@@ -100,4 +104,15 @@
   font-weight: 700;
   color: #1f2937;
   padding-right: 4px !important;
+}
+.fc-event-main {
+  display: grid !important;
+  place-items: center !important;
+}
+
+/* Fix the width of the time axis (left-side labels) */
+.fc .fc-timegrid-axis {
+  width: 40px !important; /* adjust as needed */
+  min-width: 40px !important;
+  max-width: 40px !important;
 }
