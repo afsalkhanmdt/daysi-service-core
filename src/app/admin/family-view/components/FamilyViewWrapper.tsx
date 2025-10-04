@@ -8,10 +8,10 @@ import CalendarView from "@/app/admin/family-view/components/CalendarView";
 import CelebrationDisplayCard from "@/app/admin/family-view/components/CelebrationDisplayCard";
 import PMDisplayCard from "./PMDisplayCard";
 import ToggleThemeAndLogout from "./ToggleThemeAndLogout";
+
 import danishAndNorwegianLogo from "@/app/admin/assets/DaysiDanishLogo.png";
 import enLogo from "@/app/admin/assets/DaysiEnLogo.png";
 import swedishLogo from "@/app/admin/assets/DaysiSwedishLogo.png";
-
 import mainIcon from "@/app/admin/assets/MyFamilii Brand Guide (1)-2 1.png";
 import dp from "@/app/admin/assets/try.jpg";
 
@@ -28,6 +28,8 @@ export type FamilyData = {
   Members: MemberResponse[];
 };
 
+const STORAGE_KEY = "familyDetailsCache";
+
 const FamilyViewWrapper = ({
   familyId,
   userId,
@@ -35,26 +37,45 @@ const FamilyViewWrapper = ({
   familyId: string;
   userId?: string;
 }) => {
-  const { data: familyDetails, reload } = useFetch<FamilyData>(
-    `Families/GetAllFamilies?familyId=${familyId}`
+  const { data: apiData, reload } = useFetch<FamilyData>(
+    `Families/GetAllFamlies?familyId=${familyId}`
   );
 
-  // Example: Access language property if it exists in FamilyResponse
-  const userLanguage = familyDetails?.Members?.find(
-    (m) => m.MemberId === userId
-  )?.Locale;
-
-  // const userLanguage = "en";
-
+  const [familyDetails, setFamilyDetails] = useState<FamilyData | null>(null);
+  const [isLangReady, setIsLangReady] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const { t } = useTranslation("common");
 
-  const [isLangReady, setIsLangReady] = useState(false);
+  // On mount, try to load cached data first
+  useEffect(() => {
+    const cached = localStorage.getItem(STORAGE_KEY);
+    if (cached) {
+      try {
+        setFamilyDetails(JSON.parse(cached));
+      } catch {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    }
+  }, []);
 
+  // When API returns data, update state + cache
+  useEffect(() => {
+    if (apiData) {
+      setFamilyDetails(apiData);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(apiData));
+    }
+  }, [apiData]);
+
+  // Language setup
+  const userLanguage = familyDetails?.Members?.find(
+    (m) => m.MemberId === userId
+  )?.Locale;
   useEffect(() => {
     if (userLanguage) {
       i18next.changeLanguage(userLanguage).then(() => setIsLangReady(true));
+    } else {
+      setIsLangReady(true); // default if no language found
     }
   }, [userLanguage]);
 
