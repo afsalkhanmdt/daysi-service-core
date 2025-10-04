@@ -82,18 +82,27 @@
   display: none !important;
 }
 
-.fc .fc-scrollgrid {
-  width: auto !important; /* let it shrink/grow naturally */
-  min-width: 100% !important; /* never collapse smaller than container */
-}
-/* Let resource columns expand but still have a min width */
 .fc .fc-resource,
 .fc .fc-timegrid-col {
-  min-width: 266px !important; /* don’t go smaller than this */
-  width: auto !important; /* let them auto-size */
-  flex: 1 1 auto !important; /* allow them to grow/shrink evenly */
+  min-width: 266px !important;
+  width: 266px !important; /* Fixed width for consistency */
+  flex: 0 0 auto !important; /* Prevent flex shrinking/growing */
   max-width: none !important;
 }
+
+/* Ensure the timegrid body can scroll horizontally */
+.fc-timegrid-body {
+  overflow-x: visible !important;
+  min-width: fit-content !important;
+}
+
+/* Make sure the scrollgrid can expand beyond viewport */
+.fc .fc-scrollgrid {
+  min-width: fit-content !important;
+  width: auto !important;
+}
+
+/* The parent container already has overflow-x-auto which is perfect */
 
 .fc-resourceTimeGridDay-view fc-view fc-timegrid {
   overflow-x: auto !important;
