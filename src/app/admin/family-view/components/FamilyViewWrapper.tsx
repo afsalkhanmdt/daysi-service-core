@@ -38,7 +38,7 @@ const FamilyViewWrapper = ({
   userId?: string;
 }) => {
   const { data: apiData, reload } = useFetch<FamilyData>(
-    `Families/GetAllFamlies?familyId=${familyId}`
+    `Families/GetAllFamilies?familyId=${familyId}`
   );
 
   const [familyDetails, setFamilyDetails] = useState<FamilyData | null>(null);
