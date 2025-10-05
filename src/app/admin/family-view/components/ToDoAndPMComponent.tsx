@@ -177,7 +177,7 @@ const ToDoAndPMComponent = ({
                     (pmTasksByMember.get(memberResourceId(m)) ?? []).length > 0
                 )) && (
                 <div className="flex sm:items-center  justify-between sm:pr-1">
-                  <div className="font-semibold break-all w-min sm:w-11 rounded-lg p-1 sm:flex sm:items-center sm:justify-center text-xs bg-gradient-to-r from-emerald-400 to-sky-500 text-white text-center [writing-mode:vertical-rl] [transform:rotate(180deg)] sm:[writing-mode:horizontal-tb] sm:[transform:none]">
+                  <div className="font-semibold break-words w-min sm:w-[55px] rounded-lg p-1 sm:flex sm:items-center sm:justify-center text-xs bg-gradient-to-r from-emerald-400 to-sky-500 text-white text-center [writing-mode:vertical-rl] [transform:rotate(180deg)] sm:[writing-mode:horizontal-tb] sm:[transform:none]">
                     {t("Pocket Money Tasks")}
                   </div>
                 </div>
@@ -199,7 +199,7 @@ const ToDoAndPMComponent = ({
                         key={`pm-${rid}`}
                         className="my-auto border-dashed sm:border-l-2 border-gray-400 h-full"
                       >
-                        <div className="w-full sm:min-w-[200px] flex-shrink-0 bg-blue-100 rounded-lg sm:p-3 h-full">
+                        <div className="w-full sm:min-w-[348px] flex-shrink-0 bg-blue-100 rounded-lg sm:p-3 h-full">
                           {/* <ResourceHeader member={member} /> */}
                           <div className="sm:mt-3 flex sm:flex-col gap-3 flex-1 max-h-44 overflow-auto h-full ">
                             {pmForThis.length === 0 ? (
@@ -238,7 +238,7 @@ const ToDoAndPMComponent = ({
                     (todosByMember.get(memberResourceId(m)) ?? []).length > 0
                 )) && (
                 <div className="flex sm:items-center justify-between sm:pr-1">
-                  <div className="font-semibold break-all w-min sm:w-11 rounded-lg p-1 sm:flex sm:items-center sm:justify-center text-xs bg-gradient-to-r from-emerald-400 to-sky-500 text-white text-center [writing-mode:vertical-rl] [transform:rotate(180deg)] sm:[writing-mode:horizontal-tb] sm:[transform:none]">
+                  <div className="font-semibold break-words w-min sm:w-[55px] rounded-lg p-1 sm:flex sm:items-center sm:justify-center text-xs bg-gradient-to-r from-emerald-400 to-sky-500 text-white text-center [writing-mode:vertical-rl] [transform:rotate(180deg)] sm:[writing-mode:horizontal-tb] sm:[transform:none]">
                     {t("To-Do Tasks")}
                   </div>
                 </div>
@@ -261,7 +261,7 @@ const ToDoAndPMComponent = ({
                           key={`todo-${rid}`}
                           className="my-auto border-dashed sm:border-l-2 border-gray-400 h-full"
                         >
-                          <div className="w-full sm:min-w-[264px] flex-shrink-0 bg-blue-100 rounded-lg sm:p-3 h-full">
+                          <div className="w-full sm:min-w-[348px] flex-shrink-0 bg-blue-100 rounded-lg sm:p-3 h-full">
                             {/* <ResourceHeader member={member} /> */}
                             <div className="sm:mt-3 flex sm:flex-col gap-3 flex-1 max-h-44 overflow-auto h-full ">
                               {todosForThis.length === 0 ? (
