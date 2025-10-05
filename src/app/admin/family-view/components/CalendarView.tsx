@@ -75,8 +75,6 @@ const CalendarView = ({
   currentDate: Date;
   setCurrentDate: Dispatch<SetStateAction<Date>>;
 }) => {
-  console.log(data, "data in calendar view");
-
   const { t } = useTranslation("common");
   const calendarRef = useRef<any>(null);
   const calendarContainerRef = useRef<HTMLDivElement>(null);
