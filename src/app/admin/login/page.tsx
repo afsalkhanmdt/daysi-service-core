@@ -1,20 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AdminLoginCall } from "@/services/api/apiCall";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import daysiLogo from "../assets/MyFamilii Brand Guide (1)-2 1.png";
 import emailPlaceholderLogo from "../assets/inputEmailIcon.svg";
 import passwordPlaceholderLogo from "../assets/inputLockIcon.svg";
+import danishAndNorwegianLogo from "@/app/admin/assets/DaysiDanishLogo.png";
+import enLogo from "@/app/admin/assets/DaysiEnLogo.png";
+import swedishLogo from "@/app/admin/assets/DaysiSwedishLogo.png";
 
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false); // To handle loading state
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [userLanguage, setUserLanguage] = useState("en");
   const router = useRouter();
+
+  useEffect(() => {
+    const lang =
+      typeof navigator !== "undefined"
+        ? navigator.language.slice(0, 2).toLowerCase()
+        : "en";
+    setUserLanguage(lang);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,9 +33,7 @@ const Login = () => {
     setLoading(true);
     try {
       const res = await AdminLoginCall(username, password);
-
       localStorage.setItem("access_token", res.access_token);
-
       router.push(
         `/admin/family-view/?familyId=${res.familyId}&memberId=${res.memberId}`
       );
@@ -36,10 +45,23 @@ const Login = () => {
     }
   };
 
+  const getLogoForLanguage = () => {
+    if (userLanguage === "sv") return swedishLogo;
+    if (userLanguage === "da" || userLanguage === "no")
+      return danishAndNorwegianLogo;
+    return enLogo;
+  };
+
   return (
     <div className="grid h-screen w-screen place-items-center bg-gradient-to-r from-emerald-400 to-sky-500 p-10">
-      <div className="bg-white rounded-2xl shadow-xl p-8 grid place-items-center sm:gap-6">
-        <Image src={daysiLogo.src} alt={""} width={160} height={60} />
+      <div className="bg-white rounded-2xl shadow-xl p-8 grid place-items-center sm:gap-4">
+        <Image
+          src={getLogoForLanguage().src}
+          alt="language logo"
+          width={1200}
+          height={200}
+          className="w-96 h-14"
+        />
         <form className="grid gap-8" onSubmit={handleSubmit}>
           <div className="grid gap-3">
             <h2 className="text-2xl font-bold text-center text-gray-800">
