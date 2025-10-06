@@ -39,7 +39,12 @@
   min-height: 250px !important;
   height: 250px !important;
   max-height: none !important;
-  border: none !important; /* remove slot lines */
+  border: none !important;
+}
+
+/* Ensure event containers can expand properly */
+.fc .fc-timegrid-event-harness {
+  min-height: 40px;
 }
 
 /* Style resource labels (left-side names) */
@@ -84,8 +89,8 @@
 
 .fc .fc-resource,
 .fc .fc-timegrid-col {
-  min-width: 266px !important;
-  width: 266px !important; /* Fixed width for consistency */
+  min-width: 350px !important;
+  width: 350px !important; /* Fixed width for consistency */
   flex: 0 0 auto !important; /* Prevent flex shrinking/growing */
   max-width: none !important;
 }
@@ -102,11 +107,6 @@
   width: auto !important;
 }
 
-/* The parent container already has overflow-x-auto which is perfect */
-
-.fc-resourceTimeGridDay-view fc-view fc-timegrid {
-  overflow-x: auto !important;
-}
 /* Increase font size of time labels */
 .fc .fc-timegrid-slot-label {
   font-size: 1.2rem !important;
@@ -124,4 +124,50 @@
   width: 40px !important; /* adjust as needed */
   min-width: 40px !important;
   max-width: 40px !important;
+}
+
+/* Style for empty slots */
+.fc .fc-timegrid-slot:not(.has-events) {
+  background-color: rgba(248, 250, 252, 0.5) !important;
+}
+
+/* Style for slots with events */
+.fc .fc-timegrid-slot.has-events {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Ensure smooth scrolling and proper layout */
+.fc .fc-timegrid-body {
+  position: relative;
+}
+
+/* Adjust the slot label container */
+.fc .fc-timegrid-slots {
+  position: relative;
+}
+
+/* Make sure events are properly positioned */
+.fc .fc-timegrid-event-harness-abs {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+/* Container for horizontal scrolling */
+.calendar-container {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+/* Ensure smooth scrolling for the timegrid body */
+.fc-timegrid-body {
+  scroll-behavior: smooth;
+}
+
+/* Make sure the scroll container is properly set up */
+.fc-timegrid-body {
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+  min-width: fit-content !important;
 }

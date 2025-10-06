@@ -10,6 +10,7 @@ import {
   useState,
   useMemo,
   useEffect,
+  useCallback,
 } from "react";
 import Image from "next/image";
 import dp from "@/app/admin/assets/MyFamilii Brand Guide (1)-2 1.png";
@@ -74,13 +75,13 @@ const CalendarView = ({
   currentDate: Date;
   setCurrentDate: Dispatch<SetStateAction<Date>>;
 }) => {
-  console.log(data, "data in calendar view");
-
   const { t } = useTranslation("common");
   const calendarRef = useRef<any>(null);
+  const calendarContainerRef = useRef<HTMLDivElement>(null);
   const [selectedMember, setSelectedMember] = useState<number>();
   const searchParams = useSearchParams();
   const familyId = searchParams.get("familyId");
+  const previousDateRef = useRef<Date>(currentDate);
 
   const { data: PMTaskDetails } = useFetch<PMData>(
     `PocketMoney/GetPMTasks?familyId=${familyId}`
@@ -166,62 +167,158 @@ const CalendarView = ({
     );
   }, [data.Members]);
 
+  // Function to find the earliest event time for the current day
+  const findEarliestEventTime = useCallback(() => {
+    if (!events.length) return null;
+
+    const currentDateString = currentDate.toDateString();
+    const todaysEvents = events.filter((event) => {
+      const eventDate = new Date(event.start as string);
+      return eventDate.toDateString() === currentDateString;
+    });
+
+    if (!todaysEvents.length) return null;
+
+    let earliestTime = new Date(todaysEvents[0].start as string);
+
+    todaysEvents.forEach((event) => {
+      const eventTime = new Date(event.start as string);
+      if (eventTime < earliestTime) {
+        earliestTime = eventTime;
+      }
+    });
+
+    return earliestTime;
+  }, [events, currentDate]);
+
+  // Function to scroll to the earliest event - FIXED VERSION
+  const scrollToEarliestEvent = useCallback(() => {
+    const earliestEventTime = findEarliestEventTime();
+    if (!earliestEventTime || !calendarRef.current?.getApi) return;
+
+    const calendarApi = calendarRef.current.getApi();
+
+    // Get the actual slot elements to measure real height
+    const slotLanes = calendarContainerRef.current?.querySelectorAll(
+      ".fc-timegrid-slots table tr"
+    );
+
+    if (!slotLanes || slotLanes.length === 0) {
+      console.warn("No slot lanes found");
+      return;
+    }
+
+    // Calculate position based on actual slot configuration
+    const slotDurationHours = 4; // Your slotDuration is 4 hours
+    const slotDurationMinutes = slotDurationHours * 60;
+    const slotHeight = 120; // Your CSS slot height
+
+    const eventHours = earliestEventTime.getHours();
+    const eventMinutes = earliestEventTime.getMinutes();
+    const totalMinutesFromMidnight = eventHours * 60 + eventMinutes;
+
+    // Calculate which slot the event falls into
+    const slotIndex = Math.floor(
+      totalMinutesFromMidnight / slotDurationMinutes
+    );
+
+    // Calculate position within the slot (if needed for more precision)
+    const minutesIntoSlot = totalMinutesFromMidnight % slotDurationMinutes;
+    const positionInSlot = (minutesIntoSlot / slotDurationMinutes) * slotHeight;
+
+    // Total scroll position
+    const scrollPosition = slotIndex * slotHeight + positionInSlot;
+
+    console.log("Scroll debugging:", {
+      eventTime: earliestEventTime.toTimeString(),
+      eventHours,
+      eventMinutes,
+      totalMinutesFromMidnight,
+      slotIndex,
+      minutesIntoSlot,
+      positionInSlot,
+      scrollPosition,
+    });
+
+    // Get the scrollable container
+    const scrollContainer = calendarContainerRef.current?.querySelector(
+      ".fc-timegrid-body"
+    ) as HTMLElement;
+    if (scrollContainer) {
+      // Scroll to the calculated position with small offset
+      scrollContainer.scrollTo({
+        top: Math.max(0, scrollPosition - 80), // Reduced offset for better visibility
+        behavior: "smooth",
+      });
+
+      console.log("Scrolling to position:", Math.max(0, scrollPosition - 80));
+    }
+  }, [findEarliestEventTime]);
+
+  // Alternative approach: Use FullCalendar's built-in scrolling
+  const scrollToEarliestEventAlternative = useCallback(() => {
+    const earliestEventTime = findEarliestEventTime();
+    if (!earliestEventTime || !calendarRef.current?.getApi) return;
+
+    const calendarApi = calendarRef.current.getApi();
+
+    try {
+      // Use FullCalendar's built-in method to scroll to time
+      calendarApi.scrollToTime({
+        hours: earliestEventTime.getHours(),
+        minutes: earliestEventTime.getMinutes(),
+      });
+    } catch (error) {
+      console.warn(
+        "FullCalendar scrollToTime failed, using manual method:",
+        error
+      );
+      // Fallback to manual method
+      scrollToEarliestEvent();
+    }
+  }, [findEarliestEventTime, scrollToEarliestEvent]);
+
+  // Effect to handle date changes and scroll to earliest event
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (calendarRef.current?.getApi) {
         const api = calendarRef.current.getApi();
         api.gotoDate(currentDate);
+
+        // Scroll to earliest event only when date actually changes
+        if (
+          previousDateRef.current.toDateString() !== currentDate.toDateString()
+        ) {
+          // Increased delay to ensure calendar has fully rendered
+          setTimeout(() => {
+            scrollToEarliestEventAlternative();
+          }, 300);
+        }
+
+        previousDateRef.current = currentDate;
       }
     }, 0);
 
     return () => clearTimeout(timeout);
+  }, [currentDate, scrollToEarliestEventAlternative]);
+
+  // Debug effect to log slot information
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const slotLanes = calendarContainerRef.current?.querySelectorAll(
+        ".fc-timegrid-slots table tr"
+      );
+      if (slotLanes) {
+        console.log("Slot lanes found:", slotLanes.length);
+        console.log(
+          "First slot time:",
+          slotLanes[0]?.querySelector(".fc-timegrid-slot-label")?.textContent
+        );
+      }
+    }, 500);
+
+    return () => clearTimeout(timeout);
   }, [currentDate]);
-
-  const { slotMinTime, slotMaxTime } = useMemo(() => {
-    const dayStart = new Date(currentDate);
-    dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(dayStart);
-    dayEnd.setDate(dayEnd.getDate() + 1);
-
-    const intersecting = events
-      .map((ev) => {
-        const evStart =
-          ev.start instanceof Date ? ev.start : new Date(ev.start as any);
-        const evEnd = ev.end instanceof Date ? ev.end : new Date(ev.end as any);
-
-        if (evEnd <= dayStart || evStart >= dayEnd) return null;
-
-        const startInDay = evStart < dayStart ? dayStart : evStart;
-        const endInDay = evEnd > dayEnd ? dayEnd : evEnd;
-        return { startInDay, endInDay };
-      })
-      .filter(Boolean) as { startInDay: Date; endInDay: Date }[];
-
-    if (intersecting.length === 0) {
-      return { slotMinTime: "08:00:00", slotMaxTime: "24:00:00" };
-    }
-
-    const minutesFromDayStart = (d: Date) =>
-      Math.round((d.getTime() - dayStart.getTime()) / 60000);
-
-    const allStartMins = intersecting.map((x) =>
-      minutesFromDayStart(x.startInDay)
-    );
-    const allEndMins = intersecting.map((x) => minutesFromDayStart(x.endInDay));
-
-    let earliestMin = Math.min(...allStartMins);
-    let latestMin = Math.max(...allEndMins);
-
-    // Round earliestMin down to nearest 4-hour slot (240 minutes)
-    const slotSize = 240; // 4 hours = 240 minutes
-    earliestMin = Math.floor(earliestMin / slotSize) * slotSize;
-
-    // We do NOT round latestMin — we keep it as is (so all later slots are still visible)
-    return {
-      slotMinTime: formatMinutesToTime(earliestMin),
-      slotMaxTime: "24:00:00", // keep showing until end of day
-    };
-  }, [events, currentDate]);
 
   return (
     <div className="sm:p-2.5 bg-slate-100 flex flex-col sm:h-full sm:rounded-xl">
@@ -240,7 +337,10 @@ const CalendarView = ({
         currentDate={currentDate}
       />
 
-      <div className="hidden sm:block flex-1 relative overflow-x-auto">
+      <div
+        ref={calendarContainerRef}
+        className="hidden sm:block flex-1 relative calendar-container"
+      >
         <div className="absolute p-0.5 rounded-lg left-1 top-4 w-12 flex items-center justify-center text-[13px] font-medium bg-gradient-to-r from-emerald-400 to-sky-500 text-white break-all">
           {t("Events")}
         </div>
@@ -254,10 +354,10 @@ const CalendarView = ({
           plugins={[resourceTimeGridPlugin]}
           initialView="resourceTimeGridDay"
           initialDate={currentDate}
-          slotMinTime={slotMinTime}
-          slotMaxTime={slotMaxTime}
-          slotDuration="06:00:00"
-          slotLabelInterval="01:00"
+          slotMinTime="00:00:00"
+          slotMaxTime="24:00:00"
+          slotDuration="04:00:00" // 4-hour slots
+          slotLabelInterval="01:00" // Labels every hour
           allDaySlot={false}
           weekends
           nowIndicator={false}
