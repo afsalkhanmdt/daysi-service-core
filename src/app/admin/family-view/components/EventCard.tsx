@@ -13,14 +13,18 @@ const EventCardUI = ({
   const start: Date = eventInfo.event.start;
   const end: Date = eventInfo.event.end;
 
+  console.log("eventInfo", eventInfo.event);
+
   const { t } = useTranslation("common");
 
   // Format using local timezone (browser locale)
-  const formatTime = (date: Date) =>
-    date.toLocaleTimeString("da-DK", {
+  const formatTime = (date?: Date | null) => {
+    if (!date) return ""; // or return something like "N/A"
+    return date.toLocaleTimeString(navigator.language, {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
 
   return (
     <div
@@ -53,7 +57,13 @@ const EventCardUI = ({
           </div>
           <div className="flex sm:gap-2 items-center">
             <div className="text-[9px] sm:text-sm text-stone-500">
-              {formatTime(start)} - {formatTime(end)}
+              {start && end
+                ? `${formatTime(start)} - ${formatTime(end)}`
+                : start
+                ? formatTime(start)
+                : end
+                ? formatTime(end)
+                : ""}
             </div>
             <div className="text-[9px] sm:text-xs text-black break-all ">
               {eventInfo.event.location}
