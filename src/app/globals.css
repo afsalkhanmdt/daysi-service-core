@@ -49,14 +49,12 @@
 
 /* Style resource labels (left-side names) */
 .fc-scrollgrid-sync-inner {
-  max-width: 500px !important;
   margin: 10px;
   background-color: #ffffff;
-  display: block !important; /* instead of flex */
+  display: block !important;
   margin-left: auto;
   margin-right: auto;
-  max-width: 400px;
-
+  width: fit-content;
   border-radius: 62px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
   padding: 4px;
@@ -107,23 +105,41 @@
   width: auto !important;
 }
 
-/* Increase font size of time labels */
+/* FIX TIME LABELS - Remove left spacing */
+.fc .fc-timegrid-axis {
+  width: 50px !important; /* Slightly wider to accommodate 24-hour times */
+  min-width: 50px !important;
+  max-width: 50px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
 .fc .fc-timegrid-slot-label {
   font-size: 1.2rem !important;
   font-weight: 700;
   color: #1f2937;
-  padding-right: 4px !important;
+  padding: 0 4px 0 0 !important; /* Remove left padding, keep right padding */
+  margin: 0 !important;
+  text-align: right !important; /* Align text to right for better visibility */
+  width: 100% !important;
 }
+
+/* Remove any left padding/margin from the slot labels container */
+.fc .fc-timegrid-slots {
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+}
+
+/* Remove left spacing from the timegrid axis frame */
+.fc .fc-timegrid-axis-frame {
+  padding: 0 !important;
+  margin: 0 !important;
+  justify-content: flex-end !important; /* Align content to right */
+}
+
 .fc-event-main {
   display: grid !important;
   place-items: center !important;
-}
-
-/* Fix the width of the time axis (left-side labels) */
-.fc .fc-timegrid-axis {
-  width: 40px !important; /* adjust as needed */
-  min-width: 40px !important;
-  max-width: 40px !important;
 }
 
 /* Style for empty slots */
@@ -159,7 +175,10 @@
 .calendar-container {
   overflow-x: auto;
   overflow-y: hidden;
+  padding-left: 0 !important; /* Ensure no container padding */
+  margin-left: 0 !important;
 }
+
 /* Ensure smooth scrolling for the timegrid body */
 .fc-timegrid-body {
   scroll-behavior: smooth;
@@ -170,4 +189,18 @@
   overflow-x: auto !important;
   overflow-y: auto !important;
   min-width: fit-content !important;
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+}
+
+/* Remove any left spacing from the main scrollgrid */
+.fc .fc-scrollgrid {
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+}
+
+/* Ensure the timegrid column has no left spacing */
+.fc .fc-timegrid-col {
+  padding-left: 0 !important;
+  margin-left: 0 !important;
 }

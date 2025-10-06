@@ -415,6 +415,12 @@ const CalendarView = ({
           slotMaxTime="24:00:00"
           slotDuration="04:00:00" // 4-hour slots
           slotLabelInterval="01:00" // Labels every hour
+          slotLabelFormat={{
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false, // This is the key - forces 24-hour format
+            meridiem: false,
+          }}
           allDaySlot={false}
           weekends
           nowIndicator={false}
