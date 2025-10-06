@@ -17,7 +17,7 @@ const CelebrationDisplayCard = ({
   const today = dayjs();
   const startDate = dayjs(Number(mainEvent.Start));
 
-  // Normalize event date to this year or next year
+  // Normalize event date to this year or next year for display
   let normalizedDate = startDate.year(today.year());
   if (normalizedDate.isBefore(today, "day")) {
     normalizedDate = normalizedDate.add(1, "year");
@@ -25,11 +25,23 @@ const CelebrationDisplayCard = ({
 
   const displayDate = normalizedDate.format("DD/MM/YYYY");
 
-  // Calculate age (only for birthdays)
-  let yearsOld = today.year() - startDate.year();
-  const birthdayThisYear = startDate.year(today.year());
-  if (birthdayThisYear.isAfter(today, "day")) {
-    yearsOld -= 1;
+  // Correct age calculation for birthdays only
+  let yearsOld = null;
+  if (mainEvent.SpecialEvent === 0) {
+    // Only calculate age for birthdays
+    const birthDate = startDate;
+
+    // Calculate age based on whether birthday has occurred this year
+    yearsOld = today.year() - birthDate.year();
+
+    // If birthday hasn't occurred yet this year, subtract 1
+    const hasBirthdayOccurredThisYear =
+      today.isAfter(birthDate.year(today.year()), "day") ||
+      today.isSame(birthDate.year(today.year()), "day");
+
+    if (!hasBirthdayOccurredThisYear) {
+      yearsOld -= 1;
+    }
   }
 
   const fallbackIcon =
@@ -55,9 +67,13 @@ const CelebrationDisplayCard = ({
       </div>
 
       <div className="flex justify-between items-end">
-        <div className="text-stone-500 italic text-[10px]">
-          {yearsOld}
-          {t(`YearsOld`)}
+        <div className="text-stone-500 italic text-[10px] sm:text-sm">
+          {mainEvent.SpecialEvent === 0 && yearsOld !== null && (
+            <>
+              {yearsOld}
+              {t(`YearsOld`)}
+            </>
+          )}
         </div>
         <img className="w-6 h-6" src={eventIcon.src} alt="" />
       </div>

@@ -263,20 +263,42 @@ const CalendarView = ({
     const calendarApi = calendarRef.current.getApi();
 
     try {
-      // Use FullCalendar's built-in method to scroll to time
+      // Vertical scroll using FullCalendar API
       calendarApi.scrollToTime({
         hours: earliestEventTime.getHours(),
         minutes: earliestEventTime.getMinutes(),
       });
+
+      // Also scroll horizontally to the resource column
+      const earliestEvent = events.find((ev) => {
+        return (
+          new Date(ev.start as string).toDateString() ===
+            currentDate.toDateString() &&
+          new Date(ev.start as string).getTime() === earliestEventTime.getTime()
+        );
+      });
+
+      if (earliestEvent) {
+        const resourceEl = calendarContainerRef.current?.querySelector(
+          `.fc-timegrid-col[data-resource-id="${earliestEvent.resourceId}"]`
+        ) as HTMLElement;
+
+        if (resourceEl) {
+          resourceEl.scrollIntoView({
+            behavior: "smooth",
+            block: "nearest",
+            inline: "center", // horizontally center that resource column
+          });
+        }
+      }
     } catch (error) {
       console.warn(
         "FullCalendar scrollToTime failed, using manual method:",
         error
       );
-      // Fallback to manual method
-      scrollToEarliestEvent();
+      scrollToEarliestEvent(); // fallback vertical
     }
-  }, [findEarliestEventTime, scrollToEarliestEvent]);
+  }, [findEarliestEventTime, scrollToEarliestEvent, events, currentDate]);
 
   // Effect to handle date changes and scroll to earliest event
   useEffect(() => {
@@ -319,6 +341,41 @@ const CalendarView = ({
 
     return () => clearTimeout(timeout);
   }, [currentDate]);
+
+  // Add this useEffect to your component
+  useEffect(() => {
+    const handleScroll = () => {
+      const timeAxis =
+        calendarContainerRef.current?.querySelector(".fc-timegrid-axis");
+      const slotLabels = calendarContainerRef.current?.querySelectorAll(
+        ".fc-timegrid-slot-label"
+      );
+
+      if (timeAxis) {
+        (timeAxis as HTMLElement).style.transform = `translateX(${
+          calendarContainerRef.current?.scrollLeft || 0
+        }px)`;
+        (timeAxis as HTMLElement).style.zIndex = "1000"; // Very high z-index
+      }
+
+      slotLabels?.forEach((label) => {
+        (label as HTMLElement).style.transform = `translateX(${
+          calendarContainerRef.current?.scrollLeft || 0
+        }px)`;
+        (label as HTMLElement).style.zIndex = "999"; // High z-index
+      });
+    };
+
+    const scrollContainer = calendarContainerRef.current;
+    scrollContainer?.addEventListener("scroll", handleScroll);
+
+    // Initial call to set positions
+    handleScroll();
+
+    return () => {
+      scrollContainer?.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
 
   return (
     <div className="sm:p-2.5 bg-slate-100 flex flex-col sm:h-full sm:rounded-xl">
