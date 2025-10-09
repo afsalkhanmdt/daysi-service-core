@@ -183,10 +183,10 @@ const ToDoAndPMComponent = ({
                 </div>
               )}
 
-              <div className="overflow-x-auto sm:overflow-x-visible pl-2 sm:pl-0 flex flex-col flex-1">
-                <div className="sm:grid grid-flow-col sm:items-start my-auto sm:h-full">
+              <div className="overflow-x-auto flex-1 min-w-0">
+                <div className="flex sm:grid sm:grid-cols-[repeat(auto-fit,minmax(0,1fr))] sm:items-start my-auto sm:h-full w-full">
                   {members.length === 0 && (
-                    <div className="py-6 px-4 text-sm text-gray-500 italic">
+                    <div className="text-sm text-gray-500 italic text-center w-full h-24 sm:h-20 border-t-2 sm:mx-6 sm:border-t-4 rounded-xl flex flex-col justify-between gap-1 p-1">
                       {t("No members")}
                     </div>
                   )}
@@ -197,17 +197,16 @@ const ToDoAndPMComponent = ({
                     return (
                       <div
                         key={`pm-${rid}`}
-                        className="my-auto border-dashed sm:border-l-2 border-gray-400 h-full"
+                        className="flex-shrink-0 w-full my-auto border-dashed sm:border-l-2 border-gray-400 h-full"
                       >
-                        <div className="w-full sm:min-w-[348px] flex-shrink-0 bg-blue-100 rounded-lg sm:p-3 h-full">
-                          {/* <ResourceHeader member={member} /> */}
-                          <div className="sm:mt-3 flex sm:flex-col gap-3 flex-1 max-h-44 overflow-auto h-full ">
-                            {pmForThis.length === 0 ? (
-                              <div className="text-sm text-gray-500 italic text-center w-full h-full">
-                                {t("No PM tasks")}
-                              </div>
-                            ) : (
-                              pmForThis.map((pm) => (
+                        <div className="w-full bg-blue-100 rounded-lg sm:p-3 h-full min-h-[120px] flex items-center justify-center">
+                          {pmForThis.length === 0 ? (
+                            <div className="text-sm text-gray-500 italic text-center w-full">
+                              {t("No PM tasks")}
+                            </div>
+                          ) : (
+                            <div className="sm:mt-3 flex sm:flex-col gap-3 flex-1 max-h-44 overflow-auto h-full w-full sm:max-w-[300px]">
+                              {pmForThis.map((pm) => (
                                 <div
                                   key={`${pm.PMTransId}-${rid}`}
                                   className="w-full my-auto sm:my-0"
@@ -217,9 +216,9 @@ const ToDoAndPMComponent = ({
                                     familyDetails={familyDetails}
                                   />
                                 </div>
-                              ))
-                            )}
-                          </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
@@ -245,10 +244,10 @@ const ToDoAndPMComponent = ({
               )}
 
               {todosByMember ? (
-                <div className="overflow-x-auto sm:overflow-x-visible pl-2 sm:pl-0 flex flex-col flex-1">
-                  <div className="sm:grid grid-flow-col sm:items-start my-auto sm:h-full">
+                <div className="overflow-x-auto flex-1 min-w-0">
+                  <div className="flex sm:grid sm:grid-cols-[repeat(auto-fit,minmax(0,1fr))] sm:items-start my-auto sm:h-full w-full">
                     {members.length === 0 && (
-                      <div className="py-6 px-4 text-sm text-gray-500 italic">
+                      <div className="py-6 px-4 text-sm text-gray-500 italic w-full">
                         {t("No members")}
                       </div>
                     )}
@@ -259,17 +258,16 @@ const ToDoAndPMComponent = ({
                       return (
                         <div
                           key={`todo-${rid}`}
-                          className="my-auto border-dashed sm:border-l-2 border-gray-400 h-full"
+                          className="flex-shrink-0 w-full my-auto border-dashed sm:border-l-2 border-gray-400 h-full"
                         >
-                          <div className="w-full sm:min-w-[348px] flex-shrink-0 bg-blue-100 rounded-lg sm:p-3 h-full">
-                            {/* <ResourceHeader member={member} /> */}
-                            <div className="sm:mt-3 flex sm:flex-col gap-3 flex-1 max-h-44 overflow-auto h-full ">
-                              {todosForThis.length === 0 ? (
-                                <div className="text-sm text-gray-500 italic text-center w-full h-full">
-                                  {t("No To-dos")}
-                                </div>
-                              ) : (
-                                todosForThis.map((todo) => (
+                          <div className="w-full bg-blue-100 rounded-lg sm:p-3 h-full min-h-[120px] flex items-center justify-center">
+                            {todosForThis.length === 0 ? (
+                              <div className="text-sm text-gray-500 italic text-center w-full min-w-52 h-24 sm:h-20 border-t-2 sm:mx-6 sm:border-t-4 rounded-xl  flex flex-col justify-between gap-1 p-1">
+                                {t("No To-dos")}
+                              </div>
+                            ) : (
+                              <div className="sm:mt-3 flex sm:flex-col gap-3 flex-1 max-h-44 overflow-auto h-full w-full sm:max-w-[300px]">
+                                {todosForThis.map((todo) => (
                                   <div
                                     key={`${todo.ToDoTaskId}-${rid}`}
                                     className="w-full my-auto sm:my-0"
@@ -279,9 +277,9 @@ const ToDoAndPMComponent = ({
                                       familyDetails={familyDetails}
                                     />
                                   </div>
-                                ))
-                              )}
-                            </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </div>
                       );

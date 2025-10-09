@@ -376,6 +376,83 @@ const CalendarView = ({
       scrollContainer?.removeEventListener("scroll", handleScroll);
     };
   }, []);
+  // useEffect(() => {
+  //   const handleResize = () => {
+  //     if (calendarRef.current?.getApi) {
+  //       const calendarApi = calendarRef.current.getApi();
+
+  //       // Force calendar to update its dimensions
+  //       setTimeout(() => {
+  //         calendarApi.updateSize();
+
+  //         // Additional forced reflow for the calendar
+  //         const calendarEl =
+  //           calendarContainerRef.current?.querySelector(".fc-timegrid-body");
+  //         if (calendarEl) {
+  //           // Trigger reflow
+  //           (calendarEl as HTMLElement).style.display = "none";
+  //           (calendarEl as HTMLElement).offsetHeight; // Force reflow
+  //           (calendarEl as HTMLElement).style.display = "";
+  //         }
+  //       }, 100);
+  //     }
+  //   };
+
+  //   // Add event listeners
+  //   window.addEventListener("resize", handleResize);
+  //   window.addEventListener("orientationchange", handleResize);
+
+  //   // Initial calculation after mount
+  //   const initTimer = setTimeout(() => {
+  //     handleResize();
+  //   }, 500);
+
+  //   return () => {
+  //     window.removeEventListener("resize", handleResize);
+  //     window.removeEventListener("orientationchange", handleResize);
+  //     clearTimeout(initTimer);
+  //   };
+  // }, []);
+
+  // // Add this useEffect to handle initial load stretching
+  // useEffect(() => {
+  //   // Force a recalculation after the calendar has rendered
+  //   const timer = setTimeout(() => {
+  //     if (calendarRef.current?.getApi) {
+  //       const calendarApi = calendarRef.current.getApi();
+  //       calendarApi.updateSize();
+
+  //       // Additional DOM manipulation to ensure proper stretching
+  //       const resourceCols =
+  //         calendarContainerRef.current?.querySelectorAll(".fc-timegrid-col");
+  //       const resourceHeaders =
+  //         calendarContainerRef.current?.querySelectorAll(".fc-resource");
+
+  //       if (resourceCols && resourceHeaders) {
+  //         // Calculate available width
+  //         const container = calendarContainerRef.current;
+  //         if (container) {
+  //           const availableWidth = container.clientWidth - 50; // Subtract time axis
+  //           const columnCount = resourceCols.length;
+  //           const calculatedWidth = Math.max(350, availableWidth / columnCount);
+
+  //           // Apply calculated width
+  //           resourceCols.forEach((col: Element) => {
+  //             (col as HTMLElement).style.minWidth = "350px";
+  //             (col as HTMLElement).style.flex = `1 1 ${calculatedWidth}px`;
+  //           });
+
+  //           resourceHeaders.forEach((header: Element) => {
+  //             (header as HTMLElement).style.minWidth = "350px";
+  //             (header as HTMLElement).style.flex = `1 1 ${calculatedWidth}px`;
+  //           });
+  //         }
+  //       }
+  //     }
+  //   }, 1000);
+
+  //   return () => clearTimeout(timer);
+  // }, [resources.length, currentDate]);
 
   return (
     <div className="sm:p-2.5 bg-slate-100 flex flex-col sm:h-full sm:rounded-xl">
@@ -441,7 +518,7 @@ const CalendarView = ({
                   height={28}
                   className="rounded-full w-7 h-7 border"
                 />
-                <div className="text-sm font-semibold truncate w-40">
+                <div className="text-sm font-semibold truncate">
                   {arg.resource._resource.title || t("Unknown")}
                 </div>
               </div>

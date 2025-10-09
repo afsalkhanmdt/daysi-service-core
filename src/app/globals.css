@@ -52,12 +52,16 @@
   margin: 10px;
   background-color: #ffffff;
   display: block !important;
+  max-width: 300px;
   margin-left: auto;
   margin-right: auto;
-  width: fit-content;
   border-radius: 62px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
   padding: 4px;
+}
+
+.fc-col-header-cell-cushion {
+  width: 100% !important;
 }
 
 /* Remove table borders but don't touch custom event borders */
@@ -85,24 +89,40 @@
   display: none !important;
 }
 
+/* Make columns flexible with minimum width */
 .fc .fc-resource,
 .fc .fc-timegrid-col {
-  min-width: 350px !important;
-  width: 350px !important; /* Fixed width for consistency */
-  flex: 0 0 auto !important; /* Prevent flex shrinking/growing */
+  min-width: 350px !important; /* Keep your current width as minimum */
+  width: auto !important; /* Allow columns to grow */
+  flex: 1 1 auto !important; /* Allow flex growing and shrinking */
   max-width: none !important;
 }
 
-/* Ensure the timegrid body can scroll horizontally */
+/* Ensure the timegrid body can handle flexible columns */
 .fc-timegrid-body {
-  overflow-x: visible !important;
+  overflow-x: auto !important;
   min-width: fit-content !important;
+  width: 100% !important;
 }
 
-/* Make sure the scrollgrid can expand beyond viewport */
+/* Make sure the scrollgrid can expand properly */
 .fc .fc-scrollgrid {
   min-width: fit-content !important;
+  width: 100% !important;
+  table-layout: fixed !important; /* This helps with consistent column sizing */
+}
+
+/* Ensure resource area matches column widths */
+.fc .fc-resource-area {
+  min-width: 350px !important;
   width: auto !important;
+  flex: 1 1 auto !important;
+}
+
+/* Make the timegrid columns container flexible */
+.fc .fc-timegrid-cols {
+  min-width: fit-content !important;
+  width: 100% !important;
 }
 
 /* FIX TIME LABELS - Remove left spacing */
