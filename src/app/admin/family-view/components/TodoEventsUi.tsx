@@ -15,7 +15,7 @@ const TodoEventUi = ({
     familyDetails.Members.find((m) => m.MemberId === ToDoData.AssignedTo)
       ?.ResourceUrl || icon.src;
   return (
-    <div className="min-w-52 sm:mx-6 h-20 border-t-2 sm:border-t-4 rounded-xl border-emerald-500 bg-white shadow-md shadow-gray-300 flex flex-col justify-between gap-1 p-1">
+    <div className="min-w-52 sm:min-w-0 h-20 border-t-2 sm:border-t-4 rounded-xl border-emerald-500 bg-white shadow-md shadow-gray-300 flex flex-col justify-between gap-1 p-1">
       <div>
         <div className="flex justify-between items-center">
           <div className="text-center py-0.5 px-1.5 bg-emerald-50 text-emerald-500 w-fit text-[7px] rounded-2xl">
