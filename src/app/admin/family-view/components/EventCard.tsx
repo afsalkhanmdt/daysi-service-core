@@ -72,7 +72,7 @@ const EventCardUI = ({
           <div className="text-[9px] sm:text-xs font-medium text-black line-clamp-1  break-all truncate">
             {eventInfo.event.extendedProps.IsPrivateEvent === 1
               ? `${t("Private")}.....`
-              : eventInfo.event.description}
+              : eventInfo.event.extendedProps.description}
           </div>
         </div>
         <div className="flex flex-wrap justify-between max-w-full gap-1.5 sm:gap-3">
