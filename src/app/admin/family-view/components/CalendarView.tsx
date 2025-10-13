@@ -59,12 +59,12 @@ export type ToDoTaskType = {
 const pad = (n: number) => String(n).padStart(2, "0");
 
 // convert minutes-from-day-start to "HH:MM:SS"; allow 1440 -> "24:00:00"
-const formatMinutesToTime = (mins: number) => {
-  if (mins >= 1440) return "24:00:00";
-  const h = Math.floor(mins / 60);
-  const m = Math.floor(mins % 60);
-  return `${pad(h)}:${pad(m)}:00`;
-};
+// const formatMinutesToTime = (mins: number) => {
+//   if (mins >= 1440) return "24:00:00";
+//   const h = Math.floor(mins / 60);
+//   const m = Math.floor(mins % 60);
+//   return `${pad(h)}:${pad(m)}:00`;
+// };
 
 const CalendarView = ({
   data,
@@ -90,13 +90,30 @@ const CalendarView = ({
     `ToDo/GetToDos?familyId=${familyId}`
   );
 
-  const sortedMembers = useMemo(
-    () =>
-      [...data.Members].sort(
-        (a, b) => memberOrder[a.MemberType] - memberOrder[b.MemberType]
-      ),
-    [data.Members]
-  );
+  const sortedMembers = useMemo(() => {
+    return [...data.Members].sort((a, b) => {
+      const aType = a.MemberType;
+      const bType = b.MemberType;
+
+      // Family first
+      if (aType === 1 && bType !== 1) return -1;
+      if (bType === 1 && aType !== 1) return 1;
+
+      // Admin second
+      if (aType === 0 && bType !== 0) return -1;
+      if (bType === 0 && aType !== 0) return 1;
+
+      // For all others (normal members), sort by birthdate (eldest first)
+      if (aType > 1 && bType > 1) {
+        const aDate = new Date(a.Birthdate || "");
+        const bDate = new Date(b.Birthdate || "");
+        return aDate.getTime() - bDate.getTime(); // earlier = older
+      }
+
+      // keep relative order if all else equal
+      return 0;
+    });
+  }, [data.Members]);
 
   const resources = useMemo(
     () =>
