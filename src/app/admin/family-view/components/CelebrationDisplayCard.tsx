@@ -25,23 +25,11 @@ const CelebrationDisplayCard = ({
 
   const displayDate = normalizedDate.format("DD/MM/YYYY");
 
-  // Correct age calculation for birthdays only
+  // Correct upcoming age calculation for birthdays only
   let yearsOld = null;
   if (mainEvent.SpecialEvent === 0) {
-    // Only calculate age for birthdays
     const birthDate = startDate;
-
-    // Calculate age based on whether birthday has occurred this year
     yearsOld = today.year() - birthDate.year();
-
-    // If birthday hasn't occurred yet this year, subtract 1
-    const hasBirthdayOccurredThisYear =
-      today.isAfter(birthDate.year(today.year()), "day") ||
-      today.isSame(birthDate.year(today.year()), "day");
-
-    if (!hasBirthdayOccurredThisYear) {
-      yearsOld -= 1;
-    }
   }
 
   const fallbackIcon =
