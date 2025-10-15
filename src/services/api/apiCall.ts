@@ -4,10 +4,11 @@ export const AdminLoginCall = async (username: string, password: string) => {
   formData.append("username", username);
   formData.append("password", password);
 
-  const res = await fetch("https://api.daysi.dk/Token", {
+  const res = await fetch("https://dev.daysi.dk/Token", {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
+      "X-Source": "events-webpage" // ← ADD THIS HEADER to identify your new events webpage
     },
     body: formData,
     credentials: "omit",       // Do NOT send cookies or credentials
@@ -20,7 +21,18 @@ export const AdminLoginCall = async (username: string, password: string) => {
   }
 
   if (!res.ok) {
-    throw new Error("Login failed");
+    // Enhanced error handling to get more details
+    let errorMessage = "Login failed";
+    try {
+      const errorData = await res.json();
+      if (errorData.error_description) {
+        errorMessage = errorData.error_description;
+      }
+    } catch {
+      // If we can't parse JSON, use status text
+      errorMessage = `Login failed: ${res.status} ${res.statusText}`;
+    }
+    throw new Error(errorMessage);
   }
 
   return res.json();
@@ -28,10 +40,11 @@ export const AdminLoginCall = async (username: string, password: string) => {
 
 export const getAllFamilies = async (familyId: string, token: string) => {
   const res = await fetch(
-    `https://api.daysi.dk/api/Families/GetAllFamilies?familyId=${familyId}`,
+    `https://dev.daysi.dk/api/Families/GetAllFamilies?familyId=${familyId}`,
     {
       headers: {
         Authorization: `Bearer ${token}`,
+        "X-Source": "events-webpage" // ← Also add to other API calls for consistency
       },
     }
   );
