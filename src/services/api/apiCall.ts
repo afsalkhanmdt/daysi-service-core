@@ -8,20 +8,18 @@ export const AdminLoginCall = async (username: string, password: string) => {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
-      "X-Source": "events-webpage" // ← ADD THIS HEADER to identify your new events webpage
+      "X-Source": "events-webpage"
     },
     body: formData,
-    credentials: "omit",       // Do NOT send cookies or credentials
-    redirect: "manual",        // Prevent automatic redirect following
+    credentials: "include",   // <-- Use 'include' if backend uses cookies for auth
+    redirect: "manual"        // <-- Prevent automatic redirect
   });
 
-  // If server tries to redirect (status 3xx), treat as error here
   if (res.status >= 300 && res.status < 400) {
     throw new Error("Login failed: server redirected the request.");
   }
 
   if (!res.ok) {
-    // Enhanced error handling to get more details
     let errorMessage = "Login failed";
     try {
       const errorData = await res.json();
@@ -29,7 +27,6 @@ export const AdminLoginCall = async (username: string, password: string) => {
         errorMessage = errorData.error_description;
       }
     } catch {
-      // If we can't parse JSON, use status text
       errorMessage = `Login failed: ${res.status} ${res.statusText}`;
     }
     throw new Error(errorMessage);
