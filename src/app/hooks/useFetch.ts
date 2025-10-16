@@ -11,7 +11,7 @@ interface FetchState<T> {
 export function useFetch<T>(url: string | null, options?: RequestInit) {
   const [state, setState] = useState<FetchState<T>>({
     data: null,
-    loading: !!url,
+    loading: false, // ⬅️ Change this to false initially
     error: null,
   });
 
@@ -50,8 +50,13 @@ export function useFetch<T>(url: string | null, options?: RequestInit) {
   }, [url, options]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    // ⬅️ ADD SERVER CHECK HERE TOO
+    if (typeof window === "undefined") return;
+    
+    if (url) {
+      fetchData();
+    }
+  }, [fetchData, url]); // ⬅️ Make sure url is in dependencies
 
   return { ...state, reload: fetchData };
 }
