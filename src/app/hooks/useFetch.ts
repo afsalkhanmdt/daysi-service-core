@@ -11,15 +11,13 @@ interface FetchState<T> {
 export function useFetch<T>(url: string | null, options?: RequestInit) {
   const [state, setState] = useState<FetchState<T>>({
     data: null,
-    loading: false, // ⬅️ Change this to false initially
+    loading: false,
     error: null,
   });
 
   const fetchData = useCallback(async () => {
-    if (!url) return;
-
-    // Don't run on server
-    if (typeof window === "undefined") return;
+    // ⬅️ ADD SERVER CHECK HERE
+    if (!url || typeof window === "undefined") return;
 
     setState((prev) => ({ ...prev, loading: true }));
 
