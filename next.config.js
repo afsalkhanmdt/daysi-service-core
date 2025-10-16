@@ -8,7 +8,7 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "dev.daysi.dk",
+        hostname: "api.daysi.dk",
       },
     ],
   },
