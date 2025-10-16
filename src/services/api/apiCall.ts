@@ -11,7 +11,7 @@ export const AdminLoginCall = async (username: string, password: string) => {
       "X-Source": "events-webpage"
     },
     body: formData,
-    credentials: "include",   // <-- Use 'include' if backend uses cookies for auth
+    // credentials: "include",   // <-- Use 'include' if backend uses cookies for auth
     redirect: "manual"        // <-- Prevent automatic redirect
   });
 
