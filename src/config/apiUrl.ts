@@ -4,7 +4,7 @@ const apiSever = "api.daysi.dk";
 const devSever = "api.daysi.dk";
 const prodSever = "api.daysi.dk";
 
-const apiUrl =`https://${devSever}/api/`
+const apiUrl =`https://${prodSever}/api/`
           ;
 
 export const assetsUrl = "https://assets.babble-ai.com";
