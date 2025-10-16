@@ -31,15 +31,27 @@ const Login = () => {
     e.preventDefault();
     setError(null);
     setLoading(true);
+
+    // Basic validation
+    if (!username.trim() || !password.trim()) {
+      setError("Please enter both username and password.");
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await AdminLoginCall(username, password);
       localStorage.setItem("access_token", res.access_token);
+      // Store additional user info if needed
+      localStorage.setItem("familyId", res.familyId);
+      localStorage.setItem("memberId", res.memberId);
+
       router.push(
         `/admin/family-view/?familyId=${res.familyId}&memberId=${res.memberId}`
       );
-    } catch (err) {
+    } catch (err: any) {
       console.error("Login failed:", err);
-      setError("Login failed. Please check your credentials.");
+      setError(err.message || "Login failed. Please check your credentials.");
     } finally {
       setLoading(false);
     }
@@ -54,71 +66,76 @@ const Login = () => {
 
   return (
     <div className="grid h-screen w-screen place-items-center bg-gradient-to-r from-emerald-400 to-sky-500 p-10">
-      <div className="bg-white rounded-2xl shadow-xl p-8 grid place-items-center sm:gap-4">
+      <div className="bg-white rounded-2xl shadow-xl p-8 grid place-items-center sm:gap-4 w-full max-w-md">
         <Image
           src={getLogoForLanguage().src}
-          alt="language logo"
-          width={1200}
-          height={200}
-          className="w-96 h-14"
+          alt="Daysi Logo"
+          width={300}
+          height={60}
+          className="w-64 h-12 object-contain mb-4"
         />
-        <form className="grid gap-8" onSubmit={handleSubmit}>
-          <div className="grid gap-3">
+        <form className="grid gap-6 w-full" onSubmit={handleSubmit}>
+          <div className="grid gap-2">
             <h2 className="text-2xl font-bold text-center text-gray-800">
               All Your Family Plans
             </h2>
-            <h3 className="text-lg text-center text-gray-600">
+            <h3 className="text-sm text-center text-gray-600">
               Log in to access your shared family calendar, events, and
               reminders.
             </h3>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Username
-            </label>
-            <div className="relative">
-              <Image
-                src={emailPlaceholderLogo.src}
-                alt=""
-                width={20}
-                height={20}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              />
-              <input
-                type="text"
-                placeholder="hello@gmail.com"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400"
-                disabled={loading}
-                required
-              />
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Username
+              </label>
+              <div className="relative">
+                <Image
+                  src={emailPlaceholderLogo.src}
+                  alt="Email icon"
+                  width={20}
+                  height={20}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                />
+                <input
+                  type="text"
+                  placeholder="hello@gmail.com"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent transition duration-200"
+                  disabled={loading}
+                  required
+                />
+              </div>
             </div>
 
-            <label className="block text-sm font-medium text-gray-700 mt-4">
-              Password
-            </label>
-            <div className="relative">
-              <Image
-                src={passwordPlaceholderLogo.src}
-                alt=""
-                width={20}
-                height={20}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              />
-              <input
-                type="password"
-                placeholder="*************"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400"
-                disabled={loading}
-                required
-              />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Password
+              </label>
+              <div className="relative">
+                <Image
+                  src={passwordPlaceholderLogo.src}
+                  alt="Password icon"
+                  width={20}
+                  height={20}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                />
+                <input
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent transition duration-200"
+                  disabled={loading}
+                  required
+                />
+              </div>
             </div>
 
-            <div className="flex items-center justify-between text-sm text-gray-600 mt-2">
-              <label className="flex items-center gap-2">
+            <div className="flex items-center justify-between text-sm text-gray-600">
+              <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   className="accent-sky-500"
@@ -126,26 +143,57 @@ const Login = () => {
                 />
                 Remember me
               </label>
-              <Link href="#" className="text-sky-500 hover:underline">
+              <Link
+                href="#"
+                className="text-sky-500 hover:underline transition duration-200"
+              >
                 Forgot Password?
               </Link>
             </div>
 
             {error && (
-              <p className="text-red-600 mt-3 text-center font-medium">
-                {error}
-              </p>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-red-600 text-sm text-center font-medium">
+                  {error}
+                </p>
+              </div>
             )}
           </div>
 
           <button
             type="submit"
-            className={`w-full py-2 px-4 bg-sky-500 hover:bg-sky-600 text-white font-semibold rounded-lg transition duration-300 ${
-              loading ? "opacity-70 cursor-not-allowed" : ""
+            className={`w-full py-3 px-4 bg-sky-500 hover:bg-sky-600 text-white font-semibold rounded-lg transition duration-300 flex items-center justify-center ${
+              loading ? "opacity-70 cursor-not-allowed" : "hover:shadow-lg"
             }`}
             disabled={loading}
           >
-            {loading ? "Logging in..." : "Login"}
+            {loading ? (
+              <>
+                <svg
+                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                Logging in...
+              </>
+            ) : (
+              "Login"
+            )}
           </button>
         </form>
       </div>
