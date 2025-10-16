@@ -18,11 +18,14 @@ export function useFetch<T>(url: string | null, options?: RequestInit) {
   const fetchData = useCallback(async () => {
     if (!url) return;
 
+    // Don't run on server
+    if (typeof window === "undefined") return;
+
     setState((prev) => ({ ...prev, loading: true }));
 
     try {
       const token = localStorage.getItem("access_token");
-      const res = await fetch(apiUrl+url, {
+      const res = await fetch(apiUrl + url, {
         ...options,
         headers: {
           "Content-Type": "application/json",
