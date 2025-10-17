@@ -41,6 +41,8 @@ const FamilyViewWrapper = ({
     `Families/GetAllFamilies?familyId=${familyId}`
   );
 
+  console.log("apiData", apiData);
+
   const [familyDetails, setFamilyDetails] = useState<FamilyData | null>(null);
   const [isLangReady, setIsLangReady] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
