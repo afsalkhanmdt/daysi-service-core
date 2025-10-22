@@ -145,9 +145,9 @@ const CalendarView = ({
   );
 
   const events: EventInput[] = useMemo(() => {
-    return data.Members.flatMap((member: MemberResponse) =>
+    const extractedEvents = data.Members.flatMap((member: MemberResponse) =>
       member.Events.flatMap((event: any): EventInput[] => {
-        // If member is type 1, only keep events where participants count matches members count
+        // Filter logic for family/admin members
         if (
           member.MemberType === 1 &&
           event.EventParticipant?.length !== data.Members.length - 1
@@ -162,13 +162,23 @@ const CalendarView = ({
           return [];
         }
 
+        // ✅ Handle all-day events (set to 00:00 → 24:00)
+        let start = new Date(Number(event.Start));
+        let end = new Date(Number(event.End));
+
+        if (event.IsAllDayEvent === 1) {
+          const day = new Date(Number(event.Start));
+          start = new Date(day.setHours(0, 0, 0, 0));
+          end = new Date(day.setHours(24, 0, 0, 0)); // midnight next day
+        }
+
         return [
           {
             id: event.Id,
             resourceId: String(member.Id),
             title: event.Title,
-            start: new Date(Number(event.Start)),
-            end: new Date(Number(event.End)),
+            start,
+            end,
             display: "block",
             extendedProps: {
               ...event,
@@ -182,6 +192,13 @@ const CalendarView = ({
         ];
       })
     );
+
+    // Optional: summary log for testing
+    const repeatEventsCount = extractedEvents.filter(
+      (e) => e.extendedProps?.RepeatEndDate
+    ).length;
+
+    return extractedEvents;
   }, [data.Members]);
 
   // Function to find the earliest event time for the current day

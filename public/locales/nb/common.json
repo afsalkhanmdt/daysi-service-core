@@ -25,5 +25,6 @@
   "Loading your data...": "Laster inn dataene dine...",
   "Pocket Money": "Lommepenger",
   "No member selected.": "Ingen medlem valgt.",
-  "No events on the selected day for the selected member.": "Ingen hendelser på den valgte dagen for det valgte medlemmet."
+  "No events on the selected day for the selected member.": "Ingen hendelser på den valgte dagen for det valgte medlemmet.",
+  "AllDayEvent": "Heldagsarrangement"
 }

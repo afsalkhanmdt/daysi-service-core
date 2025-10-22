@@ -162,7 +162,7 @@ const ToDoAndPMComponent = ({
         <div
           className={`sticky grid gap-4 transition-all duration-300 bg-white ${
             isSmallScreen
-              ? "max-h-[80rem]"
+              ? "max-h-[80rem] overflow-auto"
               : isTasksOpen
               ? "max-h-[80rem]"
               : "max-h-0 overflow-hidden"
@@ -229,8 +229,8 @@ const ToDoAndPMComponent = ({
           </section>
 
           {/* To-Do Section */}
-          <section className="bg-blue-100 rounded-xl sm:p-1 shadow-md ">
-            <div className="flex  min-h-28 sm:min-h-0 ">
+          <section className="bg-blue-100 sm:p-1 shadow-md">
+            <div className="flex min-h-28 sm:min-h-0">
               {(!isSmallScreen ||
                 members.some(
                   (m) =>
@@ -243,54 +243,49 @@ const ToDoAndPMComponent = ({
                 </div>
               )}
 
-              {todosByMember ? (
-                <div className="overflow-x-auto flex-1 min-w-0">
-                  <div className="flex sm:grid sm:grid-cols-[repeat(auto-fit,minmax(0,1fr))] sm:items-start my-auto sm:h-full w-full">
-                    {members.length === 0 && (
-                      <div className="py-6 px-4 text-sm text-gray-500 italic w-full">
-                        {t("No members")}
-                      </div>
-                    )}
-                    {members.map((member) => {
-                      const rid = memberResourceId(member);
-                      const todosForThis = todosByMember.get(rid) ?? [];
+              <div className="overflow-x-auto flex-1 min-w-0">
+                <div className="flex sm:grid sm:grid-cols-[repeat(auto-fit,minmax(0,1fr))] sm:items-start my-auto sm:h-full w-full">
+                  {members.length === 0 && (
+                    <div className="text-sm text-gray-500 italic text-center w-full h-24 sm:h-20 border-t-2 sm:mx-6 sm:border-t-4 rounded-xl flex flex-col justify-between gap-1 p-1">
+                      {t("No members")}
+                    </div>
+                  )}
 
-                      return (
-                        <div
-                          key={`todo-${rid}`}
-                          className="flex-shrink-0 w-full my-auto border-dashed sm:border-l-2 border-gray-400 h-full"
-                        >
-                          <div className="w-full bg-blue-100 rounded-lg sm:p-3 h-full min-h-[120px] flex items-center justify-center">
-                            {todosForThis.length === 0 ? (
-                              <div className="text-sm text-gray-500 italic text-center w-full min-w-52 h-24 sm:h-20 border-t-2 sm:mx-6 sm:border-t-4 rounded-xl  flex flex-col justify-between gap-1 p-1">
-                                {t("No To-dos")}
-                              </div>
-                            ) : (
-                              <div className="sm:mt-3 flex sm:flex-col gap-3 flex-1 max-h-44 overflow-auto h-full w-full sm:max-w-[300px]">
-                                {todosForThis.map((todo) => (
-                                  <div
-                                    key={`${todo.ToDoTaskId}-${rid}`}
-                                    className="w-full my-auto sm:my-0"
-                                  >
-                                    <TodoEventUi
-                                      ToDoData={todo}
-                                      familyDetails={familyDetails}
-                                    />
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
+                  {members.map((member) => {
+                    const rid = memberResourceId(member);
+                    const todosForThis = todosByMember.get(rid) ?? [];
+
+                    return (
+                      <div
+                        key={`todo-${rid}`}
+                        className="flex-shrink-0 w-full my-auto border-dashed sm:border-l-2 border-gray-400 h-full"
+                      >
+                        <div className="w-full bg-blue-100 rounded-lg sm:p-3 h-full min-h-[120px] flex items-center justify-center">
+                          {todosForThis.length === 0 ? (
+                            <div className="text-sm text-gray-500 italic text-center w-full">
+                              {t("No To-dos")}
+                            </div>
+                          ) : (
+                            <div className="sm:mt-3 flex sm:flex-col gap-3 flex-1 max-h-44 overflow-auto h-full w-full sm:max-w-[300px]">
+                              {todosForThis.map((todo) => (
+                                <div
+                                  key={`${todo.ToDoTaskId}-${rid}`}
+                                  className="w-full my-auto sm:my-0"
+                                >
+                                  <TodoEventUi
+                                    ToDoData={todo}
+                                    familyDetails={familyDetails}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                      );
-                    })}
-                  </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              ) : (
-                <div className="text-sm text-gray-500 italic text-center w-full">
-                  {t("No To-dos")}
-                </div>
-              )}
+              </div>
             </div>
           </section>
         </div>
