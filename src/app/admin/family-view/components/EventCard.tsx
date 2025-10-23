@@ -13,8 +13,6 @@ const EventCardUI = ({
   const start: Date = eventInfo.event.start;
   const end: Date = eventInfo.event.end;
 
-  console.log("eventInfo", eventInfo.event);
-
   const { t } = useTranslation("common");
 
   // Format using local timezone (browser locale)

@@ -162,16 +162,83 @@ const CalendarView = ({
           return [];
         }
 
-        // ✅ Handle all-day events (set to 00:00 → 24:00)
+        // Handle all-day events (set to 00:00 → 24:00)
         let start = new Date(Number(event.Start));
         let end = new Date(Number(event.End));
 
         if (event.IsAllDayEvent === 1) {
           const day = new Date(Number(event.Start));
           start = new Date(day.setHours(0, 0, 0, 0));
-          end = new Date(day.setHours(24, 0, 0, 0)); // midnight next day
+          end = new Date(day.setHours(24, 0, 0, 0));
         }
 
+        // Generate recurrence instances if applicable
+        const recurrenceEvents: EventInput[] = [];
+
+        const rule = event.RecurrenceRule;
+        const repeatEnd = event.RepeatEndDate
+          ? new Date(Number(event.RepeatEndDate))
+          : null;
+
+        if (rule && rule.Frequency > 0 && repeatEnd) {
+          const freq = rule.Frequency; // 1=daily, 2=weekly, 3=monthly, 4=yearly
+          const interval = rule.Interval || 1;
+          let currentStart = new Date(start);
+          let currentEnd = new Date(end);
+
+          while (currentStart <= repeatEnd) {
+            recurrenceEvents.push({
+              id: `${event.Id}-${currentStart.getTime()}`, // unique id per occurrence
+              resourceId: String(member.Id),
+              title: event.Title,
+              start: new Date(currentStart),
+              end: new Date(currentEnd),
+              display: "block",
+              extendedProps: {
+                ...event,
+                participants: event.EventParticipant,
+                externalCalender: event.ExternalCalendarName,
+                userColorCode: member.ColorCode || "000000",
+                description: event.Description || "",
+                location: event.Location || "",
+                isRecurrence: true,
+              },
+            });
+
+            // Increment date based on frequency & interval
+            switch (freq) {
+              case 1: // daily
+                currentStart.setDate(currentStart.getDate() + interval);
+                currentEnd.setDate(currentEnd.getDate() + interval);
+                break;
+              case 2: // weekly
+                currentStart.setDate(currentStart.getDate() + 7 * interval);
+                currentEnd.setDate(currentEnd.getDate() + 7 * interval);
+                break;
+              case 3: // monthly
+                currentStart.setMonth(currentStart.getMonth() + interval);
+                currentEnd.setMonth(currentEnd.getMonth() + interval);
+                break;
+              case 4: // yearly
+                currentStart.setFullYear(currentStart.getFullYear() + interval);
+                currentEnd.setFullYear(currentEnd.getFullYear() + interval);
+                break;
+              default:
+                break;
+            }
+          }
+
+          // console.log(" Recurring event created:", {
+          //   title: event.Title,
+          //   eventStart: event.LocalStartDate,
+          //   frequency: freq,
+          //   interval,
+          //   repeatEnd,
+          //   occurrences: recurrenceEvents.length,
+          // });
+        }
+
+        // the original (base) event
         return [
           {
             id: event.Id,
@@ -187,16 +254,17 @@ const CalendarView = ({
               userColorCode: member.ColorCode || "000000",
               description: event.Description || "",
               location: event.Location || "",
+              isRecurrence: false,
             },
           },
+          ...recurrenceEvents,
         ];
       })
     );
 
-    // Optional: summary log for testing
-    const repeatEventsCount = extractedEvents.filter(
-      (e) => e.extendedProps?.RepeatEndDate
-    ).length;
+    // console.log(
+    //   `✅ Total events (including recurrence): ${extractedEvents.length}`
+    // );
 
     return extractedEvents;
   }, [data.Members]);
@@ -263,17 +331,6 @@ const CalendarView = ({
     // Total scroll position
     const scrollPosition = slotIndex * slotHeight + positionInSlot;
 
-    console.log("Scroll debugging:", {
-      eventTime: earliestEventTime.toTimeString(),
-      eventHours,
-      eventMinutes,
-      totalMinutesFromMidnight,
-      slotIndex,
-      minutesIntoSlot,
-      positionInSlot,
-      scrollPosition,
-    });
-
     // Get the scrollable container
     const scrollContainer = calendarContainerRef.current?.querySelector(
       ".fc-timegrid-body"
@@ -284,8 +341,6 @@ const CalendarView = ({
         top: Math.max(0, scrollPosition - 80), // Reduced offset for better visibility
         behavior: "smooth",
       });
-
-      console.log("Scrolling to position:", Math.max(0, scrollPosition - 80));
     }
   }, [findEarliestEventTime]);
 
