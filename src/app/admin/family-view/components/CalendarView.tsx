@@ -147,7 +147,6 @@ const CalendarView = ({
   const events: EventInput[] = useMemo(() => {
     const extractedEvents = data.Members.flatMap((member: MemberResponse) =>
       member.Events.flatMap((event: any): EventInput[] => {
-        // Filter logic for family/admin members
         if (
           member.MemberType === 1 &&
           event.EventParticipant?.length !== data.Members.length - 1
@@ -162,7 +161,6 @@ const CalendarView = ({
           return [];
         }
 
-        // Handle all-day events (set to 00:00 → 24:00)
         let start = new Date(Number(event.Start));
         let end = new Date(Number(event.End));
 
@@ -172,9 +170,7 @@ const CalendarView = ({
           end = new Date(day.setHours(24, 0, 0, 0));
         }
 
-        // Generate recurrence instances if applicable
         const recurrenceEvents: EventInput[] = [];
-
         const rule = event.RecurrenceRule;
         const repeatEnd = event.RepeatEndDate
           ? new Date(Number(event.RepeatEndDate))
@@ -186,9 +182,29 @@ const CalendarView = ({
           let currentStart = new Date(start);
           let currentEnd = new Date(end);
 
+          // Skip the base event by moving to the *next* recurrence
+          switch (freq) {
+            case 1: // daily
+              currentStart.setDate(currentStart.getDate() + interval);
+              currentEnd.setDate(currentEnd.getDate() + interval);
+              break;
+            case 2: // weekly
+              currentStart.setDate(currentStart.getDate() + 7 * interval);
+              currentEnd.setDate(currentEnd.getDate() + 7 * interval);
+              break;
+            case 3: // monthly
+              currentStart.setMonth(currentStart.getMonth() + interval);
+              currentEnd.setMonth(currentEnd.getMonth() + interval);
+              break;
+            case 4: // yearly
+              currentStart.setFullYear(currentStart.getFullYear() + interval);
+              currentEnd.setFullYear(currentEnd.getFullYear() + interval);
+              break;
+          }
+
           while (currentStart <= repeatEnd) {
             recurrenceEvents.push({
-              id: `${event.Id}-${currentStart.getTime()}`, // unique id per occurrence
+              id: `${event.Id}-${currentStart.getTime()}`,
               resourceId: String(member.Id),
               title: event.Title,
               start: new Date(currentStart),
@@ -205,25 +221,23 @@ const CalendarView = ({
               },
             });
 
-            // Increment date based on frequency & interval
+            // Increment for the next recurrence
             switch (freq) {
-              case 1: // daily
+              case 1:
                 currentStart.setDate(currentStart.getDate() + interval);
                 currentEnd.setDate(currentEnd.getDate() + interval);
                 break;
-              case 2: // weekly
+              case 2:
                 currentStart.setDate(currentStart.getDate() + 7 * interval);
                 currentEnd.setDate(currentEnd.getDate() + 7 * interval);
                 break;
-              case 3: // monthly
+              case 3:
                 currentStart.setMonth(currentStart.getMonth() + interval);
                 currentEnd.setMonth(currentEnd.getMonth() + interval);
                 break;
-              case 4: // yearly
+              case 4:
                 currentStart.setFullYear(currentStart.getFullYear() + interval);
                 currentEnd.setFullYear(currentEnd.getFullYear() + interval);
-                break;
-              default:
                 break;
             }
           }
@@ -261,10 +275,6 @@ const CalendarView = ({
         ];
       })
     );
-
-    // console.log(
-    //   `✅ Total events (including recurrence): ${extractedEvents.length}`
-    // );
 
     return extractedEvents;
   }, [data.Members]);

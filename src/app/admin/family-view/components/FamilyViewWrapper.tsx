@@ -29,6 +29,7 @@ export type FamilyData = {
 };
 
 const STORAGE_KEY = "familyDetailsCache";
+const AUTO_REFRESH_INTERVAL = 60000; // 60 seconds
 
 const FamilyViewWrapper = ({
   familyId,
@@ -44,10 +45,8 @@ const FamilyViewWrapper = ({
   const [familyDetails, setFamilyDetails] = useState<FamilyData | null>(null);
   const [isLangReady, setIsLangReady] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
-
   const { t } = useTranslation("common");
 
-  // On mount, try to load cached data first
   useEffect(() => {
     const cached = localStorage.getItem(STORAGE_KEY);
     if (cached) {
@@ -59,7 +58,6 @@ const FamilyViewWrapper = ({
     }
   }, []);
 
-  // When API returns data, update state + cache
   useEffect(() => {
     if (apiData) {
       setFamilyDetails(apiData);
@@ -67,17 +65,24 @@ const FamilyViewWrapper = ({
     }
   }, [apiData]);
 
-  // Language setup
-  const userLanguage = familyDetails?.Members?.find(
-    (m) => m.MemberId === userId
-  )?.Locale;
   useEffect(() => {
+    const userLanguage = familyDetails?.Members?.find(
+      (m) => m.MemberId === userId
+    )?.Locale;
     if (userLanguage) {
       i18next.changeLanguage(userLanguage).then(() => setIsLangReady(true));
     } else {
-      setIsLangReady(true); // default if no language found
+      setIsLangReady(true);
     }
-  }, [userLanguage]);
+  }, [familyDetails, userId]);
+
+  // Auto-refresh every 60s
+  useEffect(() => {
+    const interval = setInterval(() => {
+      reload();
+    }, AUTO_REFRESH_INTERVAL);
+    return () => clearInterval(interval);
+  }, [reload]);
 
   if (!familyDetails || !isLangReady) {
     return (
@@ -110,19 +115,14 @@ const FamilyViewWrapper = ({
   const selectedDaysEvents =
     uniqueEvents
       ?.map((event) => {
-        let eventDate = dayjs(Number(event.Start)); // convert timestamp properly
-
-        // Put the event in the current year
+        let eventDate = dayjs(Number(event.Start));
         eventDate = eventDate.year(today.year());
-
-        // If it already happened this year, push to next year
         if (eventDate.isBefore(today, "day")) {
           eventDate = eventDate.add(1, "year");
         }
-
         return { ...event, normalizedDate: eventDate };
       })
-      .sort((a, b) => a.normalizedDate.valueOf() - b.normalizedDate.valueOf()) // sort ascending
+      .sort((a, b) => a.normalizedDate.valueOf() - b.normalizedDate.valueOf())
       .slice(0, 5) || [];
 
   const imageUrls = familyDetails?.Members.reduce(
@@ -135,14 +135,15 @@ const FamilyViewWrapper = ({
 
   return (
     <div className="sm:flex w-screen h-screen sm:py-3 sm:px-3 bg-white dark:bg-gray-800 transition-colors">
-      {/* Sidebar */}
       <div className="hidden sm:flex flex-col min-w-[140px] max-w-[300px] w-[30%] bg-white dark:bg-gray-800 border-r dark:border-gray-700 text-gray-800 dark:text-gray-100">
         <div className="border-b border-slate-100 dark:border-gray-700 pb-3 grid place-items-center">
           <Image
             src={
-              userLanguage === "en"
+              familyDetails?.Members?.find((m) => m.MemberId === userId)
+                ?.Locale === "en"
                 ? enLogo.src
-                : userLanguage === "sv"
+                : familyDetails?.Members?.find((m) => m.MemberId === userId)
+                    ?.Locale === "sv"
                 ? swedishLogo.src
                 : danishAndNorwegianLogo.src
             }
@@ -153,7 +154,6 @@ const FamilyViewWrapper = ({
           />
         </div>
 
-        {/* Celebrations */}
         <div className="flex-1 min-h-0 flex flex-col border-b border-slate-100 dark:border-gray-700">
           <div className="p-3 text-base font-semibold grid place-content-center border-b dark:border-gray-700">
             {t("Celebrations")}
@@ -177,7 +177,6 @@ const FamilyViewWrapper = ({
           )}
         </div>
 
-        {/* Pocket Money */}
         <div className="flex-1 min-h-0 flex flex-col">
           <div className="p-3 text-base font-semibold grid place-content-center border-b dark:border-gray-700">
             {t("PocketMoney")}
@@ -203,7 +202,6 @@ const FamilyViewWrapper = ({
         <ToggleThemeAndLogout reload={reload} />
       </div>
 
-      {/* Calendar */}
       <div className="flex-1 min-w-0 sm:h-full">
         <CalendarView
           data={familyDetails}
