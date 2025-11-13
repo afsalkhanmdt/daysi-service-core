@@ -10,32 +10,46 @@ import {
   SetStateAction,
 } from "react";
 import dayjs from "dayjs";
-import "dayjs/locale/da"; // Import Danish (or any languages you need)
+import "dayjs/locale/da";
 import "dayjs/locale/sv";
 import "dayjs/locale/nb";
 import { useTranslation } from "react-i18next";
-import mockHolidays from "@/app/holiday.json";
+import Holidays from "@/app/holiday.json";
 
-// Define holiday type
-interface Holiday {
-  date: string; // YYYY-MM-DD format
-  name: string;
+interface HolidayEvent {
+  EventName: string;
+  EventStartDate: string;
 }
 
-// Mock holiday data - replace this with your actual holiday data source
+interface LanguageEventList {
+  Language: string;
+  Events: HolidayEvent[];
+}
+
+interface CountryHolidays {
+  Country: string;
+  LanguageEventList: LanguageEventList[];
+}
+
+interface Holiday {
+  date: string;
+  name: string;
+}
 
 const DateScrollAndDisplay = ({
   familyName,
   calendarRef,
   currentDate,
   setCurrentDate,
-  holidays = mockHolidays as unknown as Holiday[], // Use provided holidays or fallback to mock data
+  country = "dk", // Default to Denmark, can be "dk" or "uk"
+  holidaysData = Holidays as unknown as CountryHolidays[], // Use the full JSON data
 }: {
   familyName: string;
   calendarRef: RefObject<any>;
   currentDate: Date;
   setCurrentDate: Dispatch<SetStateAction<Date>>;
-  holidays?: Holiday[]; // Optional holidays prop
+  country?: string; // Country code: "dk" or "uk"
+  holidaysData?: CountryHolidays[]; // The full JSON data structure
 }) => {
   const { t, i18n } = useTranslation("common");
   const dayRefs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -44,6 +58,37 @@ const DateScrollAndDisplay = ({
   useEffect(() => {
     dayjs.locale(i18n.language);
   }, [i18n.language]);
+
+  // Function to get holidays for current country and language
+  const getFilteredHolidays = (): Holiday[] => {
+    // Find the country data
+    const countryData = holidaysData.find((c) => c.Country === country);
+    if (!countryData) return [];
+
+    // Get current language code (map i18n language to your data language codes)
+    const currentLang = i18n.language === "da" ? "da" : "en"; // Add more mappings as needed
+
+    // Find the language data
+    const languageData = countryData.LanguageEventList.find(
+      (lang) => lang.Language === currentLang
+    );
+    if (!languageData) return [];
+
+    // Transform to the format expected by the component
+    return languageData.Events.map((event) => ({
+      date: event.EventStartDate,
+      name: event.EventName,
+    }));
+  };
+
+  const [filteredHolidays, setFilteredHolidays] = useState<Holiday[]>(
+    getFilteredHolidays()
+  );
+
+  // Update filtered holidays when language or country changes
+  useEffect(() => {
+    setFilteredHolidays(getFilteredHolidays());
+  }, [i18n.language, country, holidaysData]);
 
   const getDaysInMonth = (date: Date) => {
     const start = dayjs(date).startOf("month");
@@ -66,7 +111,7 @@ const DateScrollAndDisplay = ({
   // Function to check if a date is a holiday
   const getHolidayForDate = (date: Date): Holiday | undefined => {
     const dateString = dayjs(date).format("YYYY-MM-DD");
-    return holidays.find((holiday) => holiday.date === dateString);
+    return filteredHolidays.find((holiday) => holiday.date === dateString);
   };
 
   // Function to get day background color based on holiday status
