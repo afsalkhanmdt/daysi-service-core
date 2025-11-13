@@ -14,8 +14,6 @@ import {
 } from "react";
 import Image from "next/image";
 import dp from "@/app/admin/assets/MyFamilii Brand Guide (1)-2 1.png";
-
-import ToDoAndPMComponent, { PMData } from "./ToDoAndPMComponent";
 import {
   EventParticipant,
   MemberResponse,
@@ -30,6 +28,8 @@ import MobileEventAndScrollBar from "./MobileEventAndScrollBar";
 import DateScrollAndDisplay from "./DateScrollAndDisplay";
 import { EventInput } from "@fullcalendar/core";
 import { useTranslation } from "react-i18next";
+import { PMData } from "@/app/types/ToDoAndPMTypes";
+import ToDoAndPMComponent from "./ToDoAndPMComponent";
 
 const memberOrder: Record<number, number> = {
   1: 0,
@@ -583,6 +583,7 @@ const CalendarView = ({
           height="100%"
           contentHeight="100%"
           expandRows
+          resourceAreaWidth="300px"
           resourceOrder="sortOrder"
           plugins={[resourceTimeGridPlugin]}
           initialView="resourceTimeGridDay"

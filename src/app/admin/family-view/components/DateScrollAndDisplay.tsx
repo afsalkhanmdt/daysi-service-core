@@ -14,24 +14,35 @@ import "dayjs/locale/da"; // Import Danish (or any languages you need)
 import "dayjs/locale/sv";
 import "dayjs/locale/nb";
 import { useTranslation } from "react-i18next";
+import mockHolidays from "@/app/holiday.json";
+
+// Define holiday type
+interface Holiday {
+  date: string; // YYYY-MM-DD format
+  name: string;
+}
+
+// Mock holiday data - replace this with your actual holiday data source
 
 const DateScrollAndDisplay = ({
   familyName,
   calendarRef,
   currentDate,
   setCurrentDate,
+  holidays = mockHolidays as unknown as Holiday[], // Use provided holidays or fallback to mock data
 }: {
   familyName: string;
   calendarRef: RefObject<any>;
   currentDate: Date;
   setCurrentDate: Dispatch<SetStateAction<Date>>;
+  holidays?: Holiday[]; // Optional holidays prop
 }) => {
   const { t, i18n } = useTranslation("common");
   const dayRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
   // Sync dayjs locale with current i18n language
   useEffect(() => {
-    dayjs.locale(i18n.language); // switches dayjs locale dynamically
+    dayjs.locale(i18n.language);
   }, [i18n.language]);
 
   const getDaysInMonth = (date: Date) => {
@@ -51,6 +62,28 @@ const DateScrollAndDisplay = ({
   const [visibleDays, setVisibleDays] = useState<Date[]>(
     getDaysInMonth(currentDate)
   );
+
+  // Function to check if a date is a holiday
+  const getHolidayForDate = (date: Date): Holiday | undefined => {
+    const dateString = dayjs(date).format("YYYY-MM-DD");
+    return holidays.find((holiday) => holiday.date === dateString);
+  };
+
+  // Function to get day background color based on holiday status
+  const getDayBackgroundColor = (
+    date: Date,
+    isCurrentDate: boolean
+  ): string => {
+    const holiday = getHolidayForDate(date);
+
+    if (isCurrentDate) {
+      return holiday ? "bg-red-600 text-white" : "bg-blue-500 text-white";
+    }
+
+    return holiday
+      ? "bg-red-100 hover:bg-red-300"
+      : "bg-blue-100 hover:bg-blue-300";
+  };
 
   const scrollToDay = (date: Date) => {
     const key = dayjs(date).format("YYYY-MM-DD");
@@ -147,28 +180,40 @@ const DateScrollAndDisplay = ({
       </div>
 
       {/* Scrollable Days Bar */}
-      <div className="mb-2 flex gap-0.5 overflow-x-auto max-w-full scroll-smooth">
-        {visibleDays.map((day) => (
-          <button
-            key={dayjs(day).format("YYYY-MM-DD")}
-            ref={(el) => {
-              dayRefs.current[dayjs(day).format("YYYY-MM-DD")] = el;
-            }}
-            className={`flex flex-col items-center justify-center px-0.5 py-1 sm:px-1.5 sm:py-2 rounded-xl min-w-20 sm:min-w-28 ${
-              dayjs(day).isSame(currentDate, "day")
-                ? "bg-blue-500 text-white"
-                : "bg-blue-100 hover:bg-blue-300"
-            }`}
-            onClick={() => handleDayClick(day)}
-          >
-            <div className="text-xs sm:text-sm font-normal">
-              {dayjs(day).format("dddd")}
-            </div>
-            <div className="text-2xl sm:text-3xl font-bold">
-              {dayjs(day).format("D")}
-            </div>
-          </button>
-        ))}
+      <div className="mb-2 py-2 flex gap-0.5 overflow-x-auto max-w-full scroll-smooth">
+        {visibleDays.map((day) => {
+          const holiday = getHolidayForDate(day);
+          const isCurrentDate = dayjs(day).isSame(currentDate, "day");
+          const backgroundColor = getDayBackgroundColor(day, isCurrentDate);
+
+          return (
+            <button
+              key={dayjs(day).format("YYYY-MM-DD")}
+              ref={(el) => {
+                dayRefs.current[dayjs(day).format("YYYY-MM-DD")] = el;
+              }}
+              className={`flex flex-col items-center justify-center px-0.5 py-1 sm:px-1.5 sm:py-2 rounded-xl min-w-20 sm:min-w-28 relative ${backgroundColor}`}
+              onClick={() => handleDayClick(day)}
+            >
+              {/* Holiday Specialty Badge */}
+              {holiday?.name && (
+                <div className="absolute -top-2  bg-yellow-500 text-white text-xs px-1 py-0.5 rounded-full max-w-28 mx-auto truncate">
+                  {holiday.name}
+                </div>
+              )}
+
+              {/* Day of week */}
+              <div className="text-xs sm:text-sm font-normal">
+                {dayjs(day).format("dddd")}
+              </div>
+
+              {/* Date number */}
+              <div className="text-2xl sm:text-3xl font-bold">
+                {dayjs(day).format("D")}
+              </div>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

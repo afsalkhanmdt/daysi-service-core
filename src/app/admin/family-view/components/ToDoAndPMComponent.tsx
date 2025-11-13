@@ -1,64 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Image from "next/image";
-import dp from "@/app/admin/assets/MyFamilii Brand Guide (1)-2 1.png";
+
 import PocketMoneyEventUi from "./PocketMoneyEventsUi";
 import TodoEventUi from "./TodoEventsUi";
 import { ToDoTaskType } from "./CalendarView";
 import { FamilyData } from "./FamilyViewWrapper";
 import { useTranslation } from "react-i18next";
-
-export type PMMember = {
-  MemberId: string;
-  MemberName: string;
-  FirstName: string;
-  MemberType: number;
-  CanApprovePMTask: boolean;
-  CanCreatePMTask: boolean;
-  IsPocketMoneyUser: boolean;
-  HasPMTaskApprovedConfirmation: boolean;
-  AmountEarned: number;
-};
-
-export type PMFamily = {
-  FamilyId: number;
-  FamilyName: string;
-  CurrencyCode: string | null;
-  EveryoneCreatePMTask: boolean;
-};
-
-export type FamilyMemberPlanned = {
-  MemberId: string;
-  FinishedDate: string | null;
-  ApprovedDate: string | null;
-  Status: number;
-};
-
-export type PMTask = {
-  LocalPMTaskId: number;
-  PMTransId: number;
-  TransType: number;
-  PMDescription: string;
-  PMAmount: number;
-  FirstComeFirstServe: boolean;
-  Note: string;
-  FamilyMembersPlanned: FamilyMemberPlanned[];
-  CreatedBy: string;
-  CreatedOn: string;
-  ActivityDate: string;
-  Interval: number;
-  Repeat: number;
-  Status: number;
-  UpdatedOn: string;
-};
-
-export type PMData = {
-  PMFamily: PMFamily;
-  PMMembers: PMMember[];
-  PMTasks: PMTask[];
-  MembersUpdatedOn: string | null;
-};
+import { PMData, PMTask } from "@/app/types/ToDoAndPMTypes";
 
 const ToDoAndPMComponent = ({
   todoDetails,
@@ -127,23 +76,6 @@ const ToDoAndPMComponent = ({
     }
     return map;
   }, [todosArr]);
-
-  const ResourceHeader = ({ member }: { member: any }) => {
-    const img = member.ResourceUrl || dp.src;
-    const title = member.FirstName || member.MemberName || "Unknown";
-    return (
-      <div className="hidden sm:flex items-center gap-2 p-2 bg-white rounded-full w-60">
-        <Image
-          src={img}
-          alt={title}
-          width={28}
-          height={28}
-          className="rounded-full w-7 h-7 border"
-        />
-        <div className="text-sm font-semibold truncate">{title}</div>
-      </div>
-    );
-  };
 
   return (
     <div className="relative ">
