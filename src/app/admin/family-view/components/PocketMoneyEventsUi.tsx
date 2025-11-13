@@ -1,8 +1,8 @@
 "use client";
 import Image from "next/image";
-import { PMTask } from "./ToDoAndPMComponent";
 import { FamilyData } from "./FamilyViewWrapper";
 import { useTranslation } from "react-i18next";
+import { PMTask } from "@/app/types/ToDoAndPMTypes";
 
 const PocketMoneyEventUi = ({
   PMEventData,
