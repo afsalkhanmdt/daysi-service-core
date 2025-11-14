@@ -16,7 +16,7 @@ export default function ToggleThemeAndLogout({
   const [refreshing, setRefreshing] = useState(false);
 
   const handleLogout = () => {
-    localStorage.removeItem("access_token");
+    localStorage.clear();
     router.push("/admin/login");
   };
 
