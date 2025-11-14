@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 
 const FamilyViewWrapper = dynamic(
@@ -17,7 +21,29 @@ export default function Page({
 }: {
   searchParams: { familyId?: string; memberId?: string };
 }) {
-  const familyId = searchParams.familyId ?? "";
-  const memberId = searchParams.memberId ?? "";
-  return <FamilyViewWrapper familyId={familyId} userId={memberId} />;
+  const router = useRouter();
+
+  const urlFamilyId = searchParams.familyId ?? "";
+  const urlMemberId = searchParams.memberId ?? "";
+
+  useEffect(() => {
+    const storedFamilyId = localStorage.getItem("familyId");
+    const storedMemberId = localStorage.getItem("memberId");
+
+    // CASE 1: User not logged in → force logout
+    if (!storedFamilyId || !storedMemberId) {
+      localStorage.clear();
+      router.replace("/admin/login");
+      return;
+    }
+
+    // CASE 2: User edited URL manually → force logout
+    if (storedFamilyId !== urlFamilyId || storedMemberId !== urlMemberId) {
+      localStorage.clear();
+      router.replace("/admin/login");
+      return;
+    }
+  }, [router, urlFamilyId, urlMemberId]);
+
+  return <FamilyViewWrapper familyId={urlFamilyId} userId={urlMemberId} />;
 }
