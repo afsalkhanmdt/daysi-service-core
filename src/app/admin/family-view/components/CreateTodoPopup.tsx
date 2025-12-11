@@ -1,5 +1,8 @@
 import { PopupPropsType } from "@/app/types/todo";
 import React, { useState } from "react";
+import Image from "next/image";
+import createTodoImage from "@/app/admin/assets/doctor-suitcase-with-a-cross-svgrepo-com 1.png"; // You need to add an appropriate icon
+import { ToggleSwitch } from "./FormComponents/ToggleSwitch";
 
 interface CreateTodoData {
   description: string;
@@ -37,15 +40,43 @@ const CreateTodoPopup: React.FC<
     e.preventDefault();
     onSubmit(formData);
     onClose();
+    // Reset form
+    setFormData({
+      description: "",
+      classesResponsible: [],
+      group: "",
+      status: "Open",
+      notes: "",
+    });
+  };
+
+  const handleClose = () => {
+    onClose();
+    // Reset form on close
+    setFormData({
+      description: "",
+      classesResponsible: [],
+      group: "",
+      status: "Open",
+      notes: "",
+    });
   };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg w-full max-w-md mx-4">
-        {/* Header */}
-        <div className="border-b border-gray-200 px-6 py-4">
+      <div className="bg-white rounded-lg w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+        {/* Header - Matching Appointment Popup Style */}
+        <div className="border-b border-gray-200 bg-blue-200 m-2 px-6 py-4 rounded-lg flex gap-2">
+          <div className="rounded-full bg-white p-2">
+            <Image
+              src={createTodoImage}
+              alt="createTodoImage"
+              width={15}
+              height={15}
+            />
+          </div>
           <h2 className="text-xl font-semibold">Create ToDo</h2>
         </div>
 
@@ -53,7 +84,9 @@ const CreateTodoPopup: React.FC<
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Description */}
           <div>
-            <h3 className="text-lg font-medium mb-2">Description</h3>
+            <label className="block text-lg font-medium mb-2 text-gray-800">
+              Description
+            </label>
             <input
               type="text"
               placeholder="By Writing Without"
@@ -65,24 +98,32 @@ const CreateTodoPopup: React.FC<
                 }))
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
             />
           </div>
 
           {/* Classes Responsible */}
           <div>
-            <h3 className="text-lg font-medium mb-2">Classes Responsible</h3>
-            <div className="space-y-2">
+            <div className="flex justify-between items-center mb-2">
+              <label className="block text-lg font-medium text-gray-800">
+                Classes Responsible
+              </label>
+            </div>
+            <div className="space-y-3">
               <div className="font-medium text-gray-700">Advanced</div>
-              <div className="grid grid-cols-2 gap-2 ml-4">
+              <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-3">
                 {classesOptions.map((option) => (
-                  <label key={option} className="flex items-center space-x-2">
+                  <label
+                    key={option}
+                    className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded"
+                  >
                     <input
                       type="checkbox"
                       checked={formData.classesResponsible.includes(option)}
                       onChange={() => handleClassToggle(option)}
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
-                    <span>{option}</span>
+                    <span className="flex-1">{option}</span>
                   </label>
                 ))}
               </div>
@@ -91,7 +132,9 @@ const CreateTodoPopup: React.FC<
 
           {/* Groups */}
           <div>
-            <h3 className="text-lg font-medium mb-2">Groups</h3>
+            <label className="block text-lg font-medium mb-2 text-gray-800">
+              Groups
+            </label>
             <select
               value={formData.group}
               onChange={(e) =>
@@ -110,10 +153,15 @@ const CreateTodoPopup: React.FC<
 
           {/* Status */}
           <div>
-            <h3 className="text-lg font-medium mb-2">Status</h3>
-            <div className="flex space-x-4">
+            <label className="block text-lg font-medium mb-2 text-gray-800">
+              Status
+            </label>
+            <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-3">
               {statusOptions.map((option) => (
-                <label key={option} className="flex items-center space-x-2">
+                <label
+                  key={option}
+                  className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded"
+                >
                   <input
                     type="radio"
                     name="status"
@@ -127,7 +175,7 @@ const CreateTodoPopup: React.FC<
                     }
                     className="text-blue-600 focus:ring-blue-500"
                   />
-                  <span>{option}</span>
+                  <span className="flex-1">{option}</span>
                 </label>
               ))}
             </div>
@@ -135,7 +183,9 @@ const CreateTodoPopup: React.FC<
 
           {/* Note */}
           <div>
-            <h3 className="text-lg font-medium mb-2">Note</h3>
+            <label className="block text-lg font-medium mb-2 text-gray-800">
+              Note
+            </label>
             <textarea
               placeholder="Write next here"
               value={formData.notes}
@@ -147,19 +197,19 @@ const CreateTodoPopup: React.FC<
             />
           </div>
 
-          {/* Divider */}
+          {/* Divider and Buttons - Matching Appointment Popup Style */}
           <div className="border-t border-gray-200 pt-4">
             <div className="flex justify-end space-x-3">
               <button
                 type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
+                onClick={handleClose}
+                className="px-6 py-2 text-gray-600 hover:text-gray-800 font-medium border border-gray-300 rounded-md hover:bg-gray-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
+                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
               >
                 Save
               </button>

@@ -1,6 +1,11 @@
 "use client";
 import { PocketMoney, PocketMoneyPopupProps } from "@/app/types/pocketMoney";
 import React, { useState } from "react";
+import Image from "next/image";
+import createPocketMoneyImage from "@/app/admin/assets/doctor-suitcase-with-a-cross-svgrepo-com 1.png"; // You need to add an appropriate icon
+import { ToggleSwitch } from "./FormComponents/ToggleSwitch";
+import SelectableOptions from "./FormComponents/SelectableOptions";
+import additionalNoteIcon from "@/app/admin/assets/name.png";
 
 const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
   isOpen,
@@ -14,7 +19,7 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
     amount: 0,
     currency: "RAY",
     checkerResponsible: [],
-    repeatSequence: "Never",
+    repeat: "Never",
     notes: "",
     standardTask: "",
   });
@@ -52,6 +57,13 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
     setFormData((prev) => ({ ...prev, standardTask: task }));
   };
 
+  const handleRepeatChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      repeat: value as PocketMoney["repeat"],
+    }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(formData);
@@ -64,7 +76,7 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
       amount: 0,
       currency: "RAY",
       checkerResponsible: [],
-      repeatSequence: "Never",
+      repeat: "Never",
       notes: "",
       standardTask: "",
     });
@@ -80,7 +92,7 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
       amount: 0,
       currency: "RAY",
       checkerResponsible: [],
-      repeatSequence: "Never",
+      repeat: "Never",
       notes: "",
       standardTask: "",
     });
@@ -90,29 +102,41 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="border-b border-gray-200 px-6 py-4">
+      <div className="bg-white rounded-lg w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+        {/* Header - Matching Appointment Popup Style */}
+        <div className="border-b border-gray-200 bg-blue-200 m-2 px-6 py-4 rounded-lg flex gap-2">
+          <div className="rounded-full bg-white p-2">
+            <Image
+              src={createPocketMoneyImage}
+              alt="createPocketMoneyImage"
+              width={15}
+              height={15}
+            />
+          </div>
           <h2 className="text-xl font-semibold">Create Pocket Money</h2>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Choose Standard Task */}
-          <div>
-            <h3 className="text-lg font-medium mb-3">Choose Standard Task</h3>
+          <div className="border-b border-gray-200 pb-4">
+            <h3 className="text-lg font-medium mb-3 text-gray-800">
+              Choose Standard Task
+            </h3>
             <div className="space-y-4">
               {standardTasks.map((group, index) => (
                 <div
                   key={index}
-                  className="border border-gray-200 rounded-lg p-4"
+                  className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50"
                 >
-                  <div className="font-semibold mb-2">{group.category}</div>
+                  <div className="font-semibold mb-3 text-gray-700">
+                    {group.category}
+                  </div>
                   <div className="space-y-2">
                     {group.tasks.map((task, taskIndex) => (
                       <label
                         key={taskIndex}
-                        className="flex items-center space-x-3"
+                        className="flex items-center space-x-3 p-2 hover:bg-gray-100 rounded"
                       >
                         <input
                           type="radio"
@@ -122,7 +146,7 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
                           onChange={() => handleTaskSelect(task)}
                           className="text-blue-600 focus:ring-blue-500"
                         />
-                        <span>{task}</span>
+                        <span className="flex-1">{task}</span>
                       </label>
                     ))}
                   </div>
@@ -133,7 +157,9 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
 
           {/* Description */}
           <div>
-            <h3 className="text-lg font-medium mb-2">Description</h3>
+            <label className="block text-lg font-medium mb-2 text-gray-800">
+              Description
+            </label>
             <textarea
               placeholder="While details of track here"
               value={formData.description}
@@ -150,8 +176,10 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
 
           {/* Pocket Money Amount */}
           <div>
-            <h3 className="text-lg font-medium mb-2">Pocket Money Amount</h3>
-            <div className="flex items-center space-x-3">
+            <label className="block text-lg font-medium mb-2 text-gray-800">
+              Pocket Money Amount
+            </label>
+            <div className="flex gap-4">
               <input
                 type="number"
                 placeholder="Enter pocket money amount"
@@ -169,7 +197,7 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, currency: e.target.value }))
                 }
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-32"
               >
                 <option value="RAY">RAY</option>
                 <option value="USD">USD</option>
@@ -180,65 +208,56 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
 
           {/* Checker Responsible */}
           <div>
-            <h3 className="text-lg font-medium mb-2">Checker Responsible</h3>
-            <div className="space-y-2">
-              <div className="font-medium">Attempts</div>
-              <div className="grid grid-cols-2 gap-2 ml-4">
+            <label className="block text-lg font-medium mb-2 text-gray-800">
+              Checker Responsible
+            </label>
+            <div className="space-y-3">
+              <div className="font-medium text-gray-700">Attempts</div>
+              <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-3">
                 {checkerOptions.map((option) => (
-                  <label key={option} className="flex items-center space-x-2">
+                  <label
+                    key={option}
+                    className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded"
+                  >
                     <input
                       type="checkbox"
                       checked={formData.checkerResponsible.includes(option)}
                       onChange={() => handleCheckerToggle(option)}
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
-                    <span>{option}</span>
+                    <span className="flex-1">{option}</span>
                   </label>
                 ))}
               </div>
             </div>
           </div>
 
-          {/* Repeat Sequence */}
-          <div>
-            <h3 className="text-lg font-medium mb-2">Repeat Sequence</h3>
-            <div className="space-y-2">
-              {repeatOptions.map((option) => (
-                <label key={option} className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    name="repeatSequence"
-                    value={option}
-                    checked={formData.repeatSequence === option}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        repeatSequence: e.target.value as any,
-                      }))
-                    }
-                    className="text-blue-600 focus:ring-blue-500"
-                  />
-                  <span>{option}</span>
-                </label>
-              ))}
-            </div>
-          </div>
+          <SelectableOptions
+            repeat={formData.repeat}
+            onRepeatChange={handleRepeatChange}
+          />
 
-          {/* Note */}
+          {/* Additional Notes */}
           <div>
-            <h3 className="text-lg font-medium mb-2">Note</h3>
+            <div className="flex items-center gap-2 ">
+              <Image
+                src={additionalNoteIcon}
+                alt="createAppointmentImage"
+                width={15}
+                height={15}
+              />
+              <label className="block text-lg font-medium mb-2">
+                Additional Notes
+              </label>
+            </div>
             <textarea
-              placeholder="Within more hours"
-              value={formData.notes}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, notes: e.target.value }))
-              }
+              placeholder="Any additional information..."
               rows={2}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
-          {/* Divider and Buttons */}
+          {/* Divider and Buttons - Matching Appointment Popup Style */}
           <div className="border-t border-gray-200 pt-4">
             <div className="flex justify-end space-x-3">
               <button

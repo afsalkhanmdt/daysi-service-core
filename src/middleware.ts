@@ -22,20 +22,23 @@ const allowlist = [
 ];
 
 export async function middleware(request: NextRequest) {
-    const url = request.nextUrl;
-    let pathname = url.pathname;
+  const url = request.nextUrl;
+  const pathname = url.pathname;
 
-  // Skip translation files
-  if (pathname.startsWith('/locales/')) {
-    console.log('Bypassing middleware for translation file:', pathname);
+  
+  if (pathname === '/favicon.ico') {
     return NextResponse.next();
   }
 
-  // Skip static files and assets
+  
+  if (pathname.startsWith('/locales/')) {
+    return NextResponse.next();
+  }
+
+ 
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/static') ||
-    pathname.startsWith('/favicon.ico') ||
     pathname.startsWith('/images') ||
     pathname.startsWith('/assets')
   ) {
