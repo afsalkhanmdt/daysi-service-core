@@ -2,7 +2,6 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import defaultDp from "@/app/admin/assets/default-avatar-icon-of-social-media-user-vector.jpg";
-import nameIcon from "@/app/admin/assets/name.png";
 
 function Check({
   color,
@@ -246,6 +245,7 @@ export default function MultipleSelector({
                     alt={`${option.label}`}
                     fill
                     sizes="24px"
+                    unoptimized
                   />
                 </div>
               )}
