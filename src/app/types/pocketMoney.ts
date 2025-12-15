@@ -8,6 +8,7 @@ export interface PocketMoney {
   repeat: 'Never' | 'Everyday' | 'Every Week' | 'Every Month' | 'Every Year';
   notes: string;
   standardTask: string;
+  firstComeFirstServe: boolean;
 }
 
 export interface PocketMoneyPopupProps {
