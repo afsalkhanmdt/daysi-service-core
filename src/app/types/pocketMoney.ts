@@ -5,7 +5,7 @@ export interface PocketMoney {
   amount: number;
   currency: string;
   checkerResponsible: string[];
-  repeat: 'Never' | 'Everyday' | 'Every Week' | 'Every Month' | 'Every Year';
+  repeat: string
   notes: string;
   standardTask: string;
   firstComeFirstServe: boolean;

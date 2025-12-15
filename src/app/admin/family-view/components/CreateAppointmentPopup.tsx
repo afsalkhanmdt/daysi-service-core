@@ -7,8 +7,35 @@ import { ToggleSwitch } from "./FormComponents/ToggleSwitch";
 import locationIcon from "@/app/admin/assets/location.png";
 import nameIcon from "@/app/admin/assets/name.png";
 import participantsIcon from "@/app/admin/assets/participantsIcon.png";
-import SelectableOptions from "./FormComponents/SelectableOptions";
+import repeatIcon from "@/app/admin/assets/repeatIcon.png";
+import alarmIcon from "@/app/admin/assets/alarmIcon.png";
 import additionalNoteIcon from "@/app/admin/assets/name.png";
+import MultipleSelector, {
+  SelectableOption,
+} from "./FormComponents/MultipleSelector";
+
+const responsiblePersonsOptions: SelectableOption[] = [
+  { id: "1", label: "Johnson", isSelected: false },
+  { id: "2", label: "Christian", isSelected: false },
+  { id: "3", label: "Sofie", isSelected: false },
+  { id: "4", label: "Clara", isSelected: false },
+];
+
+const alarmOptions: SelectableOption[] = [
+  { id: "1", label: "Never", isSelected: false },
+  { id: "2", label: "At Time of Event", isSelected: false },
+  { id: "3", label: "5 mins before", isSelected: false },
+  { id: "4", label: "30 min before", isSelected: false },
+  { id: "5", label: "1 hour before", isSelected: false },
+];
+
+const repeatOptions: SelectableOption[] = [
+  { id: "1", label: "Never", isSelected: false },
+  { id: "2", label: "Everyday", isSelected: false },
+  { id: "3", label: "Every Week ", isSelected: false },
+  { id: "4", label: "Every Month", isSelected: false },
+  { id: "5", label: "Every Year", isSelected: false },
+];
 
 // Switch Component
 
@@ -47,33 +74,59 @@ const CreateAppointmentPopup: React.FC<
     isSpecialEvent: false, // Initialize special event as false
   });
 
-  const participantOptions = [
-    "John Doe",
-    "Jane Smith",
-    "Mike Johnson",
-    "Sarah Wilson",
-  ];
+  const [responsiblePersons, setResponsiblePersons] = useState<
+    SelectableOption[]
+  >(responsiblePersonsOptions);
 
-  const handleParticipantToggle = (participant: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      participants: prev.participants.includes(participant)
-        ? prev.participants.filter((p) => p !== participant)
-        : [...prev.participants, participant],
-    }));
-  };
+  const [alarmSequence, setAlarmSequence] =
+    useState<SelectableOption[]>(alarmOptions);
+
+  const [repeatSequence, setRepeatSequence] =
+    useState<SelectableOption[]>(repeatOptions);
 
   const handleSpecialEventToggle = (checked: boolean) => {
     setFormData((prev) => ({ ...prev, isSpecialEvent: checked }));
   };
 
-  // Add handlers for repeat and alarm
-  const handleRepeatChange = (value: string) => {
-    setFormData((prev) => ({ ...prev, repeat: value }));
+  const handlePrivateToggle = (checked: boolean) => {
+    setFormData((prev) => ({
+      ...prev,
+      isPrivate: checked,
+    }));
   };
 
-  const handleAlarmChange = (value: string) => {
-    setFormData((prev) => ({ ...prev, alarm: value }));
+  const handleResponsiblePersonsChange = (
+    selectedPersons: SelectableOption[]
+  ) => {
+    setResponsiblePersons((prev) =>
+      prev.map((person) => ({
+        ...person,
+        isSelected: selectedPersons.some((sp) => sp.id === person.id),
+      }))
+    );
+
+    // Update formData with selected person labels
+    setFormData((prev) => ({
+      ...prev,
+      checkerResponsible: selectedPersons.map((person) => person.label),
+    }));
+  };
+
+  const handleAlarmChange = (selectedAlarms: SelectableOption[]) => {
+    setAlarmSequence((prev) =>
+      prev.map((option) => ({
+        ...option,
+        isSelected: selectedAlarms.some((sa) => sa.id === option.id),
+      }))
+    );
+  };
+  const handleRepeatChange = (selectedRepeats: SelectableOption[]) => {
+    setRepeatSequence((prev) =>
+      prev.map((option) => ({
+        ...option,
+        isSelected: selectedRepeats.some((sr) => sr.id === option.id),
+      }))
+    );
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -122,7 +175,7 @@ const CreateAppointmentPopup: React.FC<
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg w-full max-w-xl mx-4 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="border-b border-gray-200 bg-blue-200 m-2 px-6 py-4 rounded-lg flex gap-2">
           <div className="rounded-full bg-white p-2 ">
@@ -212,49 +265,29 @@ const CreateAppointmentPopup: React.FC<
             </div>
           </div>
 
-          {/* Participants */}
-          <div>
-            <div className="flex justify-between items-center ">
-              <div className="flex items-center gap-2 ">
-                <Image
-                  src={participantsIcon}
-                  alt="createAppointmentImage"
-                  width={15}
-                  height={15}
-                />
-                <label className="block text-lg font-medium mb-2">
-                  Participants
-                </label>
-              </div>
-              <div className="flex items-center gap-2 ">
-                <label className="block text-lg font-medium mb-2">
-                  Private
-                </label>
-                <ToggleSwitch
-                  checked={formData.isPrivate}
-                  onChange={(checked) =>
-                    setFormData((prev) => ({ ...prev, isPrivate: checked }))
-                  }
-                />
-              </div>
-            </div>
-            <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-3">
-              {participantOptions.map((participant) => (
-                <label
-                  key={participant}
-                  className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded"
-                >
-                  <input
-                    type="checkbox"
-                    checked={formData.participants.includes(participant)}
-                    onChange={() => handleParticipantToggle(participant)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="flex-1">{participant}</span>
-                </label>
-              ))}
+          <div className="flex justify-end items-center ">
+            <div className="flex items-center gap-2">
+              <label className="block text-sm font-medium">Private</label>
+              <ToggleSwitch
+                checked={formData.isPrivate}
+                onChange={handlePrivateToggle}
+              />
             </div>
           </div>
+
+          {/* Participants */}
+          <MultipleSelector
+            titleIconUrl={participantsIcon.src}
+            options={responsiblePersons}
+            onSelectionChange={handleResponsiblePersonsChange}
+            title="Select Responsible Persons"
+            showSelectAll={true}
+            showCount={true}
+            showImages={true}
+            selectedBorderColor="green"
+            selectedBadgeColor="green"
+            singleSelect={false} // Multiple select
+          />
 
           <div className="">
             {/* Date */}
@@ -319,11 +352,31 @@ const CreateAppointmentPopup: React.FC<
               </div>
             </div>
           </div>
-          <SelectableOptions
-            repeat={formData.repeat}
-            alarm={formData.alarm}
-            onRepeatChange={handleRepeatChange}
-            onAlarmChange={handleAlarmChange}
+
+          <MultipleSelector
+            titleIconUrl={repeatIcon.src}
+            options={repeatSequence}
+            onSelectionChange={handleRepeatChange}
+            title="Repeat Sequence"
+            showSelectAll={true}
+            showCount={true}
+            showImages={false}
+            selectedBorderColor="green"
+            selectedBadgeColor="green"
+            singleSelect={true}
+          />
+
+          <MultipleSelector
+            titleIconUrl={alarmIcon.src}
+            options={alarmSequence}
+            onSelectionChange={handleAlarmChange}
+            title="Alarm"
+            showSelectAll={true}
+            showCount={true}
+            showImages={false}
+            selectedBorderColor="green"
+            selectedBadgeColor="green"
+            singleSelect={true} // Multiple select
           />
 
           {/* Additional Notes */}

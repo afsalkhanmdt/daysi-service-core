@@ -4,12 +4,30 @@ import React, { useState } from "react";
 import Image from "next/image";
 import createPocketMoneyImage from "@/app/admin/assets/doctor-suitcase-with-a-cross-svgrepo-com 1.png";
 import { ToggleSwitch } from "./FormComponents/ToggleSwitch";
-import SelectableOptions from "./FormComponents/SelectableOptions";
 import additionalNoteIcon from "@/app/admin/assets/name.png";
 import participantsIcon from "@/app/admin/assets/participantsIcon.png";
+import DescriptionIcon from "@/app/admin/assets/descriptionIcon.png";
+import repeatIcon from "@/app/admin/assets/repeatIcon.png";
+import name from "@/app/admin/assets/name.png";
 import MultipleSelector, {
   SelectableOption,
 } from "./FormComponents/MultipleSelector";
+
+const alarmOptions: SelectableOption[] = [
+  { id: "1", label: "Never", isSelected: false },
+  { id: "2", label: "At Time of Event", isSelected: false },
+  { id: "3", label: "5 mins before", isSelected: false },
+  { id: "4", label: "30 min before", isSelected: false },
+  { id: "5", label: "1 hour before", isSelected: false },
+];
+
+const repeatOptions: SelectableOption[] = [
+  { id: "1", label: "Never", isSelected: false },
+  { id: "2", label: "Everyday", isSelected: false },
+  { id: "3", label: "Every Week ", isSelected: false },
+  { id: "4", label: "Every Month", isSelected: false },
+  { id: "5", label: "Every Year", isSelected: false },
+];
 
 // You can now define different sets of options
 const responsiblePersonsOptions: SelectableOption[] = [
@@ -55,8 +73,19 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
   >(responsiblePersonsOptions);
   const [standardTasks, setStandardTasks] =
     useState<SelectableOption[]>(standardTaskOptions);
+  const [repeatSequence, setRepeatSequence] =
+    useState<SelectableOption[]>(repeatOptions);
 
   // ===== HANDLER FUNCTIONS =====
+
+  const handleRepeatChange = (repeatSequence: SelectableOption[]) => {
+    setRepeatSequence((prev) =>
+      prev.map((option) => ({
+        ...option,
+        isSelected: repeatSequence.some((rs) => rs.id === option.id),
+      }))
+    );
+  };
 
   // Handler for standard task selection (SINGLE SELECT)
   const handleStandardTaskChange = (selectedTasks: SelectableOption[]) => {
@@ -130,14 +159,6 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
     setFormData((prev) => ({
       ...prev,
       firstComeFirstServe: checked,
-    }));
-  };
-
-  // Handler for repeat selection
-  const handleRepeatChange = (value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      repeat: value as PocketMoney["repeat"],
     }));
   };
 
@@ -224,6 +245,7 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Choose Standard Task - SINGLE SELECT */}
           <MultipleSelector
+            titleIconUrl={name.src}
             options={standardTasks}
             onSelectionChange={handleStandardTaskChange}
             title="Choose Standard Task"
@@ -236,9 +258,18 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
 
           {/* Description */}
           <div>
-            <label className="block text-lg font-medium mb-2 text-gray-800">
-              Description
-            </label>
+            <div className="flex items-center gap-2">
+              <Image
+                src={DescriptionIcon}
+                alt="participants icon"
+                width={15}
+                height={15}
+              />
+              <label className="block text-lg font-medium text-gray-800">
+                Description
+              </label>
+            </div>
+
             <textarea
               placeholder="While details of track here"
               value={formData.description}
@@ -275,18 +306,7 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
 
           {/* Choose Responsible Section - MULTIPLE SELECT */}
           <div>
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center gap-2">
-                <Image
-                  src={participantsIcon}
-                  alt="participants icon"
-                  width={15}
-                  height={15}
-                />
-                <label className="block text-lg font-medium">
-                  Choose Responsible
-                </label>
-              </div>
+            <div className="flex justify-end items-center mb-4">
               <div className="flex items-center gap-2">
                 <label className="block text-sm font-medium">
                   First Come First Serve
@@ -299,6 +319,7 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
             </div>
 
             <MultipleSelector
+              titleIconUrl={participantsIcon.src}
               options={responsiblePersons}
               onSelectionChange={handleResponsiblePersonsChange}
               title="Select Responsible Persons"
@@ -312,9 +333,17 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
           </div>
 
           {/* Repeat Options */}
-          <SelectableOptions
-            repeat={formData.repeat}
-            onRepeatChange={handleRepeatChange}
+          <MultipleSelector
+            titleIconUrl={repeatIcon.src}
+            options={repeatSequence}
+            onSelectionChange={handleRepeatChange}
+            title="Repeat Sequence"
+            showSelectAll={true}
+            showCount={true}
+            showImages={false}
+            selectedBorderColor="green"
+            selectedBadgeColor="green"
+            singleSelect={true} // Multiple select
           />
 
           {/* Additional Notes */}

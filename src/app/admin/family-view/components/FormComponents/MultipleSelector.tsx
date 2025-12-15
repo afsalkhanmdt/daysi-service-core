@@ -170,12 +170,14 @@ export default function MultipleSelector({
     <div className={`w-full bg-white rounded-lg shadow`}>
       {title && (
         <div className="flex items-center gap-2 ">
-          <Image
-            src={nameIcon}
-            alt="createAppointmentImage"
-            width={15}
-            height={15}
-          />
+          {titleIconUrl && (
+            <Image
+              src={titleIconUrl}
+              alt="createAppointmentImage"
+              width={15}
+              height={15}
+            />
+          )}
           <label className="block text-lg font-medium ">{title}</label>
         </div>
       )}
