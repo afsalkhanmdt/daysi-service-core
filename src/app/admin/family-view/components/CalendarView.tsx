@@ -612,6 +612,7 @@ const CalendarView = ({
             <div className="flex justify-between items-center w-full ">
               <div className="flex gap-1.5 items-center">
                 <Image
+                  unoptimized
                   src={arg.resource._resource.extendedProps.image || dp.src}
                   alt={arg.resource._resource.title || ""}
                   width={28}

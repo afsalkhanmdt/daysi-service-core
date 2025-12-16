@@ -166,7 +166,7 @@ export default function MultipleSelector({
   const badgeColorClass = getBadgeColorClass();
 
   return (
-    <div className={`w-full bg-white rounded-lg shadow`}>
+    <div className={`w-full bg-white `}>
       {title && (
         <div className="flex items-center gap-2 ">
           {titleIconUrl && (
@@ -226,10 +226,13 @@ export default function MultipleSelector({
       {/* Responsive flex-wrap container */}
       <div className="flex flex-wrap gap-3">
         {options.map((option) => (
-          <div key={option.id} className="relative">
+          <div
+            onClick={() => handleToggleOption(option.id)}
+            key={option.id}
+            className="relative"
+          >
             <button
               type="button"
-              onClick={() => handleToggleOption(option.id)}
               className={`relative px-3 py-2 rounded-full border transition-all duration-200 flex items-center space-x-2 max-w-full group ${
                 option.isSelected
                   ? `${borderColorClass} shadow-sm`
