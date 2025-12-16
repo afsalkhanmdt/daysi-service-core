@@ -232,7 +232,13 @@ const FamilyViewWrapper = ({
 
       <div className="sm:hidden w-full flex justify-between p-2">
         <div className="grid place-items-center">
-          <Image src={mainIcon.src} alt="mainIcon" width={120} height={48} />
+          <Image
+            unoptimized
+            src={mainIcon.src}
+            alt="mainIcon"
+            width={120}
+            height={48}
+          />
         </div>
         {/* Mobile version with create functionality */}
         <ToggleThemeAndLogout
