@@ -15,9 +15,10 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
     amount: 0,
     currency: "RAY",
     checkerResponsible: [],
-    repeatSequence: "Never",
+    repeat: "Never",
     notes: "",
     standardTask: "",
+    firstComeFirstServe: false,
   });
 
   const standardTasks = [
@@ -190,7 +191,7 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
                     type="radio"
                     name="repeatSequence"
                     value={option}
-                    checked={formData.repeatSequence === option}
+                    checked={formData.repeat === option}
                     onChange={(e) =>
                       setFormData((prev) => ({
                         ...prev,

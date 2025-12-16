@@ -5,9 +5,10 @@ export interface PocketMoney {
   amount: number;
   currency: string;
   checkerResponsible: string[];
-  repeatSequence: 'Never' | 'Everyday' | 'Every Week' | 'Every Month' | 'Every Year';
+  repeat: string
   notes: string;
   standardTask: string;
+  firstComeFirstServe: boolean;
 }
 
 export interface PocketMoneyPopupProps {

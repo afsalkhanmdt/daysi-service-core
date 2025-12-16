@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 import { cookies } from "next/headers";
 import { NextRequest } from "next/server";
 

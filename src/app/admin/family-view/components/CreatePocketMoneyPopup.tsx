@@ -1,12 +1,59 @@
 "use client";
 import { PocketMoney, PocketMoneyPopupProps } from "@/app/types/pocketMoney";
 import React, { useState } from "react";
+import Image from "next/image";
+import createPocketMoneyImage from "@/app/admin/assets/doctor-suitcase-with-a-cross-svgrepo-com 1.png";
+import { ToggleSwitch } from "./FormComponents/ToggleSwitch";
+import additionalNoteIcon from "@/app/admin/assets/name.png";
+import participantsIcon from "@/app/admin/assets/participantsIcon.png";
+import DescriptionIcon from "@/app/admin/assets/descriptionIcon.png";
+import repeatIcon from "@/app/admin/assets/repeatIcon.png";
+import name from "@/app/admin/assets/name.png";
+import MultipleSelector, {
+  SelectableOption,
+} from "./FormComponents/MultipleSelector";
+
+const alarmOptions: SelectableOption[] = [
+  { id: "1", label: "Never", isSelected: false },
+  { id: "2", label: "At Time of Event", isSelected: false },
+  { id: "3", label: "5 mins before", isSelected: false },
+  { id: "4", label: "30 min before", isSelected: false },
+  { id: "5", label: "1 hour before", isSelected: false },
+];
+
+const repeatOptions: SelectableOption[] = [
+  { id: "1", label: "Never", isSelected: false },
+  { id: "2", label: "Everyday", isSelected: false },
+  { id: "3", label: "Every Week ", isSelected: false },
+  { id: "4", label: "Every Month", isSelected: false },
+  { id: "5", label: "Every Year", isSelected: false },
+];
+
+// You can now define different sets of options
+const responsiblePersonsOptions: SelectableOption[] = [
+  { id: "1", label: "Johnson", isSelected: false },
+  { id: "2", label: "Christian", isSelected: false },
+  { id: "3", label: "Sofie", isSelected: false },
+  { id: "4", label: "Clara", isSelected: false },
+];
+
+const standardTaskOptions: SelectableOption[] = [
+  { id: "1", label: "Clean up the room", isSelected: false },
+  { id: "2", label: "Walk the Dog", isSelected: false },
+  { id: "3", label: "Vacuum the Room", isSelected: false },
+  { id: "4", label: "Wash up", isSelected: false },
+  { id: "5", label: "Empty the Dishwasher", isSelected: false },
+  { id: "6", label: "Wash the Car", isSelected: false },
+  { id: "7", label: "Make the Bed", isSelected: false },
+  { id: "8", label: "Do Homework", isSelected: false },
+];
 
 const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
   isOpen,
   onClose,
   onSubmit,
 }) => {
+  // Main form state
   const [formData, setFormData] = useState<PocketMoney>({
     id: "",
     title: "",
@@ -14,65 +61,146 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
     amount: 0,
     currency: "RAY",
     checkerResponsible: [],
-    repeatSequence: "Never",
+    repeat: "Never",
     notes: "",
     standardTask: "",
+    firstComeFirstServe: false,
   });
 
-  const standardTasks = [
-    {
-      category: "Client up the Exam",
-      tasks: ["With the Buy", "Warrant the Boom", "With Up"],
-    },
-    {
-      category: "Empty the Shareholder",
-      tasks: ["With the Car", "Make the Bad", "Do Morework"],
-    },
-  ];
+  // Separate states for each selector component
+  const [responsiblePersons, setResponsiblePersons] = useState<
+    SelectableOption[]
+  >(responsiblePersonsOptions);
+  const [standardTasks, setStandardTasks] =
+    useState<SelectableOption[]>(standardTaskOptions);
+  const [repeatSequence, setRepeatSequence] =
+    useState<SelectableOption[]>(repeatOptions);
 
-  const checkerOptions = ["ChatMan", "Save", "Guns", "Draw"];
-  const repeatOptions = [
-    "Never",
-    "Everyday",
-    "Every Week",
-    "Every Month",
-    "Every Year",
-  ];
+  // ===== HANDLER FUNCTIONS =====
 
-  const handleCheckerToggle = (checker: string) => {
+  const handleRepeatChange = (repeatSequence: SelectableOption[]) => {
+    setRepeatSequence((prev) =>
+      prev.map((option) => ({
+        ...option,
+        isSelected: repeatSequence.some((rs) => rs.id === option.id),
+      }))
+    );
+  };
+
+  // Handler for standard task selection (SINGLE SELECT)
+  const handleStandardTaskChange = (selectedTasks: SelectableOption[]) => {
+    setStandardTasks((prev) =>
+      prev.map((task) => ({
+        ...task,
+        isSelected: selectedTasks.some((st) => st.id === task.id),
+      }))
+    );
+
+    // Update formData with the selected task label
+    if (selectedTasks.length > 0) {
+      setFormData((prev) => ({
+        ...prev,
+        standardTask: selectedTasks[0].label, // Single select, so take first item
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        standardTask: "",
+      }));
+    }
+  };
+
+  // Handler for responsible persons selection (MULTIPLE SELECT)
+  const handleResponsiblePersonsChange = (
+    selectedPersons: SelectableOption[]
+  ) => {
+    setResponsiblePersons((prev) =>
+      prev.map((person) => ({
+        ...person,
+        isSelected: selectedPersons.some((sp) => sp.id === person.id),
+      }))
+    );
+
+    // Update formData with selected person labels
     setFormData((prev) => ({
       ...prev,
-      checkerResponsible: prev.checkerResponsible.includes(checker)
-        ? prev.checkerResponsible.filter((c) => c !== checker)
-        : [...prev.checkerResponsible, checker],
+      checkerResponsible: selectedPersons.map((person) => person.label),
     }));
   };
 
-  const handleTaskSelect = (task: string) => {
-    setFormData((prev) => ({ ...prev, standardTask: task }));
+  // Handler for description change
+  const handleDescriptionChange = (
+    e: React.ChangeEvent<HTMLTextAreaElement>
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      description: e.target.value,
+    }));
   };
+
+  // Handler for amount change
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({
+      ...prev,
+      amount: parseFloat(e.target.value) || 0,
+    }));
+  };
+
+  // Handler for currency change
+  const handleCurrencyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setFormData((prev) => ({
+      ...prev,
+      currency: e.target.value,
+    }));
+  };
+
+  // Handler for toggle switch
+  const handleFirstComeFirstServeToggle = (checked: boolean) => {
+    setFormData((prev) => ({
+      ...prev,
+      firstComeFirstServe: checked,
+    }));
+  };
+
+  // Handler for additional notes
+  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setFormData((prev) => ({
+      ...prev,
+      notes: e.target.value,
+    }));
+  };
+
+  // ===== FORM SUBMISSION AND RESET =====
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate required fields
+    if (!formData.standardTask) {
+      alert("Please select a standard task");
+      return;
+    }
+
+    if (formData.checkerResponsible.length === 0) {
+      alert("Please select at least one responsible person");
+      return;
+    }
+
+    // Submit form
     onSubmit(formData);
+
+    // Reset form and close
+    resetForm();
     onClose();
-    // Reset form
-    setFormData({
-      id: "",
-      title: "",
-      description: "",
-      amount: 0,
-      currency: "RAY",
-      checkerResponsible: [],
-      repeatSequence: "Never",
-      notes: "",
-      standardTask: "",
-    });
   };
 
   const handleClose = () => {
+    resetForm();
     onClose();
-    // Reset form on close
+  };
+
+  // Reset all form states
+  const resetForm = () => {
     setFormData({
       id: "",
       title: "",
@@ -80,69 +208,72 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
       amount: 0,
       currency: "RAY",
       checkerResponsible: [],
-      repeatSequence: "Never",
+      repeat: "Never",
       notes: "",
       standardTask: "",
+      firstComeFirstServe: false,
     });
+
+    // Reset selector states
+    setResponsiblePersons(
+      responsiblePersonsOptions.map((p) => ({ ...p, isSelected: false }))
+    );
+    setStandardTasks(
+      standardTaskOptions.map((t) => ({ ...t, isSelected: false }))
+    );
   };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="border-b border-gray-200 px-6 py-4">
+      <div className="bg-white rounded-lg w-full max-w-xl mx-4 max-h-[90vh] overflow-y-auto">
+        {/* Header - Matching Appointment Popup Style */}
+        <div className="border-b border-gray-200 bg-blue-200 m-2 px-6 py-4 rounded-lg flex gap-2">
+          <div className="rounded-full bg-white p-2">
+            <Image
+              src={createPocketMoneyImage}
+              alt="createPocketMoneyImage"
+              width={15}
+              height={15}
+            />
+          </div>
           <h2 className="text-xl font-semibold">Create Pocket Money</h2>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Choose Standard Task */}
-          <div>
-            <h3 className="text-lg font-medium mb-3">Choose Standard Task</h3>
-            <div className="space-y-4">
-              {standardTasks.map((group, index) => (
-                <div
-                  key={index}
-                  className="border border-gray-200 rounded-lg p-4"
-                >
-                  <div className="font-semibold mb-2">{group.category}</div>
-                  <div className="space-y-2">
-                    {group.tasks.map((task, taskIndex) => (
-                      <label
-                        key={taskIndex}
-                        className="flex items-center space-x-3"
-                      >
-                        <input
-                          type="radio"
-                          name="standardTask"
-                          value={task}
-                          checked={formData.standardTask === task}
-                          onChange={() => handleTaskSelect(task)}
-                          className="text-blue-600 focus:ring-blue-500"
-                        />
-                        <span>{task}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* Choose Standard Task - SINGLE SELECT */}
+          <MultipleSelector
+            titleIconUrl={name.src}
+            options={standardTasks}
+            onSelectionChange={handleStandardTaskChange}
+            title="Choose Standard Task"
+            showSelectAll={false} // Disabled for single select
+            showCount={true}
+            selectedBorderColor="green"
+            selectedBadgeColor="green"
+            singleSelect={true}
+          />
 
           {/* Description */}
           <div>
-            <h3 className="text-lg font-medium mb-2">Description</h3>
+            <div className="flex items-center gap-2">
+              <Image
+                src={DescriptionIcon}
+                alt="participants icon"
+                width={15}
+                height={15}
+              />
+              <label className="block text-lg font-medium text-gray-800">
+                Description
+              </label>
+            </div>
+
             <textarea
               placeholder="While details of track here"
               value={formData.description}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  description: e.target.value,
-                }))
-              }
+              onChange={handleDescriptionChange}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -150,26 +281,21 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
 
           {/* Pocket Money Amount */}
           <div>
-            <h3 className="text-lg font-medium mb-2">Pocket Money Amount</h3>
-            <div className="flex items-center space-x-3">
+            <label className="block text-lg font-medium mb-2 text-gray-800">
+              Pocket Money Amount
+            </label>
+            <div className="flex gap-4">
               <input
                 type="number"
                 placeholder="Enter pocket money amount"
                 value={formData.amount || ""}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    amount: parseFloat(e.target.value) || 0,
-                  }))
-                }
+                onChange={handleAmountChange}
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <select
                 value={formData.currency}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, currency: e.target.value }))
-                }
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={handleCurrencyChange}
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-32"
               >
                 <option value="RAY">RAY</option>
                 <option value="USD">USD</option>
@@ -178,62 +304,66 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
             </div>
           </div>
 
-          {/* Checker Responsible */}
+          {/* Choose Responsible Section - MULTIPLE SELECT */}
           <div>
-            <h3 className="text-lg font-medium mb-2">Checker Responsible</h3>
-            <div className="space-y-2">
-              <div className="font-medium">Attempts</div>
-              <div className="grid grid-cols-2 gap-2 ml-4">
-                {checkerOptions.map((option) => (
-                  <label key={option} className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={formData.checkerResponsible.includes(option)}
-                      onChange={() => handleCheckerToggle(option)}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span>{option}</span>
-                  </label>
-                ))}
+            <div className="flex justify-end items-center mb-4">
+              <div className="flex items-center gap-2">
+                <label className="block text-sm font-medium">
+                  First Come First Serve
+                </label>
+                <ToggleSwitch
+                  checked={formData.firstComeFirstServe}
+                  onChange={handleFirstComeFirstServeToggle}
+                />
               </div>
             </div>
+
+            <MultipleSelector
+              titleIconUrl={participantsIcon.src}
+              options={responsiblePersons}
+              onSelectionChange={handleResponsiblePersonsChange}
+              title="Select Responsible Persons"
+              showSelectAll={true}
+              showCount={true}
+              showImages={true}
+              selectedBorderColor="green"
+              selectedBadgeColor="green"
+              singleSelect={false} // Multiple select
+            />
           </div>
 
-          {/* Repeat Sequence */}
+          {/* Repeat Options */}
+          <MultipleSelector
+            titleIconUrl={repeatIcon.src}
+            options={repeatSequence}
+            onSelectionChange={handleRepeatChange}
+            title="Repeat Sequence"
+            showSelectAll={true}
+            showCount={true}
+            showImages={false}
+            selectedBorderColor="green"
+            selectedBadgeColor="green"
+            singleSelect={true} // Multiple select
+          />
+
+          {/* Additional Notes */}
           <div>
-            <h3 className="text-lg font-medium mb-2">Repeat Sequence</h3>
-            <div className="space-y-2">
-              {repeatOptions.map((option) => (
-                <label key={option} className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    name="repeatSequence"
-                    value={option}
-                    checked={formData.repeatSequence === option}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        repeatSequence: e.target.value as any,
-                      }))
-                    }
-                    className="text-blue-600 focus:ring-blue-500"
-                  />
-                  <span>{option}</span>
-                </label>
-              ))}
+            <div className="flex items-center gap-2">
+              <Image
+                src={additionalNoteIcon}
+                alt="additional notes icon"
+                width={15}
+                height={15}
+              />
+              <label className="block text-lg font-medium mb-2">
+                Additional Notes
+              </label>
             </div>
-          </div>
-
-          {/* Note */}
-          <div>
-            <h3 className="text-lg font-medium mb-2">Note</h3>
             <textarea
-              placeholder="Within more hours"
-              value={formData.notes}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, notes: e.target.value }))
-              }
+              placeholder="Any additional information..."
               rows={2}
+              value={formData.notes}
+              onChange={handleNotesChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>

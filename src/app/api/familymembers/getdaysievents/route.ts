@@ -1,7 +1,11 @@
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 import dbConnect from '@/core/db/connect'
 import Event from '@/models/event'
 import ical from 'ical-generator'
 import { cookies } from 'next/headers'
+
+
 
 export async function GET() {
   try {
