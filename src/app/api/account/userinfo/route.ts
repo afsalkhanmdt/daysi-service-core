@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 import { cookies } from "next/headers";
 import dbConnect from "../../../../core/db/connect";
 import User from "../../../../models/users";

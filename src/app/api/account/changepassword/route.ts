@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 import { NextRequest } from "next/server";
 import { normalizeKeys } from "../../normalizeKeys";
 import { ChangePasswordSchema } from "./dto";
