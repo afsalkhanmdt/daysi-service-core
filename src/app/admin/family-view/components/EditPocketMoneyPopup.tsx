@@ -1,6 +1,52 @@
 "use client";
-import { PocketMoney, PocketMoneyPopupProps } from "@/app/types/pocketMoney";
+import { PocketMoneyPopupProps } from "@/app/types/pocketMoney";
+import { PMTask } from "@/app/types/ToDoAndPMTypes";
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
+import createPocketMoneyImage from "@/app/admin/assets/doctor-suitcase-with-a-cross-svgrepo-com 1.png";
+import { ToggleSwitch } from "./FormComponents/ToggleSwitch";
+import additionalNoteIcon from "@/app/admin/assets/name.png";
+import participantsIcon from "@/app/admin/assets/participantsIcon.png";
+import DescriptionIcon from "@/app/admin/assets/descriptionIcon.png";
+import repeatIcon from "@/app/admin/assets/repeatIcon.png";
+import name from "@/app/admin/assets/name.png";
+import MultipleSelector, {
+  SelectableOption,
+} from "./FormComponents/MultipleSelector";
+
+const alarmOptions: SelectableOption[] = [
+  { id: "1", label: "Never", isSelected: false },
+  { id: "2", label: "At Time of Event", isSelected: false },
+  { id: "3", label: "5 mins before", isSelected: false },
+  { id: "4", label: "30 min before", isSelected: false },
+  { id: "5", label: "1 hour before", isSelected: false },
+];
+
+const repeatOptions: SelectableOption[] = [
+  { id: "1", label: "Never", isSelected: false },
+  { id: "2", label: "Everyday", isSelected: false },
+  { id: "3", label: "Every Week ", isSelected: false },
+  { id: "4", label: "Every Month", isSelected: false },
+  { id: "5", label: "Every Year", isSelected: false },
+];
+
+const responsiblePersonsOptions: SelectableOption[] = [
+  { id: "1", label: "Johnson", isSelected: false },
+  { id: "2", label: "Christian", isSelected: false },
+  { id: "3", label: "Sofie", isSelected: false },
+  { id: "4", label: "Clara", isSelected: false },
+];
+
+const standardTaskOptions: SelectableOption[] = [
+  { id: "1", label: "Clean up the room", isSelected: false },
+  { id: "2", label: "Walk the Dog", isSelected: false },
+  { id: "3", label: "Vacuum the Room", isSelected: false },
+  { id: "4", label: "Wash up", isSelected: false },
+  { id: "5", label: "Empty the Dishwasher", isSelected: false },
+  { id: "6", label: "Wash the Car", isSelected: false },
+  { id: "7", label: "Make the Bed", isSelected: false },
+  { id: "8", label: "Do Homework", isSelected: false },
+];
 
 const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
   isOpen,
@@ -8,60 +54,194 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
   onSubmit,
   pocketMoney,
 }) => {
-  const [formData, setFormData] = useState<PocketMoney>({
-    id: "",
-    title: "",
-    description: "",
-    amount: 0,
-    currency: "RAY",
-    checkerResponsible: [],
-    repeat: "Never",
-    notes: "",
-    standardTask: "",
-    firstComeFirstServe: false,
+  const [formData, setFormData] = useState<PMTask>({
+    LocalPMTaskId: 0,
+    PMTransId: 0,
+    TransType: 0,
+    PMDescription: "",
+    PMAmount: 0,
+    FirstComeFirstServe: false,
+    Note: "",
+    FamilyMembersPlanned: [],
+    CreatedBy: "",
+    CreatedOn: "",
+    ActivityDate: "",
+    Interval: 0,
+    Repeat: 0,
+    Status: 0,
+    UpdatedOn: "",
   });
 
-  const standardTasks = [
-    {
-      category: "Client up the Exam",
-      tasks: ["With the Buy", "Warrant the Boom", "With Up"],
-    },
-    {
-      category: "Empty the Shareholder",
-      tasks: ["With the Car", "Make the Bad", "Do Morework"],
-    },
-  ];
-
-  const checkerOptions = ["ChatMan", "Save", "Guns", "Draw"];
-  const repeatOptions = [
-    "Never",
-    "Everyday",
-    "Every Week",
-    "Every Month",
-    "Every Year",
-  ];
+  // Separate states for each selector component
+  const [responsiblePersons, setResponsiblePersons] = useState<
+    SelectableOption[]
+  >(responsiblePersonsOptions);
+  const [standardTasks, setStandardTasks] =
+    useState<SelectableOption[]>(standardTaskOptions);
+  const [repeatSequence, setRepeatSequence] =
+    useState<SelectableOption[]>(repeatOptions);
 
   useEffect(() => {
     if (pocketMoney) {
       setFormData(pocketMoney);
+
+      // Initialize responsible persons selection based on pocketMoney data
+      if (
+        pocketMoney.FamilyMembersPlanned &&
+        pocketMoney.FamilyMembersPlanned.length > 0
+      ) {
+        setResponsiblePersons((prev) =>
+          prev.map((person) => ({
+            ...person,
+            isSelected: pocketMoney.FamilyMembersPlanned.some(
+              (member) => member.MemberId === person.id
+            ),
+          }))
+        );
+      }
+
+      // Initialize standard task selection if there's a PMDescription
+      if (pocketMoney.PMDescription) {
+        setStandardTasks((prev) =>
+          prev.map((task) => ({
+            ...task,
+            isSelected: task.label === pocketMoney.PMDescription,
+          }))
+        );
+      }
+
+      // Initialize repeat sequence selection
+      const repeatMap: Record<number, string> = {
+        0: "Never",
+        1: "Everyday",
+        2: "Every Week",
+        3: "Every Month",
+        4: "Every Year",
+      };
+
+      const repeatLabel = repeatMap[pocketMoney.Repeat] || "Never";
+      setRepeatSequence((prev) =>
+        prev.map((option) => ({
+          ...option,
+          isSelected: option.label === repeatLabel,
+        }))
+      );
     }
   }, [pocketMoney]);
 
-  const handleCheckerToggle = (checker: string) => {
+  // ===== HANDLER FUNCTIONS =====
+
+  const handleRepeatChange = (selectedRepeat: SelectableOption[]) => {
+    setRepeatSequence((prev) =>
+      prev.map((option) => ({
+        ...option,
+        isSelected: selectedRepeat.some((rs) => rs.id === option.id),
+      }))
+    );
+
+    // Update formData with selected repeat value
+    if (selectedRepeat.length > 0) {
+      const repeatMap: Record<string, number> = {
+        Never: 0,
+        Everyday: 1,
+        "Every Week": 2,
+        "Every Month": 3,
+        "Every Year": 4,
+      };
+
+      setFormData((prev) => ({
+        ...prev,
+        Repeat: repeatMap[selectedRepeat[0].label] || 0,
+      }));
+    }
+  };
+
+  // Handler for standard task selection (SINGLE SELECT)
+  const handleStandardTaskChange = (selectedTasks: SelectableOption[]) => {
+    setStandardTasks((prev) =>
+      prev.map((task) => ({
+        ...task,
+        isSelected: selectedTasks.some((st) => st.id === task.id),
+      }))
+    );
+
+    // Update formData with the selected task label
+    if (selectedTasks.length > 0) {
+      setFormData((prev) => ({
+        ...prev,
+        PMDescription: selectedTasks[0].label,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        PMDescription: "",
+      }));
+    }
+  };
+
+  // Handler for responsible persons selection (MULTIPLE SELECT)
+  const handleResponsiblePersonsChange = (
+    selectedPersons: SelectableOption[]
+  ) => {
+    setResponsiblePersons((prev) =>
+      prev.map((person) => ({
+        ...person,
+        isSelected: selectedPersons.some((sp) => sp.id === person.id),
+      }))
+    );
+  };
+
+  // Handler for description change
+  const handleDescriptionChange = (
+    e: React.ChangeEvent<HTMLTextAreaElement>
+  ) => {
     setFormData((prev) => ({
       ...prev,
-      checkerResponsible: prev.checkerResponsible.includes(checker)
-        ? prev.checkerResponsible.filter((c) => c !== checker)
-        : [...prev.checkerResponsible, checker],
+      PMDescription: e.target.value,
     }));
   };
 
-  const handleTaskSelect = (task: string) => {
-    setFormData((prev) => ({ ...prev, standardTask: task }));
+  // Handler for amount change
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({
+      ...prev,
+      PMAmount: parseFloat(e.target.value) || 0,
+    }));
   };
+
+  // Handler for toggle switch
+  const handleFirstComeFirstServeToggle = (checked: boolean) => {
+    setFormData((prev) => ({
+      ...prev,
+      FirstComeFirstServe: checked,
+    }));
+  };
+
+  // Handler for additional notes
+  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setFormData((prev) => ({
+      ...prev,
+      Note: e.target.value,
+    }));
+  };
+
+  // ===== FORM SUBMISSION AND RESET =====
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate required fields
+    if (!formData.PMDescription.trim()) {
+      alert("Please enter a description or select a standard task");
+      return;
+    }
+
+    if (formData.FamilyMembersPlanned.length === 0) {
+      alert("Please select at least one responsible person");
+      return;
+    }
+
+    // Submit form
     onSubmit(formData);
     onClose();
   };
@@ -74,58 +254,52 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="border-b border-gray-200 px-6 py-4">
+      <div className="bg-white rounded-lg w-full max-w-xl mx-4 max-h-[90vh] overflow-y-auto">
+        {/* Header - Matching CreatePocketMoneyPopup Style */}
+        <div className="border-b border-gray-200 bg-blue-200 m-2 px-6 py-4 rounded-lg flex gap-2">
+          <div className="rounded-full bg-white p-2">
+            <Image
+              src={createPocketMoneyImage}
+              alt="editPocketMoneyImage"
+              width={15}
+              height={15}
+            />
+          </div>
           <h2 className="text-xl font-semibold">Edit Pocket Money</h2>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Choose Standard Task */}
-          <div>
-            <h3 className="text-lg font-medium mb-3">Choose Standard Task</h3>
-            <div className="space-y-4">
-              {standardTasks.map((group, index) => (
-                <div
-                  key={index}
-                  className="border border-gray-200 rounded-lg p-4"
-                >
-                  <div className="font-semibold mb-2">{group.category}</div>
-                  <div className="space-y-2">
-                    {group.tasks.map((task, taskIndex) => (
-                      <label
-                        key={taskIndex}
-                        className="flex items-center space-x-3"
-                      >
-                        <input
-                          type="radio"
-                          name="standardTask"
-                          value={task}
-                          checked={formData.standardTask === task}
-                          onChange={() => handleTaskSelect(task)}
-                          className="text-blue-600 focus:ring-blue-500"
-                        />
-                        <span>{task}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* Choose Standard Task - SINGLE SELECT */}
+          <MultipleSelector
+            titleIconUrl={name.src}
+            options={standardTasks}
+            onSelectionChange={handleStandardTaskChange}
+            title="Choose Standard Task"
+            showSelectAll={false}
+            showCount={true}
+            selectedBorderColor="green"
+            selectedBadgeColor="green"
+            singleSelect={true}
+          />
 
           {/* Description */}
           <div>
-            <h3 className="text-lg font-medium mb-2">Description</h3>
+            <div className="flex items-center gap-2 mb-2">
+              <Image
+                src={DescriptionIcon}
+                alt="description icon"
+                width={15}
+                height={15}
+              />
+              <label className="block text-lg font-medium text-gray-800">
+                Description
+              </label>
+            </div>
             <textarea
-              value={formData.description}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  description: e.target.value,
-                }))
-              }
+              placeholder="While details of track here"
+              value={formData.PMDescription}
+              onChange={handleDescriptionChange}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -133,88 +307,81 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
 
           {/* Pocket Money Amount */}
           <div>
-            <h3 className="text-lg font-medium mb-2">Pocket Money Amount</h3>
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center gap-2 mb-2">
+              <label className="block text-lg font-medium text-gray-800">
+                Pocket Money Amount
+              </label>
+            </div>
+            <div className="flex gap-4">
               <input
                 type="number"
-                value={formData.amount || ""}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    amount: parseFloat(e.target.value) || 0,
-                  }))
-                }
+                placeholder="Enter pocket money amount"
+                value={formData.PMAmount || ""}
+                onChange={handleAmountChange}
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <select
-                value={formData.currency}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, currency: e.target.value }))
-                }
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="RAY">RAY</option>
-                <option value="USD">USD</option>
-                <option value="EUR">EUR</option>
-              </select>
             </div>
           </div>
 
-          {/* Checker Responsible */}
-          <div>
-            <h3 className="text-lg font-medium mb-2">Checker Responsible</h3>
-            <div className="space-y-2">
-              <div className="font-medium">Add Add</div>
-              <div className="grid grid-cols-2 gap-2 ml-4">
-                {checkerOptions.map((option) => (
-                  <label key={option} className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={formData.checkerResponsible.includes(option)}
-                      onChange={() => handleCheckerToggle(option)}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span>{option}</span>
-                  </label>
-                ))}
-              </div>
+          {/* First Come First Serve Toggle */}
+          <div className="flex justify-end items-center">
+            <div className="flex items-center gap-2">
+              <label className="block text-sm font-medium">
+                First Come First Serve
+              </label>
+              <ToggleSwitch
+                checked={formData.FirstComeFirstServe}
+                onChange={handleFirstComeFirstServeToggle}
+              />
             </div>
           </div>
 
-          {/* Repeat Sequence */}
-          <div>
-            <h3 className="text-lg font-medium mb-2">Repeat Sequence</h3>
-            <div className="space-y-2">
-              {repeatOptions.map((option) => (
-                <label key={option} className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    name="repeatSequence"
-                    value={option}
-                    checked={formData.repeat === option}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        repeatSequence: e.target.value as any,
-                      }))
-                    }
-                    className="text-blue-600 focus:ring-blue-500"
-                  />
-                  <span>{option}</span>
-                </label>
-              ))}
-            </div>
-          </div>
+          {/* Choose Responsible Persons - MULTIPLE SELECT */}
+          <MultipleSelector
+            titleIconUrl={participantsIcon.src}
+            options={responsiblePersons}
+            onSelectionChange={handleResponsiblePersonsChange}
+            title="Select Responsible Persons"
+            showSelectAll={true}
+            showCount={true}
+            showImages={true}
+            selectedBorderColor="green"
+            selectedBadgeColor="green"
+            singleSelect={false}
+          />
 
-          {/* Note */}
+          {/* Repeat Options */}
+          <MultipleSelector
+            titleIconUrl={repeatIcon.src}
+            options={repeatSequence}
+            onSelectionChange={handleRepeatChange}
+            title="Repeat Sequence"
+            showSelectAll={false}
+            showCount={true}
+            showImages={false}
+            selectedBorderColor="green"
+            selectedBadgeColor="green"
+            singleSelect={true}
+          />
+
+          {/* Additional Notes */}
           <div>
-            <h3 className="text-lg font-medium mb-2">Note</h3>
+            <div className="flex items-center gap-2 mb-2">
+              <Image
+                src={additionalNoteIcon}
+                alt="additional notes icon"
+                width={15}
+                height={15}
+              />
+              <label className="block text-lg font-medium text-gray-800">
+                Additional Notes
+              </label>
+            </div>
             <textarea
-              value={formData.notes}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, notes: e.target.value }))
-              }
+              placeholder="Any additional information..."
               rows={2}
+              value={formData.Note}
+              onChange={handleNotesChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -225,13 +392,13 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
               <button
                 type="button"
                 onClick={handleClose}
-                className="px-6 py-2 text-gray-600 hover:text-gray-800 font-medium border border-gray-300 rounded-md hover:bg-gray-50"
+                className="px-6 py-2 text-gray-600 hover:text-gray-800 font-medium border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
+                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium transition-colors"
               >
                 Save Changes
               </button>

@@ -12,6 +12,7 @@ import name from "@/app/admin/assets/name.png";
 import MultipleSelector, {
   SelectableOption,
 } from "./FormComponents/MultipleSelector";
+import { PMTask } from "@/app/types/ToDoAndPMTypes";
 
 const alarmOptions: SelectableOption[] = [
   { id: "1", label: "Never", isSelected: false },
@@ -54,17 +55,22 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
   onSubmit,
 }) => {
   // Main form state
-  const [formData, setFormData] = useState<PocketMoney>({
-    id: "",
-    title: "",
-    description: "",
-    amount: 0,
-    currency: "RAY",
-    checkerResponsible: [],
-    repeat: "Never",
-    notes: "",
-    standardTask: "",
-    firstComeFirstServe: false,
+  const [formData, setFormData] = useState<PMTask>({
+    LocalPMTaskId: 0,
+    PMTransId: 0,
+    TransType: 0,
+    PMDescription: "",
+    PMAmount: 0,
+    FirstComeFirstServe: false,
+    Note: "",
+    FamilyMembersPlanned: [],
+    CreatedBy: "",
+    CreatedOn: "",
+    ActivityDate: "",
+    Interval: 0,
+    Repeat: 0,
+    Status: 0,
+    UpdatedOn: "",
   });
 
   // Separate states for each selector component
@@ -176,15 +182,15 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
     e.preventDefault();
 
     // Validate required fields
-    if (!formData.standardTask) {
-      alert("Please select a standard task");
-      return;
-    }
+    // if (!formData.standardTask) {
+    //   alert("Please select a standard task");
+    //   return;
+    // }
 
-    if (formData.checkerResponsible.length === 0) {
-      alert("Please select at least one responsible person");
-      return;
-    }
+    // if (formData.checkerResponsible.length === 0) {
+    //   alert("Please select at least one responsible person");
+    //   return;
+    // }
 
     // Submit form
     onSubmit(formData);
@@ -202,16 +208,21 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
   // Reset all form states
   const resetForm = () => {
     setFormData({
-      id: "",
-      title: "",
-      description: "",
-      amount: 0,
-      currency: "RAY",
-      checkerResponsible: [],
-      repeat: "Never",
-      notes: "",
-      standardTask: "",
-      firstComeFirstServe: false,
+      LocalPMTaskId: 0,
+      PMTransId: 0,
+      TransType: 0,
+      PMDescription: "",
+      PMAmount: 0,
+      FirstComeFirstServe: false,
+      Note: "",
+      FamilyMembersPlanned: [],
+      CreatedBy: "",
+      CreatedOn: "",
+      ActivityDate: "",
+      Interval: 0,
+      Repeat: 0,
+      Status: 0,
+      UpdatedOn: "",
     });
 
     // Reset selector states
@@ -272,7 +283,7 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
 
             <textarea
               placeholder="While details of track here"
-              value={formData.description}
+              value={formData.PMDescription}
               onChange={handleDescriptionChange}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -288,11 +299,11 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
               <input
                 type="number"
                 placeholder="Enter pocket money amount"
-                value={formData.amount || ""}
+                value={formData.PMAmount || ""}
                 onChange={handleAmountChange}
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <select
+              {/* <select
                 value={formData.currency}
                 onChange={handleCurrencyChange}
                 className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-32"
@@ -300,7 +311,7 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
                 <option value="RAY">RAY</option>
                 <option value="USD">USD</option>
                 <option value="EUR">EUR</option>
-              </select>
+              </select> */}
             </div>
           </div>
 
@@ -312,7 +323,7 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
                   First Come First Serve
                 </label>
                 <ToggleSwitch
-                  checked={formData.firstComeFirstServe}
+                  checked={formData.FirstComeFirstServe}
                   onChange={handleFirstComeFirstServeToggle}
                 />
               </div>
@@ -362,7 +373,7 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
             <textarea
               placeholder="Any additional information..."
               rows={2}
-              value={formData.notes}
+              value={formData.Note}
               onChange={handleNotesChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />

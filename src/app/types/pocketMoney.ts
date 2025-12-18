@@ -1,3 +1,5 @@
+import { PMTask } from "./ToDoAndPMTypes";
+
 export interface PocketMoney {
   id: string;
   title: string;
@@ -14,6 +16,6 @@ export interface PocketMoney {
 export interface PocketMoneyPopupProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: PocketMoney) => void;
-  pocketMoney?: PocketMoney | null; // For edit mode
+  onSubmit: (data: PMTask) => void;
+  pocketMoney?: PMTask | null; // For edit mode
 }
