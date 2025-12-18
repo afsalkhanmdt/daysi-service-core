@@ -660,7 +660,18 @@ const CalendarView = ({
 
         {showEditAppointment && selectedAppointment && (
           <EditAppointmentPopup
-            appointment={selectedAppointment}
+            appointment={
+              selectedAppointment
+                ? {
+                    id: selectedAppointment.id,
+                    title: selectedAppointment.title,
+                    start: selectedAppointment.start || undefined,
+                    end: selectedAppointment.end || undefined,
+                    resourceId: selectedAppointment.getResources()?.[0]?.id,
+                    extendedProps: selectedAppointment.extendedProps,
+                  }
+                : undefined
+            }
             isOpen={showEditAppointment}
             onClose={() => {
               setShowEditAppointment(false);
