@@ -1,47 +1,70 @@
-import { EventApi, EventInput } from "@fullcalendar/core";
+import { EventInput } from "@fullcalendar/core";
 
-/* ================================
-   Popup Props (IMPORTANT FIX)
-================================ */
-
-export type AppointmentPopupProps = {
+export type appointmentPopupPropsType = {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: ExtendedProps) => void;
-  appointment?: EventApi| null; // For edit mode
+  onSubmit: (data: any) => void;
+  appointment?: EventInput;
 };
 
-/* ================================
-   Backend Event (API shape)
-================================ */
+export type CalendarEvent = {
+  id: number;
+  resourceId: string;
+  title: string;
+  start: string;
+  end: string;
+  display: "block" | "auto" | "background";
+  extendedProps: ExtendedProps;
+};
 
-export type BackendEvent = {
+export type ExtendedProps = {
   Id: number;
   FamilyId: number;
   Title: string;
   Description: string | null;
   Location: string | null;
+  ActualStartDate: string | null;
 
   Start: string;
   End: string;
 
+  SpecialEvent: number;
+  EventPerson: string;
   Repeat: number;
-  RepeatEndDate: string | null;
-  IsAllDayEvent: number;
+  RepeatEndDate: string;
+  Alert: number;
 
+  IsForAll: number;
+  IsSpecialEvent: number;
+  IsAllDayEvent: number;
+  IsPrivateEvent: number;
+
+  FamilyColorCode: string;
+
+  Attendee: string[];
   EventParticipant: EventParticipant[];
+  ParentEventId: string;
+
+  UpdatedOn: string;
+  AddedBy: string;
+
+  ExternalCalendarId: number;
   ExternalCalendarName: string | null;
 
-  RecurrenceRule?: RecurrenceRule;
-};
+  Alarms: any | null;
 
-/* ================================
-   Frontend ExtendedProps (UI-safe)
-================================ */
+  Latitude: number | null;
+  Longitude: number | null;
 
-export type ExtendedProps = BackendEvent & {
+  RecurrenceRule: RecurrenceRule;
+
+  LocalStartDate: string;
+  LocalEndDate: string;
+  LocalRepeatEndDate: string;
+
   participants: EventParticipant[];
-  externalCalender: string | null;
+
+  externalCalender: any | null;
   userColorCode: string;
 
   description: string;
@@ -50,17 +73,6 @@ export type ExtendedProps = BackendEvent & {
   isRecurrence: boolean;
 };
 
-/* ================================
-   Calendar Event Input (creation)
-================================ */
-
-export type CalendarEventInput = EventInput & {
-  extendedProps: ExtendedProps;
-};
-
-/* ================================
-   Supporting Types
-================================ */
 
 export type EventParticipant = {
   ParticipantId: string;
@@ -68,6 +80,7 @@ export type EventParticipant = {
   ParticipantClass: string;
   ParticipantFirstName: string | null;
 };
+
 
 export type RecurrenceRule = {
   Frequency: number;
