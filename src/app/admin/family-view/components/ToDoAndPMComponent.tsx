@@ -8,6 +8,8 @@ import { ToDoTaskType } from "./CalendarView";
 import { FamilyData } from "./FamilyViewWrapper";
 import { useTranslation } from "react-i18next";
 import { PMData, PMTask } from "@/app/types/ToDoAndPMTypes";
+import EditTodoPopup from "./EditTodoPopup";
+import EditPocketMoneyPopup from "./EditPocketMoneyPopup";
 
 const ToDoAndPMComponent = ({
   todoDetails,
@@ -23,6 +25,13 @@ const ToDoAndPMComponent = ({
   const { t } = useTranslation("common");
   const [isTasksOpen, setIsTasksOpen] = useState(false);
   const [isSmallScreen, setIsSmallScreen] = useState(true);
+  const [showEditTodo, setShowEditTodo] = useState(false);
+  const [selectedTodo, setSelectedTodo] = useState<ToDoTaskType | null>(null);
+
+  const [showEditPocketMoney, setShowEditPocketMoney] = useState(false);
+  const [selectedPocketMoney, setSelectedPocketMoney] = useState<PMTask | null>(
+    null
+  );
 
   useEffect(() => {
     const checkScreenSize = () => setIsSmallScreen(window.innerWidth < 640);
@@ -76,6 +85,18 @@ const ToDoAndPMComponent = ({
     }
     return map;
   }, [todosArr]);
+
+  const handleEditTodo = (todoData: any) => {
+    console.log("Edit todo:", todoData);
+    // Add your API call to Edit todo here
+    // Example: createTodoAPI(todoData).then(() => reload());
+  };
+
+  const handleEditPocketMoney = (pocketMoneyData: any) => {
+    console.log("Edit pocket money:", pocketMoneyData);
+    // Add your API call to Edit pocket money here
+    // Example: createPocketMoneyAPI(pocketMoneyData).then(() => reload());
+  };
 
   return (
     <div className="relative ">
@@ -142,6 +163,10 @@ const ToDoAndPMComponent = ({
                                 <div
                                   key={`${pm.PMTransId}-${rid}`}
                                   className="w-full my-auto sm:my-0"
+                                  onClick={() => {
+                                    setSelectedPocketMoney(pm);
+                                    setShowEditPocketMoney(true);
+                                  }}
                                 >
                                   <PocketMoneyEventUi
                                     PMEventData={pm}
@@ -203,6 +228,10 @@ const ToDoAndPMComponent = ({
                                 <div
                                   key={`${todo.ToDoTaskId}-${rid}`}
                                   className="w-full my-auto sm:my-0"
+                                  onClick={() => {
+                                    setSelectedTodo(todo);
+                                    setShowEditTodo(true);
+                                  }}
                                 >
                                   <TodoEventUi
                                     ToDoData={todo}
@@ -222,6 +251,27 @@ const ToDoAndPMComponent = ({
           </section>
         </div>
       )}
+      {selectedTodo && (
+        <EditTodoPopup
+          isOpen={showEditTodo}
+          todo={selectedTodo}
+          onClose={() => {
+            setShowEditTodo(false);
+            setSelectedTodo(null);
+          }}
+          onSubmit={handleEditTodo}
+        />
+      )}
+
+      <EditPocketMoneyPopup
+        isOpen={showEditPocketMoney}
+        pocketMoney={selectedPocketMoney}
+        onClose={() => {
+          setShowEditPocketMoney(false);
+          setSelectedPocketMoney(null);
+        }}
+        onSubmit={handleEditPocketMoney}
+      />
     </div>
   );
 };

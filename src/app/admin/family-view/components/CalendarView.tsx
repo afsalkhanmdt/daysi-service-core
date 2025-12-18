@@ -30,6 +30,9 @@ import { EventInput } from "@fullcalendar/core";
 import { useTranslation } from "react-i18next";
 import { PMData } from "@/app/types/ToDoAndPMTypes";
 import ToDoAndPMComponent from "./ToDoAndPMComponent";
+import EditAppointmentPopup from "./EditAppointmentPopup";
+import { ExtendedProps } from "@/app/types/appoinment";
+import { EventApi } from "@fullcalendar/core";
 
 const memberOrder: Record<number, number> = {
   1: 0,
@@ -82,6 +85,10 @@ const CalendarView = ({
   const searchParams = useSearchParams();
   const familyId = searchParams.get("familyId");
   const previousDateRef = useRef<Date>(currentDate);
+
+  const [showEditAppointment, setShowEditAppointment] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] =
+    useState<EventApi | null>(null);
 
   const { data: PMTaskDetails } = useFetch<PMData>(
     `PocketMoney/GetPMTasks?familyId=${familyId}`
@@ -145,8 +152,8 @@ const CalendarView = ({
   );
 
   const events: EventInput[] = useMemo(() => {
-    const extractedEvents = data.Members.flatMap((member: MemberResponse) =>
-      member.Events.flatMap((event: any): EventInput[] => {
+    return data.Members.flatMap((member: MemberResponse) =>
+      member.Events.flatMap((event): EventInput[] => {
         if (
           member.MemberType === 1 &&
           event.EventParticipant?.length !== data.Members.length - 1
@@ -165,11 +172,35 @@ const CalendarView = ({
         let end = new Date(Number(event.End));
 
         if (event.IsAllDayEvent === 1) {
-          const day = new Date(Number(event.Start));
+          const day = new Date(start);
           start = new Date(day.setHours(0, 0, 0, 0));
           end = new Date(day.setHours(24, 0, 0, 0));
         }
 
+        /* ==========================
+         Base Event
+      ========================== */
+        const baseEvent: EventInput = {
+          id: String(event.Id),
+          resourceId: String(member.Id),
+          title: event.Title,
+          start,
+          end,
+          display: "block",
+          extendedProps: {
+            ...event,
+            participants: event.EventParticipant,
+            externalCalender: event.ExternalCalendarName,
+            userColorCode: member.ColorCode || "000000",
+            description: event.Description || "",
+            location: event.Location || "",
+            isRecurrence: false,
+          },
+        };
+
+        /* ==========================
+         Recurrence Events
+      ========================== */
         const recurrenceEvents: EventInput[] = [];
         const rule = event.RecurrenceRule;
         const repeatEnd = event.RepeatEndDate
@@ -177,107 +208,61 @@ const CalendarView = ({
           : null;
 
         if (rule && rule.Frequency > 0 && repeatEnd) {
-          const freq = rule.Frequency; // 1=daily, 2=weekly, 3=monthly, 4=yearly
-          const interval = rule.Interval || 1;
           let currentStart = new Date(start);
           let currentEnd = new Date(end);
 
-          // Skip the base event by moving to the *next* recurrence
-          switch (freq) {
-            case 1: // daily
-              currentStart.setDate(currentStart.getDate() + interval);
-              currentEnd.setDate(currentEnd.getDate() + interval);
-              break;
-            case 2: // weekly
-              currentStart.setDate(currentStart.getDate() + 7 * interval);
-              currentEnd.setDate(currentEnd.getDate() + 7 * interval);
-              break;
-            case 3: // monthly
-              currentStart.setMonth(currentStart.getMonth() + interval);
-              currentEnd.setMonth(currentEnd.getMonth() + interval);
-              break;
-            case 4: // yearly
-              currentStart.setFullYear(currentStart.getFullYear() + interval);
-              currentEnd.setFullYear(currentEnd.getFullYear() + interval);
-              break;
-          }
+          const addInterval = () => {
+            switch (rule.Frequency) {
+              case 1:
+                currentStart.setDate(currentStart.getDate() + rule.Interval);
+                currentEnd.setDate(currentEnd.getDate() + rule.Interval);
+                break;
+              case 2:
+                currentStart.setDate(
+                  currentStart.getDate() + 7 * rule.Interval
+                );
+                currentEnd.setDate(currentEnd.getDate() + 7 * rule.Interval);
+                break;
+              case 3:
+                currentStart.setMonth(currentStart.getMonth() + rule.Interval);
+                currentEnd.setMonth(currentEnd.getMonth() + rule.Interval);
+                break;
+              case 4:
+                currentStart.setFullYear(
+                  currentStart.getFullYear() + rule.Interval
+                );
+                currentEnd.setFullYear(
+                  currentEnd.getFullYear() + rule.Interval
+                );
+                break;
+            }
+          };
+
+          // skip base event
+          addInterval();
 
           while (currentStart <= repeatEnd) {
             recurrenceEvents.push({
+              ...baseEvent,
               id: `${event.Id}-${currentStart.getTime()}`,
-              resourceId: String(member.Id),
-              title: event.Title,
               start: new Date(currentStart),
               end: new Date(currentEnd),
-              display: "block",
               extendedProps: {
-                ...event,
-                participants: event.EventParticipant,
-                externalCalender: event.ExternalCalendarName,
-                userColorCode: member.ColorCode || "000000",
-                description: event.Description || "",
-                location: event.Location || "",
+                ...baseEvent.extendedProps,
                 isRecurrence: true,
               },
             });
 
-            // Increment for the next recurrence
-            switch (freq) {
-              case 1:
-                currentStart.setDate(currentStart.getDate() + interval);
-                currentEnd.setDate(currentEnd.getDate() + interval);
-                break;
-              case 2:
-                currentStart.setDate(currentStart.getDate() + 7 * interval);
-                currentEnd.setDate(currentEnd.getDate() + 7 * interval);
-                break;
-              case 3:
-                currentStart.setMonth(currentStart.getMonth() + interval);
-                currentEnd.setMonth(currentEnd.getMonth() + interval);
-                break;
-              case 4:
-                currentStart.setFullYear(currentStart.getFullYear() + interval);
-                currentEnd.setFullYear(currentEnd.getFullYear() + interval);
-                break;
-            }
+            addInterval();
           }
-
-          // console.log(" Recurring event created:", {
-          //   title: event.Title,
-          //   eventStart: event.LocalStartDate,
-          //   frequency: freq,
-          //   interval,
-          //   repeatEnd,
-          //   occurrences: recurrenceEvents.length,
-          // });
         }
 
-        // the original (base) event
-        return [
-          {
-            id: event.Id,
-            resourceId: String(member.Id),
-            title: event.Title,
-            start,
-            end,
-            display: "block",
-            extendedProps: {
-              ...event,
-              participants: event.EventParticipant,
-              externalCalender: event.ExternalCalendarName,
-              userColorCode: member.ColorCode || "000000",
-              description: event.Description || "",
-              location: event.Location || "",
-              isRecurrence: false,
-            },
-          },
-          ...recurrenceEvents,
-        ];
+        return [baseEvent, ...recurrenceEvents];
       })
     );
-
-    return extractedEvents;
   }, [data.Members]);
+
+  console.log(events, "events");
 
   // Function to find the earliest event time for the current day
   const findEarliestEventTime = useCallback(() => {
@@ -553,6 +538,12 @@ const CalendarView = ({
   //   return () => clearTimeout(timer);
   // }, [resources.length, currentDate]);
 
+  const handleEditAppointment = (appointmentData: any) => {
+    console.log("Edit appointment:", appointmentData);
+    // Add your API call to Edit appointment here
+    // Example: createAppointmentAPI(appointmentData).then(() => reload());
+  };
+
   return (
     <div className="sm:p-2.5 bg-slate-100 flex flex-col sm:h-full sm:rounded-xl">
       <DateScrollAndDisplay
@@ -647,13 +638,38 @@ const CalendarView = ({
               .filter((img): img is string => Boolean(img));
 
             return (
-              <EventCardUI
-                eventInfo={eventInfo}
-                participantImages={participantImages}
-              />
+              <div
+                onClick={() => {
+                  setSelectedAppointment(eventInfo.event);
+                  setShowEditAppointment(true);
+                }}
+                className={`h-full border-t-4 rounded-xl border-sky-500 ${
+                  eventInfo.event.extendedProps.ExternalCalendarName
+                    ? "bg-slate-200"
+                    : "bg-white"
+                }  shadow-sm overflow-auto min-h-32 w-full max-w-96`}
+              >
+                <EventCardUI
+                  eventInfo={eventInfo}
+                  participantImages={participantImages}
+                />
+              </div>
             );
           }}
         />
+
+        {showEditAppointment && selectedAppointment && (
+          <EditAppointmentPopup
+            appointment={selectedAppointment}
+            isOpen={showEditAppointment}
+            onClose={() => {
+              setShowEditAppointment(false);
+              setSelectedAppointment(null);
+            }}
+            onSubmit={handleEditAppointment}
+          />
+        )}
+
         {PMTaskDetails && todoData && (
           <div className="absolute bottom-0  hidden sm:block w-full z-20">
             <ToDoAndPMComponent

@@ -1,5 +1,5 @@
-import { PopupPropsType } from "@/app/types/todo";
-import React, { useState, useRef, useEffect } from "react";
+import { todoPopupPropsType } from "@/app/types/todo";
+import React, { useState } from "react";
 import Image from "next/image";
 import createTodoImage from "@/app/admin/assets/doctor-suitcase-with-a-cross-svgrepo-com 1.png";
 import { ToggleSwitch } from "./FormComponents/ToggleSwitch";
@@ -12,6 +12,7 @@ import additionalNoteIcon from "@/app/admin/assets/name.png";
 import groupIcon from "@/app/admin/assets/groupIcon.png";
 import dateIcon from "@/app/admin/assets/selectDateIcon.png"; // Add this icon
 import CustomDropdown from "./FormComponents/DropDown";
+import { ToDoTaskType } from "./CalendarView";
 
 interface CreateTodoData {
   description: string;
@@ -47,16 +48,25 @@ const responsiblePersonsOptions: SelectableOption[] = [
 
 // Custom Dropdown Component
 
-const CreateTodoPopup: React.FC<
-  PopupPropsType & { onSubmit: (data: CreateTodoData) => void }
-> = ({ isOpen, onClose, onSubmit }) => {
-  const [formData, setFormData] = useState<CreateTodoData>({
-    description: "",
-    responsiblePersons: [],
-    group: "",
-    status: "Open",
-    notes: "",
-    private: false,
+const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
+  isOpen,
+  onClose,
+  onSubmit,
+}) => {
+  const [formData, setFormData] = useState<ToDoTaskType>({
+    ToDoTaskId: 0,
+    FamilyId: 0,
+    CreatedBy: "",
+    AssignedTo: "",
+    ToDoGroupId: 0,
+    Description: "",
+    Note: "",
+    Private: false,
+    CreatedDate: "",
+    ClosedDate: null,
+    Status: 0,
+    UpdatedOn: "",
+    IsForAll: false,
   });
 
   // Component states for selector components
@@ -147,12 +157,12 @@ const CreateTodoPopup: React.FC<
     e.preventDefault();
 
     // Validate required fields
-    if (!formData.description.trim()) {
+    if (!formData.Description.trim()) {
       alert("Please enter a description");
       return;
     }
 
-    if (formData.responsiblePersons.length === 0) {
+    if (formData.AssignedTo.length === 0) {
       alert("Please select at least one responsible person");
       return;
     }
@@ -171,12 +181,19 @@ const CreateTodoPopup: React.FC<
   // Reset all form states
   const resetForm = () => {
     setFormData({
-      description: "",
-      responsiblePersons: [],
-      group: "",
-      status: "Open",
-      notes: "",
-      private: false,
+      ToDoTaskId: 0,
+      FamilyId: 0,
+      CreatedBy: "",
+      AssignedTo: "",
+      ToDoGroupId: 0,
+      Description: "",
+      Note: "",
+      Private: false,
+      CreatedDate: "",
+      ClosedDate: null,
+      Status: 0,
+      UpdatedOn: "",
+      IsForAll: false,
     });
 
     // Reset selector states
@@ -229,7 +246,7 @@ const CreateTodoPopup: React.FC<
             <input
               type="text"
               placeholder="By Writing Without"
-              value={formData.description}
+              value={formData.Description}
               onChange={handleDescriptionChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
@@ -239,7 +256,7 @@ const CreateTodoPopup: React.FC<
             <div className="flex items-center gap-2">
               <label className="block text-sm font-medium">Private</label>
               <ToggleSwitch
-                checked={formData.private}
+                checked={formData.Private}
                 onChange={handlePrivateToggle}
               />
             </div>
@@ -262,7 +279,7 @@ const CreateTodoPopup: React.FC<
             {/* Groups - Custom Dropdown */}
             <CustomDropdown
               options={groupOptions}
-              selectedValue={formData.group}
+              selectedValue={formData.ToDoGroupId.toString()}
               onSelect={handleGroupSelect}
               placeholder="Select a group"
               title="Groups"
@@ -278,7 +295,7 @@ const CreateTodoPopup: React.FC<
               </div>
               <input
                 type="date"
-                value={formData.dueDate || ""}
+                value={formData.ClosedDate || ""}
                 onChange={handleDueDateChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -314,7 +331,7 @@ const CreateTodoPopup: React.FC<
             </div>
             <textarea
               placeholder="Write next here"
-              value={formData.notes}
+              value={formData.Note}
               onChange={handleNotesChange}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"

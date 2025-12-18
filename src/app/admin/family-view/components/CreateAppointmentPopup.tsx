@@ -1,4 +1,4 @@
-import { PopupPropsType } from "@/app/types/todo";
+import { todoPopupPropsType } from "@/app/types/todo";
 import Image from "next/image";
 import React, { useState } from "react";
 import createAppointmentImage from "@/app/admin/assets/doctor-suitcase-with-a-cross-svgrepo-com 1.png";
@@ -56,7 +56,7 @@ interface AppointmentData {
 }
 
 const CreateAppointmentPopup: React.FC<
-  PopupPropsType & { onSubmit: (data: AppointmentData) => void }
+  todoPopupPropsType & { onSubmit: (data: AppointmentData) => void }
 > = ({ isOpen, onClose, onSubmit }) => {
   const [formData, setFormData] = useState<AppointmentData>({
     name: "",

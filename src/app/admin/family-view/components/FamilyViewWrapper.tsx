@@ -258,16 +258,17 @@ const FamilyViewWrapper = ({
       </div>
 
       {/* Popup Modals */}
-      <CreateTodoPopup
-        isOpen={showCreateTodo}
-        onClose={() => setShowCreateTodo(false)}
-        onSubmit={handleCreateTodo}
-      />
 
       <CreateAppointmentPopup
         isOpen={showCreateAppointment}
         onClose={() => setShowCreateAppointment(false)}
         onSubmit={handleCreateAppointment}
+      />
+
+      <CreateTodoPopup
+        isOpen={showCreateTodo}
+        onClose={() => setShowCreateTodo(false)}
+        onSubmit={handleCreateTodo}
       />
 
       <CreatePocketMoneyPopup

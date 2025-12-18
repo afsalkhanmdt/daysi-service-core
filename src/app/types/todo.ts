@@ -1,14 +1,9 @@
-export type ToDoType = {
-  id: string;
-  description: string;
-  classesResponsible: string[];
-  group: string;
-  status: "Open" | "Close";
-  notes: string;
-};
+import { ToDoTaskType } from "../admin/family-view/components/CalendarView";
 
-export type PopupPropsType = {
+
+export type todoPopupPropsType = {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit?: (data: any) => void;
+  onSubmit: (data: any) => void;
+  todo?: ToDoTaskType
 };

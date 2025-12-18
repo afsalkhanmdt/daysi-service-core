@@ -244,7 +244,7 @@ export default function MultipleSelector({
                 <div className="flex-shrink-0 w-6 h-6 relative">
                   <Image
                     className="rounded-full object-cover"
-                    src={option.imageUrl || defaultDp}
+                    src={option.imageUrl ? option.imageUrl : defaultDp}
                     alt={`${option.label}`}
                     fill
                     sizes="24px"
