@@ -5,13 +5,7 @@ import dayjs from "dayjs";
 import { FamilyData } from "./FamilyViewWrapper";
 import { useTranslation } from "react-i18next";
 import lockIcon from "@/app/admin/assets/EventPrivateIcon.jpg";
-
-type resourcesType = {
-  id: any;
-  title: any;
-  image: any;
-  sortOrder: number;
-}[];
+import { ResourceType } from "@/app/context/ResourceContext";
 
 const MobileEventAndScrollBar = ({
   resources,
@@ -20,7 +14,7 @@ const MobileEventAndScrollBar = ({
   selectedMember,
   setSelectedMember,
 }: {
-  resources: resourcesType;
+  resources: ResourceType[];
   familyData: FamilyData;
   currentDate: Date;
   selectedMember?: number;
@@ -91,12 +85,14 @@ const MobileEventAndScrollBar = ({
         {resources.map((res) => (
           <div
             ref={(el) => {
-              memberRefs.current[res.id] = el;
+              memberRefs.current[res.memberId] = el;
             }}
-            onClick={() => setSelectedMember(res.id)}
-            key={res.id}
+            onClick={() => setSelectedMember(res.memberId as unknown as number)}
+            key={res.memberId}
             className={`flex items-center gap-1 min-w-32 ${
-              selectedMember == res.id ? "bg-sky-500 text-white" : "bg-white"
+              selectedMember == (res.memberId as unknown as number)
+                ? "bg-sky-500 text-white"
+                : "bg-white"
             } rounded-full shadow-md px-1 py-1 hover:shadow-lg transition`}
           >
             <Image

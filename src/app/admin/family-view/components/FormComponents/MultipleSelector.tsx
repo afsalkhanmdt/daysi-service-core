@@ -33,7 +33,8 @@ function Check({
 }
 
 export type SelectableOption = {
-  id: string;
+  id: number;
+  memberId?: string;
   label: string;
   imageUrl?: string;
   isSelected: boolean;
@@ -72,19 +73,19 @@ export default function MultipleSelector({
     setOptions(initialOptions);
   }, [initialOptions]);
 
-  const handleToggleOption = (id: string) => {
+  const handleToggleOption = (id: number) => {
     let updatedOptions: SelectableOption[];
 
     if (singleSelect) {
       // For single selection: select the clicked option, deselect all others
       updatedOptions = options.map((option) => ({
         ...option,
-        isSelected: option.id === id,
+        isSelected: option.id === Number(id),
       }));
     } else {
       // For multiple selection: toggle the clicked option
       updatedOptions = options.map((option) =>
-        option.id === id
+        option.id === Number(id)
           ? { ...option, isSelected: !option.isSelected }
           : option
       );

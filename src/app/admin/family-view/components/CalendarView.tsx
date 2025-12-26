@@ -31,8 +31,8 @@ import { useTranslation } from "react-i18next";
 import { PMData } from "@/app/types/ToDoAndPMTypes";
 import ToDoAndPMComponent from "./ToDoAndPMComponent";
 import EditAppointmentPopup from "./EditAppointmentPopup";
-import { ExtendedProps } from "@/app/types/appoinment";
 import { EventApi } from "@fullcalendar/core";
+import { useResources } from "@/app/context/ResourceContext";
 
 const memberOrder: Record<number, number> = {
   1: 0,
@@ -78,6 +78,8 @@ const CalendarView = ({
   currentDate: Date;
   setCurrentDate: Dispatch<SetStateAction<Date>>;
 }) => {
+  const { resources, setMembers } = useResources();
+
   const { t } = useTranslation("common");
   const calendarRef = useRef<any>(null);
   const calendarContainerRef = useRef<HTMLDivElement>(null);
@@ -121,20 +123,6 @@ const CalendarView = ({
       return 0;
     });
   }, [data.Members]);
-
-  const resources = useMemo(
-    () =>
-      sortedMembers.map((member, index) => ({
-        id: String(member.Id),
-        title: member.FirstName,
-        image: member.ResourceUrl,
-        sortOrder: index,
-        color: member.ColorCode
-          ? member.ColorCode.slice(-6) // take last 6 chars
-          : "000000",
-      })),
-    [sortedMembers]
-  );
 
   const allMemberIds = useMemo(
     () => data.Members.map((m) => String(m.Id)),
@@ -543,6 +531,12 @@ const CalendarView = ({
     // Add your API call to Edit appointment here
     // Example: createAppointmentAPI(appointmentData).then(() => reload());
   };
+
+  useEffect(() => {
+    if (data?.Members?.length) {
+      setMembers(data.Members);
+    }
+  }, [data.Members, setMembers]);
 
   return (
     <div className="sm:p-2.5 bg-slate-100 flex flex-col sm:h-full sm:rounded-xl">
