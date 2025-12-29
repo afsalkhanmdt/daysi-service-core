@@ -1,6 +1,6 @@
 "use client";
-import { PocketMoney, PocketMoneyPopupProps } from "@/app/types/pocketMoney";
-import React, { useState } from "react";
+import { PocketMoneyPopupProps } from "@/app/types/pocketMoney";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import createPocketMoneyImage from "@/app/admin/assets/doctor-suitcase-with-a-cross-svgrepo-com 1.png";
 import { ToggleSwitch } from "./FormComponents/ToggleSwitch";
@@ -13,40 +13,21 @@ import MultipleSelector, {
   SelectableOption,
 } from "./FormComponents/MultipleSelector";
 import { PMTask } from "@/app/types/ToDoAndPMTypes";
-
-const alarmOptions: SelectableOption[] = [
-  { id: "1", label: "Never", isSelected: false },
-  { id: "2", label: "At Time of Event", isSelected: false },
-  { id: "3", label: "5 mins before", isSelected: false },
-  { id: "4", label: "30 min before", isSelected: false },
-  { id: "5", label: "1 hour before", isSelected: false },
-];
-
-const repeatOptions: SelectableOption[] = [
-  { id: "1", label: "Never", isSelected: false },
-  { id: "2", label: "Everyday", isSelected: false },
-  { id: "3", label: "Every Week ", isSelected: false },
-  { id: "4", label: "Every Month", isSelected: false },
-  { id: "5", label: "Every Year", isSelected: false },
-];
+import { REPEAT_OPTIONS } from "@/app/constants/appointmentForm";
+import { mapResourcesToSelectableOptions } from "@/app/utils/resourceAdapters";
+import { useResources } from "@/app/context/ResourceContext";
 
 // You can now define different sets of options
-const responsiblePersonsOptions: SelectableOption[] = [
-  { id: "1", label: "Johnson", isSelected: false },
-  { id: "2", label: "Christian", isSelected: false },
-  { id: "3", label: "Sofie", isSelected: false },
-  { id: "4", label: "Clara", isSelected: false },
-];
 
 const standardTaskOptions: SelectableOption[] = [
-  { id: "1", label: "Clean up the room", isSelected: false },
-  { id: "2", label: "Walk the Dog", isSelected: false },
-  { id: "3", label: "Vacuum the Room", isSelected: false },
-  { id: "4", label: "Wash up", isSelected: false },
-  { id: "5", label: "Empty the Dishwasher", isSelected: false },
-  { id: "6", label: "Wash the Car", isSelected: false },
-  { id: "7", label: "Make the Bed", isSelected: false },
-  { id: "8", label: "Do Homework", isSelected: false },
+  { id: 1, label: "Clean up the room", isSelected: false },
+  { id: 2, label: "Walk the Dog", isSelected: false },
+  { id: 3, label: "Vacuum the Room", isSelected: false },
+  { id: 4, label: "Wash up", isSelected: false },
+  { id: 5, label: "Empty the Dishwasher", isSelected: false },
+  { id: 6, label: "Wash the Car", isSelected: false },
+  { id: 7, label: "Make the Bed", isSelected: false },
+  { id: 8, label: "Do Homework", isSelected: false },
 ];
 
 const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
@@ -54,6 +35,7 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
   onClose,
   onSubmit,
 }) => {
+  const { resources } = useResources();
   // Main form state
   const [formData, setFormData] = useState<PMTask>({
     LocalPMTaskId: 0,
@@ -76,11 +58,11 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
   // Separate states for each selector component
   const [responsiblePersons, setResponsiblePersons] = useState<
     SelectableOption[]
-  >(responsiblePersonsOptions);
+  >([]);
   const [standardTasks, setStandardTasks] =
     useState<SelectableOption[]>(standardTaskOptions);
   const [repeatSequence, setRepeatSequence] =
-    useState<SelectableOption[]>(repeatOptions);
+    useState<SelectableOption[]>(REPEAT_OPTIONS);
 
   // ===== HANDLER FUNCTIONS =====
 
@@ -227,12 +209,17 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
 
     // Reset selector states
     setResponsiblePersons(
-      responsiblePersonsOptions.map((p) => ({ ...p, isSelected: false }))
+      responsiblePersons.map((p) => ({ ...p, isSelected: false }))
     );
     setStandardTasks(
       standardTaskOptions.map((t) => ({ ...t, isSelected: false }))
     );
   };
+
+  useEffect(() => {
+    setResponsiblePersons(mapResourcesToSelectableOptions(resources));
+    console.log(responsiblePersons, "responsiblePersons");
+  }, [resources]);
 
   if (!isOpen) return null;
 

@@ -26,6 +26,7 @@ import { useTranslation } from "react-i18next";
 import i18next from "i18next";
 import "../../../../../i18n";
 import CreatePocketMoneyPopup from "./CreatePocketMoneyPopup";
+import { UserEventCreateRequest } from "@/app/types/appoinment";
 
 export type FamilyData = {
   Family: FamilyResponse;
@@ -101,10 +102,39 @@ const FamilyViewWrapper = ({
     // Example: createTodoAPI(todoData).then(() => reload());
   };
 
-  const handleCreateAppointment = (appointmentData: any) => {
-    console.log("Creating new appointment:", appointmentData);
-    // Add your API call to create appointment here
-    // Example: createAppointmentAPI(appointmentData).then(() => reload());
+  const handleCreateAppointment = (appointmentData: UserEventCreateRequest) => {
+    // Create a new object with all the added values
+    const updatedAppointmentData = {
+      ...appointmentData,
+      addedBy: familyDetails?.Family.MemberId || "",
+      familyUserId: userId,
+      familyId: Number(familyId),
+      locale:
+        familyDetails?.Members?.find((m) => m.MemberId === userId)?.Locale ||
+        "en",
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      offSet: dayjs().format("Z"),
+      eventsUpdatedOn: new Date().toISOString(),
+      // Add other default values you need
+      participants: appointmentData.participants || [],
+      isForAll: appointmentData.isForAll || 0,
+      isAllDayEvent: appointmentData.isAllDayEvent || 0,
+      isSpecialEvent: appointmentData.isSpecialEvent || 0,
+      isPrivateEvent: appointmentData.isPrivateEvent || 0,
+      recurrenceRule: appointmentData.recurrenceRule || {
+        frequency: 0,
+        interval: 1,
+      },
+      noPush: appointmentData.noPush || false,
+    };
+
+    console.log(
+      "Creating new appointment with updated data:",
+      updatedAppointmentData
+    );
+
+    // Now call your API with the updated data
+    // Example: createAppointmentAPI(updatedAppointmentData).then(() => reload());
   };
 
   const handleCreatePocketMoney = (pocketMoneyData: any) => {
