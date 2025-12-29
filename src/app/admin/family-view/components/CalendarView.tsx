@@ -250,8 +250,6 @@ const CalendarView = ({
     );
   }, [data.Members]);
 
-  console.log(events, "events");
-
   // Function to find the earliest event time for the current day
   const findEarliestEventTime = useCallback(() => {
     if (!events.length) return null;

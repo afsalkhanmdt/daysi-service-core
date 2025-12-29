@@ -14,16 +14,6 @@ import dateIcon from "@/app/admin/assets/selectDateIcon.png"; // Add this icon
 import CustomDropdown from "./FormComponents/DropDown";
 import { ToDoTaskType } from "./CalendarView";
 
-interface CreateTodoData {
-  description: string;
-  responsiblePersons: string[];
-  dueDate?: string;
-  group: string;
-  status: "Open" | "Close";
-  notes: string;
-  private?: boolean;
-}
-
 // Define options as SelectableOption arrays
 const groupOptions = [
   { id: "1", label: "Select group" },
@@ -35,15 +25,15 @@ const groupOptions = [
 ];
 
 const statusOptions: SelectableOption[] = [
-  { id: "1", label: "Open", isSelected: true },
-  { id: "2", label: "Close", isSelected: false },
+  { id: 1, label: "Open", isSelected: true },
+  { id: 2, label: "Close", isSelected: false },
 ];
 
 const responsiblePersonsOptions: SelectableOption[] = [
-  { id: "1", label: "Johnson", isSelected: false },
-  { id: "2", label: "Christian", isSelected: false },
-  { id: "3", label: "Sofie", isSelected: false },
-  { id: "4", label: "Clara", isSelected: false },
+  { id: 1, label: "Johnson", isSelected: false },
+  { id: 2, label: "Christian", isSelected: false },
+  { id: 3, label: "Sofie", isSelected: false },
+  { id: 4, label: "Clara", isSelected: false },
 ];
 
 // Custom Dropdown Component

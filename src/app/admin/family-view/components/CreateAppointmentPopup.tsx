@@ -19,26 +19,11 @@ import {
   appointmentPopupPropsType,
   UserEventCreateRequest,
 } from "@/app/types/appoinment";
-
-const alertOptions: SelectableOption[] = [
-  { id: 1, label: "Never", isSelected: false },
-  { id: 2, label: "At Time of Event", isSelected: false },
-  { id: 3, label: "5 mins before", isSelected: false },
-  { id: 4, label: "30 min before", isSelected: false },
-  { id: 5, label: "1 hour before", isSelected: false },
-];
-
-const repeatOptions: SelectableOption[] = [
-  { id: 1, label: "Never", isSelected: false },
-  { id: 2, label: "Everyday", isSelected: false },
-  { id: 3, label: "Every Week ", isSelected: false },
-  { id: 4, label: "Every Month", isSelected: false },
-  { id: 5, label: "Every Year", isSelected: false },
-];
-
-const buildTimestamp = (date: string, time: string) => {
-  return new Date(`${date}T${time}`).toISOString();
-};
+import {
+  ALERT_OPTIONS,
+  buildTimestamp,
+  REPEAT_OPTIONS,
+} from "@/app/constants/appointmentForm";
 
 type AppointmentFormUI = UserEventCreateRequest & {
   startDateOnly: string;
@@ -387,7 +372,7 @@ const CreateAppointmentPopup: React.FC<
 
           <MultipleSelector
             titleIconUrl={repeatIcon.src}
-            options={repeatOptions}
+            options={REPEAT_OPTIONS}
             onSelectionChange={handleRepeatChange}
             title="Repeat Sequence"
             showSelectAll={true}
@@ -400,7 +385,7 @@ const CreateAppointmentPopup: React.FC<
 
           <MultipleSelector
             titleIconUrl={alarmIcon.src}
-            options={alertOptions}
+            options={ALERT_OPTIONS}
             onSelectionChange={handleAlertChange}
             title="Alarm"
             showSelectAll={true}

@@ -13,6 +13,8 @@ import MultipleSelector, {
   SelectableOption,
 } from "./FormComponents/MultipleSelector";
 import CustomDropdown from "./FormComponents/DropDown";
+import { mapResourcesToSelectableOptions } from "@/app/utils/resourceAdapters";
+import { useResources } from "@/app/context/ResourceContext";
 
 // Define options as SelectableOption arrays (same as CreateTodoPopup)
 const groupOptions = [
@@ -25,15 +27,8 @@ const groupOptions = [
 ];
 
 const statusOptions: SelectableOption[] = [
-  { id: "1", label: "Open", isSelected: true },
-  { id: "2", label: "Close", isSelected: false },
-];
-
-const responsiblePersonsOptions: SelectableOption[] = [
-  { id: "1", label: "Johnson", isSelected: false },
-  { id: "2", label: "Christian", isSelected: false },
-  { id: "3", label: "Sofie", isSelected: false },
-  { id: "4", label: "Clara", isSelected: false },
+  { id: 1, label: "Open", isSelected: true },
+  { id: 2, label: "Close", isSelected: false },
 ];
 
 const EditTodoPopup: React.FC<todoPopupPropsType> = ({
@@ -58,11 +53,16 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
     IsForAll: false,
   });
 
-  // Component states for selector components
+  const { resources } = useResources();
   const [statuses, setStatuses] = useState<SelectableOption[]>(statusOptions);
   const [responsiblePersons, setResponsiblePersons] = useState<
     SelectableOption[]
-  >(responsiblePersonsOptions);
+  >([]);
+
+  useEffect(() => {
+    setResponsiblePersons(mapResourcesToSelectableOptions(resources));
+    console.log(responsiblePersons, "responsiblePersons");
+  }, [resources]);
 
   useEffect(() => {
     if (todo) {
