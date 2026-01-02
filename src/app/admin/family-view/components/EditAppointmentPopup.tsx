@@ -1,624 +1,471 @@
-"use client";
-
-import createAppointmentImage from "@/app/admin/assets/doctor-suitcase-with-a-cross-svgrepo-com 1.png";
+import Image from "next/image";
+import React, { useEffect, useState } from "react";
+import editAppointmentImage from "@/app/admin/assets/doctor-suitcase-with-a-cross-svgrepo-com 1.png"; // You might want a different icon
 import SpecialEventIcon from "@/app/admin/assets/event-badged-1-svgrepo-com (1) 1.png";
+import { ToggleSwitch } from "./FormComponents/ToggleSwitch";
 import locationIcon from "@/app/admin/assets/location.png";
 import nameIcon from "@/app/admin/assets/name.png";
 import participantsIcon from "@/app/admin/assets/participantsIcon.png";
 import repeatIcon from "@/app/admin/assets/repeatIcon.png";
 import alarmIcon from "@/app/admin/assets/alarmIcon.png";
 import additionalNoteIcon from "@/app/admin/assets/name.png";
-
-import React, { useCallback, useEffect, useMemo, useState, memo } from "react";
-import Image from "next/image";
-import dynamic from "next/dynamic";
+import MultipleSelector, {
+  SelectableOption,
+} from "./FormComponents/MultipleSelector";
+import { useResources } from "@/app/context/ResourceContext";
+import { mapResourcesToSelectableOptions } from "@/app/utils/resourceAdapters";
 import {
+  AppointmentFormUI,
   appointmentPopupPropsType,
   UserEventCreateRequest,
 } from "@/app/types/appoinment";
-import { SelectableOption } from "./FormComponents/MultipleSelector";
-
-// Import from centralized constants and icons
 import {
   ALERT_OPTIONS,
-  REPEAT_OPTIONS,
   buildTimestamp,
-  parseDateToForm,
-  parseTimeToForm,
+  parseTimestampToDateOnly,
+  parseTimestampToTimeOnly,
+  REPEAT_OPTIONS,
 } from "@/app/constants/appointmentForm";
+import { EventInput } from "@fullcalendar/core";
 
-// Lazy load heavy components
-const ToggleSwitch = dynamic(() =>
-  import("./FormComponents/ToggleSwitch").then((mod) => mod.ToggleSwitch)
-);
-const MultipleSelector = dynamic(
-  () => import("./FormComponents/MultipleSelector")
-);
-
-type AppointmentFormUI = UserEventCreateRequest & {
-  startDateOnly: string;
-  startTimeOnly: string;
-  endDateOnly: string;
-  endTimeOnly: string;
+// Define the props type for the edit popup
+type EditAppointmentPopupProps = appointmentPopupPropsType & {
+  onSubmit: (data: UserEventCreateRequest) => void;
+  initialData?: EventInput; // Add initial data for editing
 };
 
-// Custom hook for edit form management
-const useEditAppointmentForm = (appointment?: any) => {
-  const [formData, setFormData] = useState<AppointmentFormUI | null>(null);
+const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  initialData,
+}) => {
+  const { resources } = useResources();
   const [responsiblePersons, setResponsiblePersons] = useState<
     SelectableOption[]
   >([]);
-  const [alarmSequence, setAlarmSequence] =
-    useState<SelectableOption[]>(ALERT_OPTIONS);
-  const [repeatSequence, setRepeatSequence] =
-    useState<SelectableOption[]>(REPEAT_OPTIONS);
 
-  // Initialize form data from appointment
-  useEffect(() => {
-    if (!appointment) {
-      setFormData(null);
-      return;
-    }
+  const [formData, setFormData] = useState<AppointmentFormUI>({
+    ...initialData, // Start with initial data if provided
+    startDateOnly: initialData?.startDate
+      ? parseTimestampToDateOnly(initialData.startDate)
+      : "",
+    startTimeOnly: initialData?.startDate
+      ? parseTimestampToTimeOnly(initialData.startDate)
+      : "",
+    endDateOnly: initialData?.endDate
+      ? parseTimestampToDateOnly(initialData.endDate)
+      : "",
+    endTimeOnly: initialData?.endDate
+      ? parseTimestampToTimeOnly(initialData.endDate)
+      : "",
+  } as AppointmentFormUI);
 
-    const extendedProps = appointment.extendedProps as UserEventCreateRequest;
-
-    const initialFormData: AppointmentFormUI = {
-      ...extendedProps,
-      startDateOnly: parseDateToForm(appointment.start?.toString() || ""),
-      startTimeOnly: parseTimeToForm(appointment.start?.toString() || ""),
-      endDateOnly: parseDateToForm(appointment.end?.toString() || ""),
-      endTimeOnly: parseTimeToForm(appointment.end?.toString() || ""),
-      title: extendedProps.title || appointment.title || "",
-      location: extendedProps.location || "",
-      description: extendedProps.description || "",
-    };
-
-    setFormData(initialFormData);
-
-    // Initialize participants selection
-    if (extendedProps.participants?.length > 0) {
-      const initialParticipants = extendedProps.participants.map(
-        (participant) => ({
-          id: Number(participant.id) || Number(participant.id) || 0,
-          label: participant.name || `Participant ${participant.id}`,
-          isSelected: true,
-          memberId: participant.memberId || participant.id?.toString(),
-        })
-      );
-
-      setResponsiblePersons(initialParticipants);
-    }
-
-    // Initialize alarm sequence
-    if (extendedProps.alert !== undefined) {
-      setAlarmSequence((prev) =>
-        prev.map((option) => ({
-          ...option,
-          isSelected: option.id === extendedProps.alert,
-        }))
-      );
-    }
-
-    // Initialize repeat sequence
-    if (extendedProps.repeat !== undefined) {
-      setRepeatSequence((prev) =>
-        prev.map((option) => ({
-          ...option,
-          isSelected: option.id === extendedProps.repeat,
-        }))
-      );
-    }
-  }, [appointment]);
-
-  const updateField = useCallback(
-    <K extends keyof AppointmentFormUI>(
-      field: K,
-      value: AppointmentFormUI[K]
-    ) => {
-      setFormData((prev) => (prev ? { ...prev, [field]: value } : prev));
-    },
-    []
-  );
-
-  const getPayload = useCallback((): UserEventCreateRequest | null => {
-    if (!formData) return null;
-
-    const { startDateOnly, startTimeOnly, endDateOnly, endTimeOnly, ...rest } =
-      formData;
-
-    return {
-      ...rest,
-      startDate: buildTimestamp(startDateOnly, startTimeOnly),
-      endDate: buildTimestamp(endDateOnly, endTimeOnly),
-    };
-  }, [formData]);
-
-  const resetForm = useCallback(() => {
-    setFormData(null);
-    setResponsiblePersons([]);
-    setAlarmSequence(ALERT_OPTIONS);
-    setRepeatSequence(REPEAT_OPTIONS);
-  }, []);
-
-  return {
-    formData,
-    responsiblePersons,
-    alarmSequence,
-    repeatSequence,
-    updateField,
-    setResponsiblePersons,
-    setAlarmSequence,
-    setRepeatSequence,
-    getPayload,
-    resetForm,
+  // Generic handler for text inputs
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
-};
 
-const EditAppointmentPopup: React.FC<appointmentPopupPropsType> = memo(
-  ({ isOpen, onClose, onSubmit, appointment }) => {
-    const {
-      formData,
-      responsiblePersons,
-      alarmSequence,
-      repeatSequence,
-      updateField,
-      setResponsiblePersons,
-      setAlarmSequence,
-      setRepeatSequence,
-      getPayload,
-      resetForm,
-    } = useEditAppointmentForm(appointment);
+  // Generic handler for toggle switches
+  const handleToggleChange = (
+    field: keyof AppointmentFormUI,
+    checked: boolean
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: checked ? 1 : 0,
+    }));
+  };
 
-    const handleSpecialEventToggle = useCallback(
-      (checked: boolean) => {
-        updateField("isSpecialEvent", checked ? 1 : 0);
-      },
-      [updateField]
+  // Generic handler for single-select MultipleSelector components
+  const handleSingleSelectChange = (
+    field: keyof AppointmentFormUI,
+    selectedOptions: SelectableOption[]
+  ) => {
+    const selectedOption = selectedOptions.find((option) => option.isSelected);
+    setFormData((prev) => ({
+      ...prev,
+      [field]: selectedOption ? selectedOption.id : 0,
+    }));
+  };
+
+  // Handler for responsible persons (multi-select with special mapping)
+  const handleResponsiblePersonsChange = (
+    selectedPersons: SelectableOption[]
+  ) => {
+    // Update the responsiblePersons state for UI
+    setResponsiblePersons((prev) =>
+      prev.map((person) => ({
+        ...person,
+        isSelected: selectedPersons.some((sp) => sp.id === person.id),
+      }))
     );
 
-    const handlePrivateToggle = useCallback(
-      (checked: boolean) => {
-        updateField("isPrivateEvent", checked ? 1 : 0);
-      },
-      [updateField]
-    );
+    // Update formData
+    setFormData((prev) => ({
+      ...prev,
+      participants: selectedPersons.map((person) => ({
+        localId: person.id,
+        memberId: person.memberId,
+      })),
+    }));
+  };
 
-    const handleResponsiblePersonsChange = useCallback(
-      (selectedPersons: SelectableOption[]) => {
-        setResponsiblePersons(selectedPersons);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
 
-        updateField(
-          "participants",
-          selectedPersons.map((person) => ({
-            localId: person.id,
-            memberId: person.memberId,
-            name: person.label,
-            status: "Accepted",
-          }))
-        );
-      },
-      [updateField, setResponsiblePersons]
-    );
+    const payload: UserEventCreateRequest = {
+      ...formData,
+      startDate: buildTimestamp(formData.startDateOnly, formData.startTimeOnly),
+      endDate: buildTimestamp(formData.endDateOnly, formData.endTimeOnly),
+    };
 
-    const handleAlarmChange = useCallback(
-      (selectedAlarms: SelectableOption[]) => {
-        const selectedAlert = selectedAlarms.find(
-          (option) => option.isSelected
-        );
-        setAlarmSequence(selectedAlarms);
+    delete (payload as any).startDateOnly;
+    delete (payload as any).startTimeOnly;
+    delete (payload as any).endDateOnly;
+    delete (payload as any).endTimeOnly;
 
-        if (selectedAlert) {
-          updateField("alert", selectedAlert.id);
-        }
-      },
-      [updateField, setAlarmSequence]
-    );
+    onSubmit(payload);
+    onClose();
+  };
 
-    const handleRepeatChange = useCallback(
-      (selectedRepeats: SelectableOption[]) => {
-        const selectedRepeat = selectedRepeats.find(
-          (option) => option.isSelected
-        );
-        setRepeatSequence(selectedRepeats);
+  const handleClose = () => {
+    onClose();
+    // Optionally reset form on close, or keep data for re-opening
+    if (initialData) {
+      setFormData({
+        ...initialData,
+        startDateOnly: initialData?.startDate
+          ? parseTimestampToDateOnly(initialData.startDate)
+          : "",
+        startTimeOnly: initialData?.startDate
+          ? parseTimestampToTimeOnly(initialData.startDate)
+          : "",
+        endDateOnly: initialData?.endDate
+          ? parseTimestampToDateOnly(initialData.endDate)
+          : "",
+        endTimeOnly: initialData?.endDate
+          ? parseTimestampToTimeOnly(initialData.endDate)
+          : "",
+      } as AppointmentFormUI);
+    }
+  };
 
-        if (selectedRepeat) {
-          updateField("repeat", selectedRepeat.id);
-        }
-      },
-      [updateField, setRepeatSequence]
-    );
+  // Initialize form when initialData changes
+  useEffect(() => {
+    if (initialData && isOpen) {
+      setFormData({
+        ...initialData,
+        startDateOnly: initialData.startDate
+          ? parseTimestampToDateOnly(initialData.startDate)
+          : "",
+        startTimeOnly: initialData.startDate
+          ? parseTimestampToTimeOnly(initialData.startDate)
+          : "",
+        endDateOnly: initialData.endDate
+          ? parseTimestampToDateOnly(initialData.endDate)
+          : "",
+        endTimeOnly: initialData.endDate
+          ? parseTimestampToTimeOnly(initialData.endDate)
+          : "",
+      } as AppointmentFormUI);
+    }
+  }, [initialData, isOpen]);
 
-    const handleSubmit = useCallback(
-      (e: React.FormEvent) => {
-        e.preventDefault();
-        const payload = getPayload();
-        if (!payload) return;
+  // Initialize responsible persons from resources
+  useEffect(() => {
+    const mappedPersons = mapResourcesToSelectableOptions(resources);
 
-        onSubmit(payload);
-        onClose();
-        resetForm();
-      },
-      [getPayload, onSubmit, onClose, resetForm]
-    );
+    // If we have initial participants, mark them as selected
+    if (initialData?.participants && initialData.participants.length > 0) {
+      const selectedIds = initialData.participants.map(
+        (p: any) => p.id || p.memberId
+      );
+      const updatedPersons = mappedPersons.map((person) => ({
+        ...person,
+        isSelected:
+          selectedIds.includes(person.id) ||
+          selectedIds.includes(person.memberId),
+      }));
+      setResponsiblePersons(updatedPersons);
+    } else {
+      setResponsiblePersons(mappedPersons);
+    }
+  }, [resources, initialData?.participants]);
 
-    const handleClose = useCallback(() => {
-      onClose();
-      resetForm();
-    }, [onClose, resetForm]);
+  if (!isOpen) return null;
 
-    // Handle escape key
-    useEffect(() => {
-      const handleEscape = (e: KeyboardEvent) => {
-        if (e.key === "Escape" && isOpen) {
-          handleClose();
-        }
-      };
-
-      if (isOpen) {
-        window.addEventListener("keydown", handleEscape);
-        return () => window.removeEventListener("keydown", handleEscape);
-      }
-    }, [isOpen, handleClose]);
-
-    if (!isOpen || !formData) return null;
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg w-full max-w-xl mx-4 max-h-[90vh] overflow-y-auto">
-          <Header onClose={handleClose} />
-
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            <SpecialEventSection
-              isSpecialEvent={formData.isSpecialEvent === 1}
-              onToggle={handleSpecialEventToggle}
-            />
-
-            <TitleLocationSection
-              title={formData.title}
-              location={formData.location || ""}
-              onTitleChange={useCallback(
-                (value) => updateField("title", value),
-                [updateField]
-              )}
-              onLocationChange={useCallback(
-                (value) => updateField("location", value),
-                [updateField]
-              )}
-            />
-
-            <PrivateToggle
-              isPrivate={formData.isPrivateEvent === 1}
-              onToggle={handlePrivateToggle}
-            />
-
-            <MultipleSelector
-              titleIconUrl={participantsIcon.src}
-              options={responsiblePersons}
-              onSelectionChange={handleResponsiblePersonsChange}
-              title="Select Participants"
-              showSelectAll={true}
-              showCount={true}
-              showImages={true}
-              selectedBorderColor="green"
-              selectedBadgeColor="green"
-              singleSelect={false}
-            />
-
-            <DateTimeSection
-              startDate={formData.startDateOnly}
-              startTime={formData.startTimeOnly}
-              endDate={formData.endDateOnly}
-              endTime={formData.endTimeOnly}
-              onStartDateChange={useCallback(
-                (value) => updateField("startDateOnly", value),
-                [updateField]
-              )}
-              onStartTimeChange={useCallback(
-                (value) => updateField("startTimeOnly", value),
-                [updateField]
-              )}
-              onEndDateChange={useCallback(
-                (value) => updateField("endDateOnly", value),
-                [updateField]
-              )}
-              onEndTimeChange={useCallback(
-                (value) => updateField("endTimeOnly", value),
-                [updateField]
-              )}
-            />
-
-            <MultipleSelector
-              titleIconUrl={repeatIcon.src}
-              options={repeatSequence}
-              onSelectionChange={handleRepeatChange}
-              title="Repeat Sequence"
-              showSelectAll={true}
-              showCount={true}
-              showImages={false}
-              selectedBorderColor="green"
-              selectedBadgeColor="green"
-              singleSelect={true}
-            />
-
-            <MultipleSelector
-              titleIconUrl={alarmIcon.src}
-              options={alarmSequence}
-              onSelectionChange={handleAlarmChange}
-              title="Alarm"
-              showSelectAll={true}
-              showCount={true}
-              showImages={false}
-              selectedBorderColor="green"
-              selectedBadgeColor="green"
-              singleSelect={true}
-            />
-
-            <AdditionalNotes
-              description={formData.description || ""}
-              onChange={useCallback(
-                (value) => updateField("description", value),
-                [updateField]
-              )}
-            />
-
-            <FormActions onCancel={handleClose} />
-          </form>
-        </div>
-      </div>
-    );
-  }
-);
-
-// Extracted sub-components
-const Header = memo(({ onClose }: { onClose: () => void }) => (
-  <div className="border-b border-gray-200 bg-blue-200 m-2 px-6 py-4 rounded-lg flex gap-2">
-    <div className="rounded-full bg-white p-2">
-      <Image
-        src={createAppointmentImage}
-        alt="Edit Appointment"
-        width={15}
-        height={15}
-        loading="eager"
-      />
-    </div>
-    <h2 className="text-xl font-semibold">Edit Appointment</h2>
-    <button
-      onClick={onClose}
-      className="ml-auto text-gray-500 hover:text-gray-700"
-      aria-label="Close"
-    >
-      ×
-    </button>
-  </div>
-));
-
-const SpecialEventSection = memo(
-  ({
-    isSpecialEvent,
-    onToggle,
-  }: {
-    isSpecialEvent: boolean;
-    onToggle: (checked: boolean) => void;
-  }) => (
-    <div className="border-gray-200">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="rounded-full bg-gray-100 p-2">
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg w-full max-w-xl mx-4 max-h-[90vh] overflow-y-auto">
+        {/* Header - Changed title to "Edit Appointment" */}
+        <div className="border-b border-gray-200 bg-blue-200 m-2 px-6 py-4 rounded-lg flex gap-2">
+          <div className="rounded-full bg-white p-2 ">
             <Image
-              src={SpecialEventIcon}
-              alt="Special Event"
+              src={editAppointmentImage}
+              alt="editAppointmentImage"
               width={15}
               height={15}
-              loading="lazy"
             />
           </div>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-800">
-              Special event
-            </h3>
-          </div>
+          <h2 className="text-xl font-semibold">Edit Appointment</h2>
         </div>
-        <ToggleSwitch checked={isSpecialEvent} onChange={onToggle} />
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* Special Event Section with Switch */}
+          <div className=" border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="rounded-full bg-gray-100 p-2">
+                  <Image
+                    src={SpecialEventIcon}
+                    alt="SpecialEventIcon"
+                    width={15}
+                    height={15}
+                  />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    Special event
+                  </h3>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <ToggleSwitch
+                  checked={
+                    initialData?.extendedProps?.isSpecialEvent === 1
+                      ? true
+                      : false
+                  }
+                  onChange={(checked) =>
+                    handleToggleChange("isSpecialEvent", checked)
+                  }
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Title and Location */}
+          <div className="flex gap-4">
+            <div>
+              <div className="flex items-center gap-2 ">
+                <Image src={nameIcon} alt="Name" width={15} height={15} />
+                <label className="block text-lg font-medium mb-2">Name</label>
+              </div>
+              <input
+                type="text"
+                name="title"
+                placeholder="Appointment title"
+                value={formData.title || ""}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 ">
+                <Image
+                  src={locationIcon}
+                  alt="Location"
+                  width={15}
+                  height={15}
+                />
+                <label className="block text-lg font-medium mb-2">
+                  Location
+                </label>
+              </div>
+              <input
+                type="text"
+                name="location"
+                placeholder="Location"
+                value={formData.location || ""}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Private Toggle */}
+          <div className="flex justify-end items-center ">
+            <div className="flex items-center gap-2">
+              <label className="block text-sm font-medium">Private</label>
+              <ToggleSwitch
+                checked={formData.isPrivateEvent === 1 ? true : false}
+                onChange={(checked) =>
+                  handleToggleChange("isPrivateEvent", checked)
+                }
+              />
+            </div>
+          </div>
+
+          {/* Participants */}
+          <MultipleSelector
+            titleIconUrl={participantsIcon.src}
+            options={responsiblePersons.map((option) => ({
+              ...option,
+              isSelected:
+                formData.participants?.some(
+                  (participant: any) =>
+                    participant.ParticipantId === option.memberId
+                ) || false,
+            }))}
+            onSelectionChange={handleResponsiblePersonsChange}
+            title="Select Responsible Persons"
+            showSelectAll={true}
+            showCount={true}
+            showImages={true}
+            selectedBorderColor="green"
+            selectedBadgeColor="green"
+            singleSelect={false}
+          />
+
+          {/* Dates and Times */}
+          <div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-lg font-medium mb-2">from</label>
+                <input
+                  placeholder="Select Start date"
+                  type="date"
+                  name="startDateOnly"
+                  value={formData.startDateOnly || ""}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-lg font-medium mb-2">to</label>
+                <input
+                  placeholder="Select End date"
+                  type="date"
+                  name="endDateOnly"
+                  value={formData.endDateOnly || ""}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-lg font-medium mb-2">
+                  Start Time
+                </label>
+                <input
+                  type="time"
+                  name="startTimeOnly"
+                  value={formData.startTimeOnly || ""}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-lg font-medium mb-2">
+                  End Time
+                </label>
+                <input
+                  type="time"
+                  name="endTimeOnly"
+                  value={formData.endTimeOnly || ""}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Repeat Sequence */}
+          <MultipleSelector
+            titleIconUrl={repeatIcon.src}
+            options={REPEAT_OPTIONS.map((option) => ({
+              ...option,
+              isSelected: option.id === formData.repeat,
+            }))}
+            onSelectionChange={(selected) =>
+              handleSingleSelectChange("repeat", selected)
+            }
+            title="Repeat Sequence"
+            showSelectAll={true}
+            showCount={true}
+            showImages={false}
+            selectedBorderColor="green"
+            selectedBadgeColor="green"
+            singleSelect={true}
+          />
+
+          {/* Alarm */}
+          <MultipleSelector
+            titleIconUrl={alarmIcon.src}
+            options={ALERT_OPTIONS.map((option) => ({
+              ...option,
+              isSelected: option.id === formData.alert,
+            }))}
+            onSelectionChange={(selected) => {
+              handleSingleSelectChange("alert", selected);
+            }}
+            title="Alarm"
+            showSelectAll={true}
+            showCount={true}
+            showImages={false}
+            selectedBorderColor="green"
+            selectedBadgeColor="green"
+            singleSelect={true}
+          />
+
+          {/* Additional Notes */}
+          <div>
+            <div className="flex items-center gap-2 ">
+              <Image
+                src={additionalNoteIcon}
+                alt="Notes"
+                width={15}
+                height={15}
+              />
+              <label className="block text-lg font-medium mb-2">
+                Additional Notes
+              </label>
+            </div>
+            <textarea
+              name="description"
+              onChange={handleInputChange}
+              placeholder="Any additional information..."
+              rows={2}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={formData.description || ""}
+            />
+          </div>
+
+          {/* Buttons - Changed submit button text */}
+          <div className="border-t border-gray-200 pt-4">
+            <div className="flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="px-6 py-2 text-gray-600 hover:text-gray-800 font-medium border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
+              >
+                Update Appointment
+              </button>
+            </div>
+          </div>
+        </form>
       </div>
     </div>
-  )
-);
-
-const TitleLocationSection = memo(
-  ({
-    title,
-    location,
-    onTitleChange,
-    onLocationChange,
-  }: {
-    title: string;
-    location: string;
-    onTitleChange: (value: string) => void;
-    onLocationChange: (value: string) => void;
-  }) => (
-    <div className="flex gap-4">
-      <FormField
-        label="Name"
-        icon={nameIcon}
-        value={title}
-        onChange={onTitleChange}
-        placeholder="Appointment title"
-        required
-      />
-      <FormField
-        label="Location"
-        icon={locationIcon}
-        value={location}
-        onChange={onLocationChange}
-        placeholder="Location"
-      />
-    </div>
-  )
-);
-
-const PrivateToggle = memo(
-  ({
-    isPrivate,
-    onToggle,
-  }: {
-    isPrivate: boolean;
-    onToggle: (checked: boolean) => void;
-  }) => (
-    <div className="flex justify-end items-center">
-      <div className="flex items-center gap-2">
-        <label className="block text-sm font-medium">Private</label>
-        <ToggleSwitch checked={isPrivate} onChange={onToggle} />
-      </div>
-    </div>
-  )
-);
-
-const DateTimeSection = memo(
-  ({
-    startDate,
-    startTime,
-    endDate,
-    endTime,
-    onStartDateChange,
-    onStartTimeChange,
-    onEndDateChange,
-    onEndTimeChange,
-  }: {
-    startDate: string;
-    startTime: string;
-    endDate: string;
-    endTime: string;
-    onStartDateChange: (value: string) => void;
-    onStartTimeChange: (value: string) => void;
-    onEndDateChange: (value: string) => void;
-    onEndTimeChange: (value: string) => void;
-  }) => (
-    <div>
-      <div className="grid grid-cols-2 gap-4">
-        <FormField
-          label="from"
-          value={startDate}
-          onChange={onStartDateChange}
-          type="date"
-          placeholder="Select Start date"
-          required
-        />
-        <FormField
-          label="to"
-          value={endDate}
-          onChange={onEndDateChange}
-          type="date"
-          placeholder="Select End date"
-          required
-        />
-      </div>
-      <div className="grid grid-cols-2 gap-4 mt-4">
-        <FormField
-          label="Start Time"
-          value={startTime}
-          onChange={onStartTimeChange}
-          type="time"
-          required
-        />
-        <FormField
-          label="End Time"
-          value={endTime}
-          onChange={onEndTimeChange}
-          type="time"
-          required
-        />
-      </div>
-    </div>
-  )
-);
-
-const AdditionalNotes = memo(
-  ({
-    description,
-    onChange,
-  }: {
-    description: string;
-    onChange: (value: string) => void;
-  }) => (
-    <div>
-      <div className="flex items-center gap-2 mb-2">
-        <Image
-          src={additionalNoteIcon}
-          alt="Additional Notes"
-          width={15}
-          height={15}
-          loading="lazy"
-        />
-        <label className="block text-lg font-medium">Additional Notes</label>
-      </div>
-      <textarea
-        value={description}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="Any additional information..."
-        rows={2}
-        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
-    </div>
-  )
-);
-
-const FormActions = memo(({ onCancel }: { onCancel: () => void }) => (
-  <div className="border-t border-gray-200 pt-4">
-    <div className="flex justify-end space-x-3">
-      <button
-        type="button"
-        onClick={onCancel}
-        className="px-6 py-2 text-gray-600 hover:text-gray-800 font-medium border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-      >
-        Cancel
-      </button>
-      <button
-        type="submit"
-        className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium transition-colors"
-      >
-        Save Changes
-      </button>
-    </div>
-  </div>
-));
-
-const FormField = memo(
-  ({
-    label,
-    icon,
-    value,
-    onChange,
-    type = "text",
-    placeholder,
-    required,
-  }: {
-    label: string;
-    icon?: any;
-    value: string;
-    onChange: (value: string) => void;
-    type?: string;
-    placeholder?: string;
-    required?: boolean;
-  }) => (
-    <div>
-      <div className="flex items-center gap-2 mb-2">
-        {icon && (
-          <Image src={icon} alt={label} width={15} height={15} loading="lazy" />
-        )}
-        <label className="block text-lg font-medium">{label}</label>
-      </div>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        required={required}
-      />
-    </div>
-  )
-);
-
-EditAppointmentPopup.displayName = "EditAppointmentPopup";
+  );
+};
 
 export default EditAppointmentPopup;

@@ -4,13 +4,13 @@ import { SelectableOption } from "../admin/family-view/components/FormComponents
 
 export const mapResourcesToSelectableOptions = (
   resources: ResourceType[],
-  selectedIds: string[] = []
+  selectedIds: Number[] = []
 ): SelectableOption[] => {
   return resources.map((r) => ({
-    id:r.localId,
-    memberId: r.memberId,
+    id: r.id,
+    memberId: r.extendedProps?.memberId,
     label: r.title,
-    imageUrl: r.image,
-    isSelected: selectedIds.includes(r.localId.toString()),
+    imageUrl: r.extendedProps?.image,
+    isSelected: selectedIds.includes(Number(r.id)),
   }));
 };

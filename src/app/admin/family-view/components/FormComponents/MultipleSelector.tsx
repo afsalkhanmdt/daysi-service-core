@@ -1,4 +1,3 @@
-// MultipleSelector.tsx
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import defaultDp from "@/app/admin/assets/default-avatar-icon-of-social-media-user-vector.jpg";
@@ -37,7 +36,7 @@ export type SelectableOption = {
   memberId?: string;
   label: string;
   imageUrl?: string;
-  isSelected: boolean;
+  isSelected: boolean | "" | undefined;
 };
 
 type MultipleSelectorProps = {
@@ -52,6 +51,8 @@ type MultipleSelectorProps = {
   selectedBadgeColor?: string;
   className?: string;
   singleSelect?: boolean;
+  // NEW: Add prop for initially selected IDs
+  initiallySelectedIds?: (number | string)[];
 };
 
 export default function MultipleSelector({
@@ -65,12 +66,40 @@ export default function MultipleSelector({
   selectedBorderColor = "green",
   selectedBadgeColor = "green",
   singleSelect = false,
+  // NEW: Initially selected IDs parameter
+  initiallySelectedIds = [],
 }: MultipleSelectorProps) {
   const [options, setOptions] = useState<SelectableOption[]>(initialOptions);
 
-  // Sync with external changes to initialOptions
+  // Initialize selections when component mounts or initialOptions/initiallySelectedIds change
   useEffect(() => {
-    setOptions(initialOptions);
+    if (initiallySelectedIds.length > 0) {
+      const updatedOptions = initialOptions.map((option) => ({
+        ...option,
+        isSelected:
+          initiallySelectedIds.includes(option.id) ||
+          (option.memberId && initiallySelectedIds.includes(option.memberId)),
+      }));
+      setOptions(updatedOptions);
+
+      // Notify parent about initial selection
+      if (onSelectionChange) {
+        const selected = updatedOptions.filter((opt) => opt.isSelected);
+        onSelectionChange(selected);
+      }
+    } else {
+      // If no initiallySelectedIds, just set the options as is
+      setOptions(initialOptions);
+    }
+  }, [initialOptions, initiallySelectedIds, onSelectionChange]);
+
+  // Sync with external changes to initialOptions (fallback for backward compatibility)
+  useEffect(() => {
+    // Only sync if options haven't been modified by user interaction
+    const hasUserSelection = options.some((opt) => opt.isSelected);
+    if (!hasUserSelection && initiallySelectedIds.length === 0) {
+      setOptions(initialOptions);
+    }
   }, [initialOptions]);
 
   const handleToggleOption = (id: number) => {
@@ -229,7 +258,7 @@ export default function MultipleSelector({
         {options.map((option) => (
           <div
             onClick={() => handleToggleOption(option.id)}
-            key={option.id}
+            key={option.memberId}
             className="relative"
           >
             <button

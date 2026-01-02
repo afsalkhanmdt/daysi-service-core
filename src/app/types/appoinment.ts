@@ -1,5 +1,4 @@
 import { EventInput } from "@fullcalendar/core";
-import { FamilyData } from "../admin/family-view/components/FamilyViewWrapper";
 
 export type appointmentPopupPropsType = {
   isOpen: boolean;
@@ -9,12 +8,19 @@ export type appointmentPopupPropsType = {
    
 };
 
-export enum SpecialEvent {
+export type AppointmentFormUI = UserEventCreateRequest & {
+  startDateOnly: string;
+  startTimeOnly: string;
+  endDateOnly: string;
+  endTimeOnly: string;
+};
+
+export enum SpecialEventEnum {
   Birthday = 0,
   Anniversary = 1
 }
 
-export enum Repeat {
+export enum RepeatEnum {
   Never = 0,
   EveryDay = 1,
   EveryWeek = 2,
@@ -23,7 +29,7 @@ export enum Repeat {
   EveryYear = 5
 }
 
-export enum Alert {
+export enum AlertEnum {
   None = 0,
   AtTimeOfTheEvent = 1,
   FiveMinutesBefore = 2,
@@ -65,19 +71,19 @@ export interface RecurrenceRule {
 export interface UserEventCreateRequest {
   // Optional based on your commented code
   // memberId?: string;
-  
+  id?: string;
   participants: Participant[];
   familyUserId?: string;
   familyId: number;
   title: string;
   description?: string;
-  startDate: Date | string;
-  endDate: Date | string;
+  startDate: string;
+  endDate: string;
   location?: string;
-  specialEvent?: SpecialEvent;
-  repeat?: Repeat;
-  repeatEndDate?: Date | string | null;
-  alert?: Alert;
+  specialEvent?: SpecialEventEnum;
+  repeat?: RepeatEnum;
+  repeatEndDate?: string | null;
+  alert?: AlertEnum;
   alarms?: Alarm[];
   isForAll: number;
   isAllDayEvent: number;

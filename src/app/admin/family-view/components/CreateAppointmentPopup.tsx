@@ -1,4 +1,3 @@
-import { todoPopupPropsType } from "@/app/types/todo";
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import createAppointmentImage from "@/app/admin/assets/doctor-suitcase-with-a-cross-svgrepo-com 1.png";
@@ -16,62 +15,20 @@ import MultipleSelector, {
 import { useResources } from "@/app/context/ResourceContext";
 import { mapResourcesToSelectableOptions } from "@/app/utils/resourceAdapters";
 import {
+  AppointmentFormUI,
   appointmentPopupPropsType,
+  SpecialEventEnum,
   UserEventCreateRequest,
 } from "@/app/types/appoinment";
 import {
   ALERT_OPTIONS,
   buildTimestamp,
+  initialFormDataForApi,
   REPEAT_OPTIONS,
 } from "@/app/constants/appointmentForm";
 
-type AppointmentFormUI = UserEventCreateRequest & {
-  startDateOnly: string;
-  startTimeOnly: string;
-  endDateOnly: string;
-  endTimeOnly: string;
-};
-
-const initialFormDataForApi: UserEventCreateRequest = {
-  participants: [],
-  familyId: 0,
-  title: "",
-  addedBy: "",
-  familyUserId: "",
-  description: "",
-  startDate: "",
-  endDate: "",
-  location: "",
-  specialEvent: 0,
-  repeat: 0,
-  repeatEndDate: "",
-  alert: 0,
-  alarms: [],
-  isForAll: 0,
-  isAllDayEvent: 0,
-  isSpecialEvent: 0,
-  isPrivateEvent: 0,
-  eventPerson: "",
-  eventsUpdatedOn: "",
-  localStartDate: "",
-  localEndDate: "",
-  timeZone: "",
-  offSet: "",
-  locale: "",
-  parentEventId: "",
-  eventGuID: "",
-  externalCalendarId: 0,
-  latitude: "",
-  longitude: "",
-  recurrenceRule: {
-    frequency: 0,
-    interval: 1,
-  },
-  noPush: false,
-};
-
 const initialFormData: AppointmentFormUI = {
-  ...initialFormDataForApi, // your existing ExtendedProps object
+  ...initialFormDataForApi, // existing ExtendedProps object
   startDateOnly: "",
   startTimeOnly: "",
   endDateOnly: "",
@@ -90,27 +47,42 @@ const CreateAppointmentPopup: React.FC<
 
   const [formData, setFormData] = useState<AppointmentFormUI>(initialFormData);
 
-  const handleDescriptionChange = (
-    e: React.ChangeEvent<HTMLTextAreaElement>
+  // Generic handler for text inputs
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    const value = e.target.value;
-    setFormData((prev) => ({ ...prev, description: value }));
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSpecialEventToggle = (checked: boolean) => {
-    setFormData((prev) => ({ ...prev, isSpecialEvent: checked ? 1 : 0 }));
-  };
-
-  const handlePrivateToggle = (checked: boolean) => {
+  // Generic handler for toggle switches
+  const handleToggleChange = (
+    field: keyof AppointmentFormUI,
+    checked: boolean
+  ) => {
     setFormData((prev) => ({
       ...prev,
-      isPrivate: checked,
+      [field]: checked ? 1 : 0,
     }));
   };
 
+  // Generic handler for single-select MultipleSelector components
+  const handleSingleSelectChange = (
+    field: keyof AppointmentFormUI,
+    selectedOptions: SelectableOption[]
+  ) => {
+    const selectedOption = selectedOptions.find((option) => option.isSelected);
+    setFormData((prev) => ({
+      ...prev,
+      [field]: selectedOption ? selectedOption.id : 0,
+    }));
+  };
+
+  // Handler for responsible persons (multi-select with special mapping)
   const handleResponsiblePersonsChange = (
     selectedPersons: SelectableOption[]
   ) => {
+    // Update the responsiblePersons state for UI
     setResponsiblePersons((prev) =>
       prev.map((person) => ({
         ...person,
@@ -118,31 +90,13 @@ const CreateAppointmentPopup: React.FC<
       }))
     );
 
-    // Update formData with selected person labels
+    // Update formData
     setFormData((prev) => ({
       ...prev,
       participants: selectedPersons.map((person) => ({
         localId: person.id,
-        memberId: person.memberId, // Replace 'id' with the correct property if needed
+        memberId: person.memberId,
       })),
-    }));
-  };
-
-  const handleAlertChange = (selectedOptions: SelectableOption[]) => {
-    const selectedAlert = selectedOptions.find((option) => option.isSelected);
-    setFormData((prev) => ({
-      ...prev,
-      alert: selectedAlert ? selectedAlert.id : 0,
-    }));
-  };
-
-  const handleRepeatChange = (selectedRepeats: SelectableOption[]) => {
-    const selectedRepeatSequence = selectedRepeats.find(
-      (option) => option.isSelected
-    );
-    setFormData((prev) => ({
-      ...prev,
-      repeat: selectedRepeatSequence ? selectedRepeatSequence.id : 0,
     }));
   };
 
@@ -167,13 +121,11 @@ const CreateAppointmentPopup: React.FC<
 
   const handleClose = () => {
     onClose();
-    // Reset form on close
     setFormData(initialFormData);
   };
 
   useEffect(() => {
     setResponsiblePersons(mapResourcesToSelectableOptions(resources));
-    console.log(responsiblePersons, "responsiblePersons");
   }, [resources]);
 
   if (!isOpen) return null;
@@ -216,31 +168,28 @@ const CreateAppointmentPopup: React.FC<
               </div>
               <div className="flex items-center gap-2">
                 <ToggleSwitch
-                  checked={formData.specialEvent === 1 ? true : false}
-                  onChange={handleSpecialEventToggle}
+                  checked={formData.isSpecialEvent === 1 ? true : false}
+                  onChange={(checked) =>
+                    handleToggleChange("isSpecialEvent", checked)
+                  }
                 />
               </div>
             </div>
           </div>
-          {/* Title */}
+
+          {/* Title and Location */}
           <div className="flex gap-4">
             <div>
               <div className="flex items-center gap-2 ">
-                <Image
-                  src={nameIcon}
-                  alt="createAppointmentImage"
-                  width={15}
-                  height={15}
-                />
+                <Image src={nameIcon} alt="Name" width={15} height={15} />
                 <label className="block text-lg font-medium mb-2">Name</label>
               </div>
               <input
                 type="text"
+                name="title"
                 placeholder="Appointment title"
                 value={formData.title}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, title: e.target.value }))
-                }
+                onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
@@ -249,7 +198,7 @@ const CreateAppointmentPopup: React.FC<
               <div className="flex items-center gap-2 ">
                 <Image
                   src={locationIcon}
-                  alt="createAppointmentImage"
+                  alt="Location"
                   width={15}
                   height={15}
                 />
@@ -259,23 +208,25 @@ const CreateAppointmentPopup: React.FC<
               </div>
               <input
                 type="text"
-                placeholder="Appointment title"
+                name="location"
+                placeholder="Location"
                 value={formData.location}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, location: e.target.value }))
-                }
+                onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
           </div>
 
+          {/* Private Toggle */}
           <div className="flex justify-end items-center ">
             <div className="flex items-center gap-2">
               <label className="block text-sm font-medium">Private</label>
               <ToggleSwitch
                 checked={formData.isPrivateEvent === 1 ? true : false}
-                onChange={handlePrivateToggle}
+                onChange={(checked) =>
+                  handleToggleChange("isPrivateEvent", checked)
+                }
               />
             </div>
           </div>
@@ -291,24 +242,20 @@ const CreateAppointmentPopup: React.FC<
             showImages={true}
             selectedBorderColor="green"
             selectedBadgeColor="green"
-            singleSelect={false} // Multiple select
+            singleSelect={false}
           />
 
-          <div className="">
-            {/* Date */}
+          {/* Dates and Times */}
+          <div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-lg font-medium mb-2">from</label>
                 <input
                   placeholder="Select Start date"
                   type="date"
+                  name="startDateOnly"
                   value={formData.startDateOnly}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      startDateOnly: e.target.value,
-                    }))
-                  }
+                  onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
@@ -316,22 +263,17 @@ const CreateAppointmentPopup: React.FC<
               <div>
                 <label className="block text-lg font-medium mb-2">to</label>
                 <input
-                  placeholder="Select Start date"
+                  placeholder="Select End date"
                   type="date"
+                  name="endDateOnly"
                   value={formData.endDateOnly}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      endDateOnly: e.target.value,
-                    }))
-                  }
+                  onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
             </div>
 
-            {/* Time */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-lg font-medium mb-2">
@@ -339,13 +281,9 @@ const CreateAppointmentPopup: React.FC<
                 </label>
                 <input
                   type="time"
+                  name="startTimeOnly"
                   value={formData.startTimeOnly}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      startTimeOnly: e.target.value,
-                    }))
-                  }
+                  onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
@@ -356,13 +294,9 @@ const CreateAppointmentPopup: React.FC<
                 </label>
                 <input
                   type="time"
+                  name="endTimeOnly"
                   value={formData.endTimeOnly}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      endTimeOnly: e.target.value,
-                    }))
-                  }
+                  onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
@@ -370,10 +304,15 @@ const CreateAppointmentPopup: React.FC<
             </div>
           </div>
 
+          {/* Repeat Sequence */}
           <MultipleSelector
             titleIconUrl={repeatIcon.src}
             options={REPEAT_OPTIONS}
-            onSelectionChange={handleRepeatChange}
+            onSelectionChange={(selected) =>
+              handleSingleSelectChange("repeat", selected)
+            }
+            // OR using the more generic version:
+            // onSelectionChange={(selected) => handleSelectionChange("repeat", selected)}
             title="Repeat Sequence"
             showSelectAll={true}
             showCount={true}
@@ -383,17 +322,20 @@ const CreateAppointmentPopup: React.FC<
             singleSelect={true}
           />
 
+          {/* Alarm */}
           <MultipleSelector
             titleIconUrl={alarmIcon.src}
             options={ALERT_OPTIONS}
-            onSelectionChange={handleAlertChange}
+            onSelectionChange={(selected) =>
+              handleSingleSelectChange("alert", selected)
+            }
             title="Alarm"
             showSelectAll={true}
             showCount={true}
             showImages={false}
             selectedBorderColor="green"
             selectedBadgeColor="green"
-            singleSelect={true} // Multiple select
+            singleSelect={true}
           />
 
           {/* Additional Notes */}
@@ -401,7 +343,7 @@ const CreateAppointmentPopup: React.FC<
             <div className="flex items-center gap-2 ">
               <Image
                 src={additionalNoteIcon}
-                alt="createAppointmentImage"
+                alt="Notes"
                 width={15}
                 height={15}
               />
@@ -410,14 +352,16 @@ const CreateAppointmentPopup: React.FC<
               </label>
             </div>
             <textarea
-              onChange={handleDescriptionChange}
+              name="description"
+              onChange={handleInputChange}
               placeholder="Any additional information..."
               rows={2}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={formData.description}
             />
           </div>
 
-          {/* Divider and Buttons */}
+          {/* Buttons */}
           <div className="border-t border-gray-200 pt-4">
             <div className="flex justify-end space-x-3">
               <button

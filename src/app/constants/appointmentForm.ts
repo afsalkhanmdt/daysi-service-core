@@ -1,27 +1,64 @@
-import { Alert, Repeat, FrequencyEnum } from "@/app/types/appoinment";
+import { FrequencyEnum, UserEventCreateRequest, RepeatEnum, AlertEnum } from "@/app/types/appoinment";
 import { SelectableOption } from "../admin/family-view/components/FormComponents/MultipleSelector";
 
+export const initialFormDataForApi: UserEventCreateRequest = {
+  participants: [],
+  familyId: 0,
+  title: "",
+  addedBy: "",
+  familyUserId: "",
+  description: "",
+  startDate: "",
+  endDate: "",
+  location: "",
+  specialEvent: undefined,
+  repeat: RepeatEnum.Never,
+  repeatEndDate: "",
+  alert: AlertEnum.None,
+  alarms: [],
+  isForAll: 0,
+  isAllDayEvent: 0,
+  isSpecialEvent: 0,
+  isPrivateEvent: 0,
+  eventPerson: "",
+  eventsUpdatedOn: "",
+  localStartDate: "",
+  localEndDate: "",
+  timeZone: "",
+  offSet: "",
+  locale: "",
+  parentEventId: "",
+  eventGuID: "",
+  externalCalendarId: 0,
+  latitude: "",
+  longitude: "",
+  recurrenceRule: {
+    frequency: FrequencyEnum.Never,
+    interval: 1,
+  },
+  noPush: false,
+};
 export const ALERT_OPTIONS: SelectableOption[] = [
-  { id: Alert.None, label: "Never", isSelected: false },
-  { id: Alert.AtTimeOfTheEvent, label: "At Time of Event", isSelected: false },
-  { id: Alert.FiveMinutesBefore, label: "5 mins before", isSelected: false },
-  { id: Alert.FifteenMinutsBefore, label: "15 mins before", isSelected: false },
-  { id: Alert.ThirtyMinutsBefore, label: "30 min before", isSelected: false },
-  { id: Alert.OneHourBefore, label: "1 hour before", isSelected: false },
-  { id: Alert.TwoHoursBefore, label: "2 hours before", isSelected: false },
-  { id: Alert.OneWeekBefore, label: "1 week before", isSelected: false },
-  { id: Alert.OneDayBefore, label: "1 day before", isSelected: false },
-  { id: Alert.FourHoursBefore, label: "4 hours before", isSelected: false },
-  { id: Alert.EightHoursBefore, label: "8 hours before", isSelected: false },
+  { id: AlertEnum.None, label: "Never", isSelected: false },
+  { id: AlertEnum.AtTimeOfTheEvent, label: "At Time of Event", isSelected: false },
+  { id: AlertEnum.FiveMinutesBefore, label: "5 mins before", isSelected: false },
+  { id: AlertEnum.FifteenMinutsBefore, label: "15 mins before", isSelected: false },
+  { id: AlertEnum.ThirtyMinutsBefore, label: "30 min before", isSelected: false },
+  { id: AlertEnum.OneHourBefore, label: "1 hour before", isSelected: false },
+  { id: AlertEnum.TwoHoursBefore, label: "2 hours before", isSelected: false },
+  { id: AlertEnum.OneWeekBefore, label: "1 week before", isSelected: false },
+  { id: AlertEnum.OneDayBefore, label: "1 day before", isSelected: false },
+  { id: AlertEnum.FourHoursBefore, label: "4 hours before", isSelected: false },
+  { id: AlertEnum.EightHoursBefore, label: "8 hours before", isSelected: false },
 ];
 
 export const REPEAT_OPTIONS: SelectableOption[] = [
-  { id: Repeat.Never, label: "Never", isSelected: false },
-  { id: Repeat.EveryDay, label: "Everyday", isSelected: false },
-  { id: Repeat.EveryWeek, label: "Every Week", isSelected: false },
-  { id: Repeat.Every2Week, label: "Every 2 Weeks", isSelected: false },
-  { id: Repeat.EveryMonth, label: "Every Month", isSelected: false },
-  { id: Repeat.EveryYear, label: "Every Year", isSelected: false },
+  { id: RepeatEnum.Never, label: "Never", isSelected: false },
+  { id: RepeatEnum.EveryDay, label: "Everyday", isSelected: false },
+  { id: RepeatEnum.EveryWeek, label: "Every Week", isSelected: false },
+  { id: RepeatEnum.Every2Week, label: "Every 2 Weeks", isSelected: false },
+  { id: RepeatEnum.EveryMonth, label: "Every Month", isSelected: false },
+  { id: RepeatEnum.EveryYear, label: "Every Year", isSelected: false },
 ];
 
 export const FREQUENCY_OPTIONS: SelectableOption[] = [
@@ -51,6 +88,16 @@ export const parseTimeToForm = (dateString: string | null): string => {
   } catch {
     return "";
   }
+};
+
+
+export const parseTimestampToDateOnly = (timestamp: string): string => {
+  return new Date(timestamp).toISOString().split('T')[0];
+};
+
+export const parseTimestampToTimeOnly = (timestamp: string): string => {
+  const date = new Date(timestamp);
+  return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 };
 
 export const buildTimestamp = (date: string, time: string) => {
