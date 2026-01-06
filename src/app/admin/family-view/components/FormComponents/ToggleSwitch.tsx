@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 export const ToggleSwitch = ({
-  checked = false,
+  checked,
   onChange,
   disabled = false,
 }: {

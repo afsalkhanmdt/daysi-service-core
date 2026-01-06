@@ -85,18 +85,18 @@ const MobileEventAndScrollBar = ({
         {resources.map((res) => (
           <div
             ref={(el) => {
-              memberRefs.current[res.memberId] = el;
+              memberRefs.current[res.id] = el;
             }}
-            onClick={() => setSelectedMember(res.memberId as unknown as number)}
-            key={res.memberId}
+            onClick={() => setSelectedMember(Number(res.id))}
+            key={res.id}
             className={`flex items-center gap-1 min-w-32 ${
-              selectedMember == (res.memberId as unknown as number)
+              selectedMember == (res.id as unknown as number)
                 ? "bg-sky-500 text-white"
                 : "bg-white"
             } rounded-full shadow-md px-1 py-1 hover:shadow-lg transition`}
           >
             <Image
-              src={res.image || "/fallback.png"}
+              src={res.extendedProps?.image || "/fallback.png"}
               alt={res.title}
               width={32}
               height={32}

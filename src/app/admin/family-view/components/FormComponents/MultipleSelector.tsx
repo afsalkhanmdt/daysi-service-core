@@ -1,4 +1,3 @@
-// MultipleSelector.tsx
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import defaultDp from "@/app/admin/assets/default-avatar-icon-of-social-media-user-vector.jpg";
@@ -37,7 +36,7 @@ export type SelectableOption = {
   memberId?: string;
   label: string;
   imageUrl?: string;
-  isSelected: boolean;
+  isSelected: boolean | "" | undefined;
 };
 
 type MultipleSelectorProps = {
@@ -67,31 +66,43 @@ export default function MultipleSelector({
   singleSelect = false,
 }: MultipleSelectorProps) {
   const [options, setOptions] = useState<SelectableOption[]>(initialOptions);
+  const [hasUserInteracted, setHasUserInteracted] = useState(false);
 
-  // Sync with external changes to initialOptions
   useEffect(() => {
-    setOptions(initialOptions);
-  }, [initialOptions]);
+    if (!hasUserInteracted || singleSelect) {
+      setOptions(initialOptions);
+      if (singleSelect) {
+        setHasUserInteracted(false);
+      }
+    }
+  }, [initialOptions, hasUserInteracted, singleSelect]);
 
   const handleToggleOption = (id: number) => {
+    setHasUserInteracted(true);
+
     let updatedOptions: SelectableOption[];
 
     if (singleSelect) {
       // For single selection: select the clicked option, deselect all others
       updatedOptions = options.map((option) => ({
         ...option,
-        isSelected: option.id === Number(id),
+        isSelected: option.id === id,
       }));
     } else {
-      // For multiple selection: toggle the clicked option
-      updatedOptions = options.map((option) =>
-        option.id === Number(id)
-          ? { ...option, isSelected: !option.isSelected }
-          : option
-      );
+      // For multiple selection: toggle only the clicked option
+      updatedOptions = options.map((option) => {
+        if (option.id === id) {
+          return { ...option, isSelected: !option.isSelected };
+        }
+        return option; // Keep other options unchanged
+      });
     }
 
     setOptions(updatedOptions);
+    console.log(
+      "Updated options:",
+      updatedOptions.map((o) => `${o.label}: ${o.isSelected}`)
+    );
 
     // Notify parent component about selection changes
     if (onSelectionChange) {
@@ -102,6 +113,8 @@ export default function MultipleSelector({
 
   const handleSelectAll = () => {
     if (singleSelect) return;
+
+    setHasUserInteracted(true);
 
     const allSelected = options.map((option) => ({
       ...option,
@@ -114,6 +127,8 @@ export default function MultipleSelector({
   };
 
   const handleClearAll = () => {
+    setHasUserInteracted(true);
+
     const noneSelected = options.map((option) => ({
       ...option,
       isSelected: false,
@@ -229,7 +244,7 @@ export default function MultipleSelector({
         {options.map((option) => (
           <div
             onClick={() => handleToggleOption(option.id)}
-            key={option.id}
+            key={option.memberId || option.id}
             className="relative"
           >
             <button
@@ -238,7 +253,7 @@ export default function MultipleSelector({
                 option.isSelected
                   ? `${borderColorClass} shadow-sm`
                   : "border-gray-300 hover:border-gray-400"
-              } ${singleSelect ? "cursor-pointer pr-10" : ""}`}
+              } ${singleSelect ? "cursor-pointer pr-10" : "cursor-pointer"}`}
             >
               {/* Image/Icon - conditionally shown */}
               {showImages && (
@@ -276,7 +291,7 @@ export default function MultipleSelector({
               <div
                 className={`absolute right-2 top-1/2 transform -translate-y-1/2 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
                   option.isSelected
-                    ? `${badgeColorClass} border-${selectedBorderColor}-500`
+                    ? `${badgeColorClass} border-transparent`
                     : "border-gray-300 bg-white"
                 }`}
               >
@@ -291,7 +306,7 @@ export default function MultipleSelector({
               <div
                 className={`absolute -top-1 -right-1 w-5 h-5 ${badgeColorClass} rounded-full flex items-center justify-center z-10 shadow-sm border border-white`}
               >
-                <Check color="white" strokeWidth={3} />
+                <Check color="white" strokeWidth={3} className="w-3 h-3" />
               </div>
             )}
           </div>

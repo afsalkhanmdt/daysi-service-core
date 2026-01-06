@@ -4,12 +4,15 @@ import { createContext, useContext, useMemo, useState } from "react";
 import { MemberResponse } from "@/app/types/familyMemberTypes";
 
 export type ResourceType = {
-  localId: number;
-  memberId: string;
+  id: number;
   title: string;
-  image?: string;
-  sortOrder?: number;
-  color?: string;
+  extendedProps?: {
+    localId: number;
+    memberId: string;
+    image?: string;
+    sortOrder?: number;
+    color?: string;
+  };
 };
 
 type ResourceContextType = {
@@ -44,12 +47,15 @@ export const ResourceProvider = ({
     });
 
     return sortedMembers.map((member, index) => ({
-      localId: member.Id,
-      memberId: member.MemberId,
+      id: member.Id,
       title: member.FirstName,
-      image: member.ResourceUrl,
-      sortOrder: index,
-      color: member.ColorCode ? member.ColorCode.slice(-6) : "000000",
+      extendedProps: {
+        localId: member.Id,
+        memberId: member.MemberId,
+        image: member.ResourceUrl,
+        sortOrder: index,
+        color: member.ColorCode ? member.ColorCode.slice(-6) : "000000",
+      },
     }));
   }, [members]);
 

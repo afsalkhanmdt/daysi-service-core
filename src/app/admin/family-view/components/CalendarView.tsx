@@ -1,4 +1,5 @@
 "use client";
+import dayjs from "dayjs";
 
 import FullCalendar from "@fullcalendar/react";
 import resourceTimeGridPlugin from "@fullcalendar/resource-timegrid";
@@ -33,6 +34,7 @@ import ToDoAndPMComponent from "./ToDoAndPMComponent";
 import EditAppointmentPopup from "./EditAppointmentPopup";
 import { EventApi } from "@fullcalendar/core";
 import { useResources } from "@/app/context/ResourceContext";
+import { UserEventCreateRequest } from "@/app/types/appoinment";
 
 const memberOrder: Record<number, number> = {
   1: 0,
@@ -80,6 +82,11 @@ const CalendarView = ({
 }) => {
   const { resources, setMembers } = useResources();
 
+  const formattedResources = resources.map((r) => ({
+    ...r,
+    id: String(r.id),
+  }));
+
   const { t } = useTranslation("common");
   const calendarRef = useRef<any>(null);
   const calendarContainerRef = useRef<HTMLDivElement>(null);
@@ -97,36 +104,6 @@ const CalendarView = ({
   );
   const { data: todoData } = useFetch<ToDoTaskType[]>(
     `ToDo/GetToDos?familyId=${familyId}`
-  );
-
-  const sortedMembers = useMemo(() => {
-    return [...data.Members].sort((a, b) => {
-      const aType = a.MemberType;
-      const bType = b.MemberType;
-
-      // Family first
-      if (aType === 1 && bType !== 1) return -1;
-      if (bType === 1 && aType !== 1) return 1;
-
-      // Admin second
-      if (aType === 0 && bType !== 0) return -1;
-      if (bType === 0 && aType !== 0) return 1;
-
-      // For all others (normal members), sort by birthdate (eldest first)
-      if (aType > 1 && bType > 1) {
-        const aDate = new Date(a.Birthdate || "");
-        const bDate = new Date(b.Birthdate || "");
-        return aDate.getTime() - bDate.getTime(); // earlier = older
-      }
-
-      // keep relative order if all else equal
-      return 0;
-    });
-  }, [data.Members]);
-
-  const allMemberIds = useMemo(
-    () => data.Members.map((m) => String(m.Id)),
-    [data.Members]
   );
 
   const imageUrls = useMemo(
@@ -400,13 +377,6 @@ const CalendarView = ({
       const slotLanes = calendarContainerRef.current?.querySelectorAll(
         ".fc-timegrid-slots table tr"
       );
-      if (slotLanes) {
-        console.log("Slot lanes found:", slotLanes.length);
-        console.log(
-          "First slot time:",
-          slotLanes[0]?.querySelector(".fc-timegrid-slot-label")?.textContent
-        );
-      }
     }, 500);
 
     return () => clearTimeout(timeout);
@@ -446,88 +416,40 @@ const CalendarView = ({
       scrollContainer?.removeEventListener("scroll", handleScroll);
     };
   }, []);
-  // useEffect(() => {
-  //   const handleResize = () => {
-  //     if (calendarRef.current?.getApi) {
-  //       const calendarApi = calendarRef.current.getApi();
 
-  //       // Force calendar to update its dimensions
-  //       setTimeout(() => {
-  //         calendarApi.updateSize();
+  const handleEditAppointment = (appointmentData: UserEventCreateRequest) => {
+    // Create a new object with all the added values
+    const updatedAppointmentData = {
+      ...appointmentData,
+      addedBy: data?.Family.MemberId,
+      familyUserId: data.Family.MemberId,
+      familyId: Number(familyId),
+      locale:
+        data?.Members?.find((m) => m.MemberId === data.Family.MemberId)
+          ?.Locale || "en",
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      offSet: dayjs().format("Z"),
+      eventsUpdatedOn: new Date().toISOString(),
+      // Add other default values you need
+      participants: appointmentData.participants || [],
+      isForAll: appointmentData.isForAll || 0,
+      isAllDayEvent: appointmentData.isAllDayEvent || 0,
+      isSpecialEvent: appointmentData.isSpecialEvent || 0,
+      isPrivateEvent: appointmentData.isPrivateEvent || 0,
+      recurrenceRule: appointmentData.recurrenceRule || {
+        frequency: 0,
+        interval: 1,
+      },
+      noPush: appointmentData.noPush || false,
+    };
 
-  //         // Additional forced reflow for the calendar
-  //         const calendarEl =
-  //           calendarContainerRef.current?.querySelector(".fc-timegrid-body");
-  //         if (calendarEl) {
-  //           // Trigger reflow
-  //           (calendarEl as HTMLElement).style.display = "none";
-  //           (calendarEl as HTMLElement).offsetHeight; // Force reflow
-  //           (calendarEl as HTMLElement).style.display = "";
-  //         }
-  //       }, 100);
-  //     }
-  //   };
+    console.log(
+      "Creating new appointment with updated data:",
+      updatedAppointmentData
+    );
 
-  //   // Add event listeners
-  //   window.addEventListener("resize", handleResize);
-  //   window.addEventListener("orientationchange", handleResize);
-
-  //   // Initial calculation after mount
-  //   const initTimer = setTimeout(() => {
-  //     handleResize();
-  //   }, 500);
-
-  //   return () => {
-  //     window.removeEventListener("resize", handleResize);
-  //     window.removeEventListener("orientationchange", handleResize);
-  //     clearTimeout(initTimer);
-  //   };
-  // }, []);
-
-  // // Add this useEffect to handle initial load stretching
-  // useEffect(() => {
-  //   // Force a recalculation after the calendar has rendered
-  //   const timer = setTimeout(() => {
-  //     if (calendarRef.current?.getApi) {
-  //       const calendarApi = calendarRef.current.getApi();
-  //       calendarApi.updateSize();
-
-  //       // Additional DOM manipulation to ensure proper stretching
-  //       const resourceCols =
-  //         calendarContainerRef.current?.querySelectorAll(".fc-timegrid-col");
-  //       const resourceHeaders =
-  //         calendarContainerRef.current?.querySelectorAll(".fc-resource");
-
-  //       if (resourceCols && resourceHeaders) {
-  //         // Calculate available width
-  //         const container = calendarContainerRef.current;
-  //         if (container) {
-  //           const availableWidth = container.clientWidth - 50; // Subtract time axis
-  //           const columnCount = resourceCols.length;
-  //           const calculatedWidth = Math.max(350, availableWidth / columnCount);
-
-  //           // Apply calculated width
-  //           resourceCols.forEach((col: Element) => {
-  //             (col as HTMLElement).style.minWidth = "350px";
-  //             (col as HTMLElement).style.flex = `1 1 ${calculatedWidth}px`;
-  //           });
-
-  //           resourceHeaders.forEach((header: Element) => {
-  //             (header as HTMLElement).style.minWidth = "350px";
-  //             (header as HTMLElement).style.flex = `1 1 ${calculatedWidth}px`;
-  //           });
-  //         }
-  //       }
-  //     }
-  //   }, 1000);
-
-  //   return () => clearTimeout(timer);
-  // }, [resources.length, currentDate]);
-
-  const handleEditAppointment = (appointmentData: any) => {
-    console.log("Edit appointment:", appointmentData);
-    // Add your API call to Edit appointment here
-    // Example: createAppointmentAPI(appointmentData).then(() => reload());
+    // Now call your API with the updated data
+    // Example: createAppointmentAPI(updatedAppointmentData).then(() => reload());
   };
 
   useEffect(() => {
@@ -589,7 +511,7 @@ const CalendarView = ({
           eventOverlap={false}
           slotEventOverlap={false}
           headerToolbar={false}
-          resources={resources}
+          resources={formattedResources}
           events={events}
           resourceLabelContent={(arg) => (
             <div className="flex justify-between items-center w-full ">
@@ -652,24 +574,39 @@ const CalendarView = ({
 
         {showEditAppointment && selectedAppointment && (
           <EditAppointmentPopup
-            appointment={
-              selectedAppointment
-                ? {
-                    id: selectedAppointment.id,
-                    title: selectedAppointment.title,
-                    start: selectedAppointment.start || undefined,
-                    end: selectedAppointment.end || undefined,
-                    resourceId: selectedAppointment.getResources()?.[0]?.id,
-                    extendedProps: selectedAppointment.extendedProps,
-                  }
-                : undefined
-            }
             isOpen={showEditAppointment}
             onClose={() => {
               setShowEditAppointment(false);
               setSelectedAppointment(null);
             }}
             onSubmit={handleEditAppointment}
+            initialData={
+              selectedAppointment
+                ? {
+                    id: selectedAppointment.id,
+                    title: selectedAppointment.title,
+                    startDate: selectedAppointment.start || undefined,
+                    endDate: selectedAppointment.end || undefined,
+                    description: selectedAppointment.extendedProps.description,
+                    location: selectedAppointment.extendedProps.location,
+                    isAllDayEvent:
+                      selectedAppointment.extendedProps.IsAllDayEvent,
+                    isSpecialEvent:
+                      selectedAppointment.extendedProps.IsSpecialEvent,
+                    repeat:
+                      selectedAppointment.extendedProps.Repeat || undefined,
+                    repeatEndDate:
+                      selectedAppointment.extendedProps.RepeatEndDate,
+                    alert: selectedAppointment.extendedProps.Alert || undefined,
+                    alarms:
+                      selectedAppointment.extendedProps.Alarms || undefined,
+                    participants:
+                      selectedAppointment.extendedProps.participants,
+                    externalCalendarName:
+                      selectedAppointment.extendedProps.ExternalCalendarName,
+                  }
+                : undefined
+            }
           />
         )}
 
