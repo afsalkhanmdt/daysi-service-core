@@ -1,7 +1,7 @@
 import { FrequencyEnum, UserEventCreateRequest, RepeatEnum, AlertEnum } from "@/app/types/appoinment";
 import { SelectableOption } from "../admin/family-view/components/FormComponents/MultipleSelector";
 
-export const initialFormDataForApi: UserEventCreateRequest = {
+export const initialFormDataForAppointmentApi: UserEventCreateRequest = {
   participants: [],
   familyId: 0,
   title: "",

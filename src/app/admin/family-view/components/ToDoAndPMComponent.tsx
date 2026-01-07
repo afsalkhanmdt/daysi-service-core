@@ -7,9 +7,9 @@ import TodoEventUi from "./TodoEventsUi";
 import { ToDoTaskType } from "./CalendarView";
 import { FamilyData } from "./FamilyViewWrapper";
 import { useTranslation } from "react-i18next";
-import { PMData, PMTask } from "@/app/types/ToDoAndPMTypes";
-import EditTodoPopup from "./EditTodoPopup";
 import EditPocketMoneyPopup from "./EditPocketMoneyPopup";
+import { PMData, PMTask } from "@/app/types/pocketMoney";
+import EditTodoPopup from "./EditTodoPopup";
 
 const ToDoAndPMComponent = ({
   todoDetails,

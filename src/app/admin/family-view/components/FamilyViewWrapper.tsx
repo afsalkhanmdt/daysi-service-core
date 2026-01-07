@@ -27,6 +27,7 @@ import i18next from "i18next";
 import "../../../../../i18n";
 import CreatePocketMoneyPopup from "./CreatePocketMoneyPopup";
 import { UserEventCreateRequest } from "@/app/types/appoinment";
+import { PMTaskCreateCommand } from "@/app/types/pocketMoney";
 
 export type FamilyData = {
   Family: FamilyResponse;
@@ -137,10 +138,27 @@ const FamilyViewWrapper = ({
     // Example: createAppointmentAPI(updatedAppointmentData).then(() => reload());
   };
 
-  const handleCreatePocketMoney = (pocketMoneyData: any) => {
-    console.log("Creating new pocket money:", pocketMoneyData);
-    // Add your API call to create pocket money here
-    // Example: createPocketMoneyAPI(pocketMoneyData).then(() => reload());
+  const handleCreatePocketMoney = (pocketMoneyData: PMTaskCreateCommand) => {
+    const updatedPocketMoneyData = {
+      ...pocketMoneyData,
+      familyId: Number(familyId),
+      CreatedBy: userId || "",
+      PMAmount: Number(pocketMoneyData.PMAmount) || 0,
+      Interval: Number(pocketMoneyData.Interval) || 0,
+      ActivityDate: pocketMoneyData.ActivityDate
+        ? new Date(pocketMoneyData.ActivityDate).toISOString()
+        : new Date().toISOString(),
+      FirstComeFirstServe: Boolean(pocketMoneyData.FirstComeFirstServe),
+      PMDescription: pocketMoneyData.PMDescription || "",
+      Note: pocketMoneyData.Note || "",
+      Repeat: pocketMoneyData.Repeat || "none", // Assuming RepeatEnum has a default
+      FamilyMembersPlanned: pocketMoneyData.FamilyMembersPlanned || [],
+    };
+
+    console.log(
+      "Creating new pocket money with updated data:",
+      updatedPocketMoneyData
+    );
   };
 
   if (!familyDetails || !isLangReady) {

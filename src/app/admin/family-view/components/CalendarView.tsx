@@ -29,12 +29,12 @@ import MobileEventAndScrollBar from "./MobileEventAndScrollBar";
 import DateScrollAndDisplay from "./DateScrollAndDisplay";
 import { EventInput } from "@fullcalendar/core";
 import { useTranslation } from "react-i18next";
-import { PMData } from "@/app/types/ToDoAndPMTypes";
 import ToDoAndPMComponent from "./ToDoAndPMComponent";
 import EditAppointmentPopup from "./EditAppointmentPopup";
 import { EventApi } from "@fullcalendar/core";
 import { useResources } from "@/app/context/ResourceContext";
 import { UserEventCreateRequest } from "@/app/types/appoinment";
+import { PMData } from "@/app/types/pocketMoney";
 
 const memberOrder: Record<number, number> = {
   1: 0,
