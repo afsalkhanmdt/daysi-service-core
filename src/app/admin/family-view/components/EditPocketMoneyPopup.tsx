@@ -151,6 +151,11 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
         isSelected: selectedPersons.some((sp) => sp.id === person.id),
       }))
     );
+
+    setFormData((prev) => ({
+      ...prev,
+      FamilyMembersPlanned: selectedPersons.map((p) => p.memberId!),
+    }));
   };
 
   // Handler for description change

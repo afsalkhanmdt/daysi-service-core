@@ -1,8 +1,8 @@
 "use client";
 import Image from "next/image";
 import icon from "../../assets/try.jpg";
-import { ToDoTaskType } from "./CalendarView";
 import { FamilyData } from "./FamilyViewWrapper";
+import { ToDoTaskType } from "@/app/types/todo";
 
 const TodoEventUi = ({
   ToDoData,
@@ -11,9 +11,10 @@ const TodoEventUi = ({
   ToDoData: ToDoTaskType;
   familyDetails: FamilyData;
 }) => {
-  const imageUrl =
-    familyDetails.Members.find((m) => m.MemberId === ToDoData.AssignedTo)
-      ?.ResourceUrl || icon.src;
+  const assignedMembers = familyDetails.Members.filter((m) =>
+    ToDoData.AssignedTo.includes(m.MemberId)
+  );
+
   return (
     <div className="min-w-52 sm:min-w-0 h-20 border-t-2 sm:border-t-4 rounded-xl border-emerald-500 bg-white shadow-md shadow-gray-300 flex flex-col justify-between gap-1 p-1">
       <div>
@@ -31,13 +32,16 @@ const TodoEventUi = ({
         </div>
       </div>
       <div className="flex flex-wrap justify-between w-full gap-1.5">
-        <Image
-          src={imageUrl}
-          alt={`avatar`}
-          width={22}
-          height={22}
-          className="w-8 h-8 rounded-full border border-gray-200 bg-white shadow-sm shadow-gray-200  hover:scale-110 transition-transform"
-        />
+        {assignedMembers.map((m) => (
+          <Image
+            key={m.MemberId}
+            src={m.ResourceUrl || icon.src}
+            alt=""
+            width={32}
+            height={32}
+            className="rounded-full"
+          />
+        ))}
       </div>
     </div>
   );

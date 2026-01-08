@@ -1,6 +1,7 @@
 import { ResourceType } from "@/app/context/ResourceContext";
 import { SelectableOption } from "../admin/family-view/components/FormComponents/MultipleSelector";
 import { PMTask, PMTaskCreateCommand } from "../types/pocketMoney";
+import { ToDoCreateCommand, ToDoTaskType } from "../types/todo";
 
 
 export const mapResourcesToSelectableOptions = (
@@ -35,3 +36,16 @@ export const mapPMTaskToCreateCommand = (
   CurrencyCode: "INR", // or from settings
 });
 
+
+export const mapToDoTaskToCreateCommand = (
+  task: ToDoTaskType
+): ToDoCreateCommand => ({
+  familyId: task.FamilyId,
+  createdBy: task.CreatedBy,
+  assignedTo: task.AssignedTo ?? [],
+  toDoGroupId: task.ToDoGroupId,
+  description: task.Description ?? "",
+  note: task.Note ?? "",
+  private: task.Private,
+  isForAll: task.IsForAll,
+});

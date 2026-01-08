@@ -124,22 +124,7 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Validate required fields
-    // if (!formData.standardTask) {
-    //   alert("Please select a standard task");
-    //   return;
-    // }
-
-    // if (formData.checkerResponsible.length === 0) {
-    //   alert("Please select at least one responsible person");
-    //   return;
-    // }
-
-    // Submit form
     onSubmit(formData);
-
-    // Reset form and close
     resetForm();
     onClose();
   };

@@ -35,6 +35,7 @@ import { EventApi } from "@fullcalendar/core";
 import { useResources } from "@/app/context/ResourceContext";
 import { UserEventCreateRequest } from "@/app/types/appoinment";
 import { PMData } from "@/app/types/pocketMoney";
+import { ToDoTaskType } from "@/app/types/todo";
 
 const memberOrder: Record<number, number> = {
   1: 0,
@@ -43,22 +44,6 @@ const memberOrder: Record<number, number> = {
   3: 3,
   4: 4,
   5: 5,
-};
-
-export type ToDoTaskType = {
-  ToDoTaskId: number;
-  FamilyId: number;
-  CreatedBy: string;
-  AssignedTo: string;
-  ToDoGroupId: number;
-  Description: string;
-  Note: string;
-  Private: boolean;
-  CreatedDate: string;
-  ClosedDate: string | null;
-  Status: number;
-  UpdatedOn: string;
-  IsForAll: boolean;
 };
 
 const pad = (n: number) => String(n).padStart(2, "0");
