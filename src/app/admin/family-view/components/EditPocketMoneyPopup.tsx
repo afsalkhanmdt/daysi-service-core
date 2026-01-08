@@ -1,6 +1,9 @@
 "use client";
-import { PocketMoneyPopupProps } from "@/app/types/pocketMoney";
-import { PMTask } from "@/app/types/ToDoAndPMTypes";
+import {
+  PMTask,
+  PMTaskCreateCommand,
+  PocketMoneyPopupProps,
+} from "@/app/types/pocketMoney";
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import createPocketMoneyImage from "@/app/admin/assets/doctor-suitcase-with-a-cross-svgrepo-com 1.png";
@@ -14,8 +17,12 @@ import MultipleSelector, {
   SelectableOption,
 } from "./FormComponents/MultipleSelector";
 import { REPEAT_OPTIONS } from "@/app/constants/appointmentForm";
-import { mapResourcesToSelectableOptions } from "@/app/utils/resourceAdapters";
+import {
+  mapPMTaskToCreateCommand,
+  mapResourcesToSelectableOptions,
+} from "@/app/utils/resourceAdapters";
 import { useResources } from "@/app/context/ResourceContext";
+import { initialFormDataForPMTaskApi } from "@/app/constants/pocketMoneyForm";
 
 const standardTaskOptions: SelectableOption[] = [
   { id: 1, label: "Clean up the room", isSelected: false },
@@ -34,23 +41,9 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
   onSubmit,
   pocketMoney,
 }) => {
-  const [formData, setFormData] = useState<PMTask>({
-    LocalPMTaskId: 0,
-    PMTransId: 0,
-    TransType: 0,
-    PMDescription: "",
-    PMAmount: 0,
-    FirstComeFirstServe: false,
-    Note: "",
-    FamilyMembersPlanned: [],
-    CreatedBy: "",
-    CreatedOn: "",
-    ActivityDate: "",
-    Interval: 0,
-    Repeat: 0,
-    Status: 0,
-    UpdatedOn: "",
-  });
+  const [formData, setFormData] = useState<PMTaskCreateCommand>(
+    initialFormDataForPMTaskApi
+  );
   const { resources } = useResources();
   const [responsiblePersons, setResponsiblePersons] = useState<
     SelectableOption[]
@@ -61,51 +54,41 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
     useState<SelectableOption[]>(REPEAT_OPTIONS);
 
   useEffect(() => {
-    if (pocketMoney) {
-      setFormData(pocketMoney);
+    if (!pocketMoney) return;
 
-      // Initialize responsible persons selection based on pocketMoney data
-      if (
-        pocketMoney.FamilyMembersPlanned &&
-        pocketMoney.FamilyMembersPlanned.length > 0
-      ) {
-        setResponsiblePersons((prev) =>
-          prev.map((person) => ({
-            ...person,
-            isSelected: pocketMoney.FamilyMembersPlanned.some(
-              (member) => member.MemberId === person.memberId
-            ),
-          }))
-        );
-      }
+    const mappedFormData = mapPMTaskToCreateCommand(pocketMoney);
+    setFormData(mappedFormData);
 
-      // Initialize standard task selection if there's a PMDescription
-      if (pocketMoney.PMDescription) {
-        setStandardTasks((prev) =>
-          prev.map((task) => ({
-            ...task,
-            isSelected: task.label === pocketMoney.PMDescription,
-          }))
-        );
-      }
+    setResponsiblePersons((prev) =>
+      prev.map((person) => ({
+        ...person,
+        isSelected: mappedFormData.FamilyMembersPlanned.includes(
+          person.memberId!
+        ),
+      }))
+    );
 
-      // Initialize repeat sequence selection
-      const repeatMap: Record<number, string> = {
-        0: "Never",
-        1: "Everyday",
-        2: "Every Week",
-        3: "Every Month",
-        4: "Every Year",
-      };
+    setStandardTasks((prev) =>
+      prev.map((task) => ({
+        ...task,
+        isSelected: task.label === mappedFormData.PMDescription,
+      }))
+    );
 
-      const repeatLabel = repeatMap[pocketMoney.Repeat] || "Never";
-      setRepeatSequence((prev) =>
-        prev.map((option) => ({
-          ...option,
-          isSelected: option.label === repeatLabel,
-        }))
-      );
-    }
+    const repeatMap: Record<number, string> = {
+      0: "Never",
+      1: "Everyday",
+      2: "Every Week",
+      3: "Every Month",
+      4: "Every Year",
+    };
+
+    setRepeatSequence((prev) =>
+      prev.map((option) => ({
+        ...option,
+        isSelected: option.label === repeatMap[mappedFormData.Repeat],
+      }))
+    );
   }, [pocketMoney]);
 
   // ===== HANDLER FUNCTIONS =====
@@ -168,6 +151,11 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
         isSelected: selectedPersons.some((sp) => sp.id === person.id),
       }))
     );
+
+    setFormData((prev) => ({
+      ...prev,
+      FamilyMembersPlanned: selectedPersons.map((p) => p.memberId!),
+    }));
   };
 
   // Handler for description change

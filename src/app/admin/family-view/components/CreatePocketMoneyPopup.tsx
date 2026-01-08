@@ -1,5 +1,8 @@
 "use client";
-import { PocketMoneyPopupProps } from "@/app/types/pocketMoney";
+import {
+  PMTaskCreateCommand,
+  PocketMoneyPopupProps,
+} from "@/app/types/pocketMoney";
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import createPocketMoneyImage from "@/app/admin/assets/doctor-suitcase-with-a-cross-svgrepo-com 1.png";
@@ -12,10 +15,10 @@ import name from "@/app/admin/assets/name.png";
 import MultipleSelector, {
   SelectableOption,
 } from "./FormComponents/MultipleSelector";
-import { PMTask } from "@/app/types/ToDoAndPMTypes";
 import { REPEAT_OPTIONS } from "@/app/constants/appointmentForm";
 import { mapResourcesToSelectableOptions } from "@/app/utils/resourceAdapters";
 import { useResources } from "@/app/context/ResourceContext";
+import { initialFormDataForPMTaskApi } from "@/app/constants/pocketMoneyForm";
 
 // You can now define different sets of options
 
@@ -37,23 +40,9 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
 }) => {
   const { resources } = useResources();
   // Main form state
-  const [formData, setFormData] = useState<PMTask>({
-    LocalPMTaskId: 0,
-    PMTransId: 0,
-    TransType: 0,
-    PMDescription: "",
-    PMAmount: 0,
-    FirstComeFirstServe: false,
-    Note: "",
-    FamilyMembersPlanned: [],
-    CreatedBy: "",
-    CreatedOn: "",
-    ActivityDate: "",
-    Interval: 0,
-    Repeat: 0,
-    Status: 0,
-    UpdatedOn: "",
-  });
+  const [formData, setFormData] = useState<PMTaskCreateCommand>(
+    initialFormDataForPMTaskApi
+  );
 
   // Separate states for each selector component
   const [responsiblePersons, setResponsiblePersons] = useState<
@@ -112,33 +101,7 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
     // Update formData with selected person labels
     setFormData((prev) => ({
       ...prev,
-      checkerResponsible: selectedPersons.map((person) => person.label),
-    }));
-  };
-
-  // Handler for description change
-  const handleDescriptionChange = (
-    e: React.ChangeEvent<HTMLTextAreaElement>
-  ) => {
-    setFormData((prev) => ({
-      ...prev,
-      description: e.target.value,
-    }));
-  };
-
-  // Handler for amount change
-  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({
-      ...prev,
-      amount: parseFloat(e.target.value) || 0,
-    }));
-  };
-
-  // Handler for currency change
-  const handleCurrencyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setFormData((prev) => ({
-      ...prev,
-      currency: e.target.value,
+      FamilyMembersPlanned: selectedPersons.map((person) => person.memberId!),
     }));
   };
 
@@ -150,34 +113,18 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
     }));
   };
 
-  // Handler for additional notes
-  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setFormData((prev) => ({
-      ...prev,
-      notes: e.target.value,
-    }));
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   // ===== FORM SUBMISSION AND RESET =====
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Validate required fields
-    // if (!formData.standardTask) {
-    //   alert("Please select a standard task");
-    //   return;
-    // }
-
-    // if (formData.checkerResponsible.length === 0) {
-    //   alert("Please select at least one responsible person");
-    //   return;
-    // }
-
-    // Submit form
     onSubmit(formData);
-
-    // Reset form and close
     resetForm();
     onClose();
   };
@@ -189,23 +136,7 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
 
   // Reset all form states
   const resetForm = () => {
-    setFormData({
-      LocalPMTaskId: 0,
-      PMTransId: 0,
-      TransType: 0,
-      PMDescription: "",
-      PMAmount: 0,
-      FirstComeFirstServe: false,
-      Note: "",
-      FamilyMembersPlanned: [],
-      CreatedBy: "",
-      CreatedOn: "",
-      ActivityDate: "",
-      Interval: 0,
-      Repeat: 0,
-      Status: 0,
-      UpdatedOn: "",
-    });
+    setFormData(initialFormDataForPMTaskApi);
 
     // Reset selector states
     setResponsiblePersons(
@@ -269,9 +200,10 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
             </div>
 
             <textarea
+              name="PMDescription"
               placeholder="While details of track here"
               value={formData.PMDescription}
-              onChange={handleDescriptionChange}
+              onChange={handleInputChange}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -284,10 +216,11 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
             </label>
             <div className="flex gap-4">
               <input
+                name="PMAmount"
                 type="number"
                 placeholder="Enter pocket money amount"
                 value={formData.PMAmount || ""}
-                onChange={handleAmountChange}
+                onChange={handleInputChange}
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               {/* <select
@@ -358,10 +291,11 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
               </label>
             </div>
             <textarea
+              name="Note"
               placeholder="Any additional information..."
               rows={2}
               value={formData.Note}
-              onChange={handleNotesChange}
+              onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>

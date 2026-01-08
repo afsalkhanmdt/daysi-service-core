@@ -1,5 +1,9 @@
-import { todoPopupPropsType } from "@/app/types/todo";
-import React, { useState } from "react";
+import {
+  ToDoCreateCommand,
+  todoPopupPropsType,
+  ToDoTaskType,
+} from "@/app/types/todo";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import createTodoImage from "@/app/admin/assets/doctor-suitcase-with-a-cross-svgrepo-com 1.png";
 import { ToggleSwitch } from "./FormComponents/ToggleSwitch";
@@ -12,29 +16,16 @@ import additionalNoteIcon from "@/app/admin/assets/name.png";
 import groupIcon from "@/app/admin/assets/groupIcon.png";
 import dateIcon from "@/app/admin/assets/selectDateIcon.png"; // Add this icon
 import CustomDropdown from "./FormComponents/DropDown";
-import { ToDoTaskType } from "./CalendarView";
+import { AppointmentFormUI } from "@/app/types/appoinment";
+import { useResources } from "@/app/context/ResourceContext";
+import { mapResourcesToSelectableOptions } from "@/app/utils/resourceAdapters";
+import {
+  groupOptions,
+  initialToDoCreateBody,
+  statusOptions,
+} from "@/app/constants/toDoForm";
 
 // Define options as SelectableOption arrays
-const groupOptions = [
-  { id: "1", label: "Select group" },
-  { id: "2", label: "Work Group" },
-  { id: "3", label: "Personal Group" },
-  { id: "4", label: "Urgent Group" },
-  { id: "5", label: "Project Alpha" },
-  { id: "6", label: "Marketing Team" },
-];
-
-const statusOptions: SelectableOption[] = [
-  { id: 1, label: "Open", isSelected: true },
-  { id: 2, label: "Close", isSelected: false },
-];
-
-const responsiblePersonsOptions: SelectableOption[] = [
-  { id: 1, label: "Johnson", isSelected: false },
-  { id: 2, label: "Christian", isSelected: false },
-  { id: 3, label: "Sofie", isSelected: false },
-  { id: 4, label: "Clara", isSelected: false },
-];
 
 // Custom Dropdown Component
 
@@ -43,54 +34,22 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
   onClose,
   onSubmit,
 }) => {
-  const [formData, setFormData] = useState<ToDoTaskType>({
-    ToDoTaskId: 0,
-    FamilyId: 0,
-    CreatedBy: "",
-    AssignedTo: "",
-    ToDoGroupId: 0,
-    Description: "",
-    Note: "",
-    Private: false,
-    CreatedDate: "",
-    ClosedDate: null,
-    Status: 0,
-    UpdatedOn: "",
-    IsForAll: false,
-  });
+  const [formData, setFormData] = useState<ToDoCreateCommand>(
+    initialToDoCreateBody
+  );
 
   // Component states for selector components
-  const [statuses, setStatuses] = useState<SelectableOption[]>(statusOptions);
+  const { resources } = useResources();
   const [responsiblePersons, setResponsiblePersons] = useState<
     SelectableOption[]
-  >(responsiblePersonsOptions);
+  >([]);
 
-  // ===== HANDLER FUNCTIONS =====
-
-  // Handler for responsible persons selection (MULTIPLE SELECT)
-  const handleResponsiblePersonsChange = (
-    selectedPersons: SelectableOption[]
+  // Generic handler for text inputs
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    setResponsiblePersons((prev) =>
-      prev.map((person) => ({
-        ...person,
-        isSelected: selectedPersons.some((sp) => sp.id === person.id),
-      }))
-    );
-
-    // Update formData with selected person labels
-    setFormData((prev) => ({
-      ...prev,
-      responsiblePersons: selectedPersons.map((person) => person.label),
-    }));
-  };
-
-  // Handler for description change
-  const handleDescriptionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({
-      ...prev,
-      description: e.target.value,
-    }));
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   // Handler for group selection
@@ -101,62 +60,52 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
     }));
   };
 
-  // Handler for status selection (SINGLE SELECT)
-  const handleStatusChange = (selectedStatuses: SelectableOption[]) => {
-    setStatuses((prev) =>
-      prev.map((option) => ({
-        ...option,
-        isSelected: selectedStatuses.some((ss) => ss.id === option.id),
+  // Generic handler for toggle switches
+  const handleToggleChange = (
+    field: keyof ToDoCreateCommand,
+    checked: boolean
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: checked ? 1 : 0,
+    }));
+  };
+
+  // Generic handler for single-select MultipleSelector components
+  const handleSingleSelectChange = (
+    field: keyof ToDoTaskType,
+    selectedOptions: SelectableOption[]
+  ) => {
+    const selectedOption = selectedOptions.find((option) => option.isSelected);
+    setFormData((prev) => ({
+      ...prev,
+      [field]: selectedOption ? selectedOption.id : 0,
+    }));
+  };
+
+  const handleResponsiblePersonsChange = (
+    selectedPersons: SelectableOption[]
+  ) => {
+    // Update the responsiblePersons state for UI
+    setResponsiblePersons((prev) =>
+      prev.map((person) => ({
+        ...person,
+        isSelected: selectedPersons.some((sp) => sp.id === person.id),
       }))
     );
 
-    // Update formData with selected status
-    if (selectedStatuses.length > 0) {
-      setFormData((prev) => ({
-        ...prev,
-        status: selectedStatuses[0].label as "Open" | "Close",
-      }));
-    }
-  };
-
-  // Handler for due date change
-  const handleDueDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Update formData
     setFormData((prev) => ({
       ...prev,
-      dueDate: e.target.value,
+      participants: selectedPersons.map((person) => ({
+        localId: person.id,
+        memberId: person.memberId,
+      })),
     }));
   };
 
-  const handlePrivateToggle = (checked: boolean) => {
-    setFormData((prev) => ({
-      ...prev,
-      private: checked,
-    }));
-  };
-
-  // Handler for notes change
-  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setFormData((prev) => ({
-      ...prev,
-      notes: e.target.value,
-    }));
-  };
-
-  // Form submission handler
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Validate required fields
-    if (!formData.Description.trim()) {
-      alert("Please enter a description");
-      return;
-    }
-
-    if (formData.AssignedTo.length === 0) {
-      alert("Please select at least one responsible person");
-      return;
-    }
-
     onSubmit(formData);
     resetForm();
     onClose();
@@ -170,33 +119,12 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
 
   // Reset all form states
   const resetForm = () => {
-    setFormData({
-      ToDoTaskId: 0,
-      FamilyId: 0,
-      CreatedBy: "",
-      AssignedTo: "",
-      ToDoGroupId: 0,
-      Description: "",
-      Note: "",
-      Private: false,
-      CreatedDate: "",
-      ClosedDate: null,
-      Status: 0,
-      UpdatedOn: "",
-      IsForAll: false,
-    });
-
-    // Reset selector states
-    setResponsiblePersons(
-      responsiblePersonsOptions.map((p) => ({ ...p, isSelected: false }))
-    );
-    setStatuses(
-      statusOptions.map((s) => ({
-        ...s,
-        isSelected: s.label === "Open",
-      }))
-    );
+    setFormData(initialToDoCreateBody);
   };
+
+  useEffect(() => {
+    setResponsiblePersons(mapResourcesToSelectableOptions(resources));
+  }, [resources]);
 
   if (!isOpen) return null;
 
@@ -234,10 +162,11 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
               </label>
             </div>
             <input
+              name="Description"
               type="text"
               placeholder="By Writing Without"
-              value={formData.Description}
-              onChange={handleDescriptionChange}
+              value={formData.description}
+              onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
@@ -246,8 +175,8 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
             <div className="flex items-center gap-2">
               <label className="block text-sm font-medium">Private</label>
               <ToggleSwitch
-                checked={formData.Private}
-                onChange={handlePrivateToggle}
+                checked={formData.private === 1 ? true : false}
+                onChange={(checked) => handleToggleChange("private", checked)}
               />
             </div>
           </div>
@@ -269,14 +198,14 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
             {/* Groups - Custom Dropdown */}
             <CustomDropdown
               options={groupOptions}
-              selectedValue={formData.ToDoGroupId.toString()}
+              selectedValue={formData.toDoGroupId.toString()}
               onSelect={handleGroupSelect}
               placeholder="Select a group"
               title="Groups"
               iconUrl={groupIcon.src}
             />
-            {/* Due Date - Simple date input */}
-            <div>
+
+            {/* <div>
               <div className="flex items-center gap-2 mb-2">
                 <Image src={dateIcon} alt="DateIcon" width={15} height={15} />
                 <label className="block text-lg font-medium text-gray-800">
@@ -284,18 +213,21 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
                 </label>
               </div>
               <input
+                name="ClosedDate"
                 type="date"
-                value={formData.ClosedDate || ""}
-                onChange={handleDueDateChange}
+                value={formData.closedDate || ""}
+                onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-            </div>
+            </div> */}
           </div>
 
           {/* Status - Using MultipleSelector for single selection */}
           <MultipleSelector
-            options={statuses}
-            onSelectionChange={handleStatusChange}
+            options={statusOptions}
+            onSelectionChange={(selected) =>
+              handleSingleSelectChange("Status", selected)
+            }
             title="Status"
             showSelectAll={false}
             showCount={true}
@@ -320,9 +252,10 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
               </label>
             </div>
             <textarea
+              name="Note"
               placeholder="Write next here"
-              value={formData.Note}
-              onChange={handleNotesChange}
+              value={formData.note}
+              onChange={handleInputChange}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />

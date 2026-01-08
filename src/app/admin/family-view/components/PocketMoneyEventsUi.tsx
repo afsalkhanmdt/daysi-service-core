@@ -2,7 +2,7 @@
 import Image from "next/image";
 import { FamilyData } from "./FamilyViewWrapper";
 import { useTranslation } from "react-i18next";
-import { PMTask } from "@/app/types/ToDoAndPMTypes";
+import { PMTask } from "@/app/types/pocketMoney";
 
 const PocketMoneyEventUi = ({
   PMEventData,

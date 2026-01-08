@@ -17,18 +17,17 @@ import { mapResourcesToSelectableOptions } from "@/app/utils/resourceAdapters";
 import {
   AppointmentFormUI,
   appointmentPopupPropsType,
-  SpecialEventEnum,
   UserEventCreateRequest,
 } from "@/app/types/appoinment";
 import {
   ALERT_OPTIONS,
   buildTimestamp,
-  initialFormDataForApi,
+  initialFormDataForAppointmentApi,
   REPEAT_OPTIONS,
 } from "@/app/constants/appointmentForm";
 
 const initialFormData: AppointmentFormUI = {
-  ...initialFormDataForApi, // existing ExtendedProps object
+  ...initialFormDataForAppointmentApi, // existing ExtendedProps object
   startDateOnly: "",
   startTimeOnly: "",
   endDateOnly: "",
