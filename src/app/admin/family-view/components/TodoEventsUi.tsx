@@ -31,16 +31,25 @@ const TodoEventUi = ({
           {ToDoData.Description}
         </div>
       </div>
-      <div className="flex flex-wrap justify-between w-full gap-1.5">
-        {assignedMembers.map((m) => (
-          <Image
-            key={m.MemberId}
-            src={m.ResourceUrl || icon.src}
-            alt=""
-            width={32}
-            height={32}
-            className="rounded-full"
-          />
+      <div className="flex gap-2 overflow-hidden">
+        {assignedMembers.map((participant, index) => (
+          <div
+            key={participant.Id}
+            className={`flex-shrink-0 transition-all duration-200 ${
+              index > 0 ? "ml-[-4px]" : ""
+            }`}
+            style={{
+              zIndex: assignedMembers.length - index,
+            }}
+          >
+            <Image
+              src={participant.ResourceUrl || "/fallback.png"}
+              alt={participant.MemberName}
+              width={22}
+              height={22}
+              className="w-8 h-8 rounded-full border border-gray-200 bg-white shadow-sm shadow-gray-200  hover:scale-110 transition-transform"
+            />
+          </div>
         ))}
       </div>
     </div>
