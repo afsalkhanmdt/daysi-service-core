@@ -219,7 +219,6 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
 
   useEffect(() => {
     setResponsiblePersons(mapResourcesToSelectableOptions(resources));
-    console.log(responsiblePersons, "responsiblePersons");
   }, [resources]);
 
   if (!isOpen || !pocketMoney) return null;

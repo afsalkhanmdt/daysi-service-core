@@ -28,6 +28,7 @@ import "../../../../../i18n";
 import CreatePocketMoneyPopup from "./CreatePocketMoneyPopup";
 import { UserEventCreateRequest } from "@/app/types/appoinment";
 import { PMTaskCreateCommand } from "@/app/types/pocketMoney";
+import { createAppointmentCall } from "@/services/api";
 
 export type FamilyData = {
   Family: FamilyResponse;
@@ -103,7 +104,9 @@ const FamilyViewWrapper = ({
     // Example: createTodoAPI(todoData).then(() => reload());
   };
 
-  const handleCreateAppointment = (appointmentData: UserEventCreateRequest) => {
+  const handleCreateAppointment = async (
+    appointmentData: UserEventCreateRequest
+  ) => {
     // Create a new object with all the added values
     const updatedAppointmentData = {
       ...appointmentData,
@@ -133,6 +136,9 @@ const FamilyViewWrapper = ({
       "Creating new appointment with updated data:",
       updatedAppointmentData
     );
+
+    const response = await createAppointmentCall([updatedAppointmentData]);
+    console.log("Appointment creation response:", response);
 
     // Now call your API with the updated data
     // Example: createAppointmentAPI(updatedAppointmentData).then(() => reload());

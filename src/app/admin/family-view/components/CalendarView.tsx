@@ -46,16 +46,6 @@ const memberOrder: Record<number, number> = {
   5: 5,
 };
 
-const pad = (n: number) => String(n).padStart(2, "0");
-
-// convert minutes-from-day-start to "HH:MM:SS"; allow 1440 -> "24:00:00"
-// const formatMinutesToTime = (mins: number) => {
-//   if (mins >= 1440) return "24:00:00";
-//   const h = Math.floor(mins / 60);
-//   const m = Math.floor(mins % 60);
-//   return `${pad(h)}:${pad(m)}:00`;
-// };
-
 const CalendarView = ({
   data,
   currentDate,

@@ -121,7 +121,6 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
 
   useEffect(() => {
     setResponsiblePersons(mapResourcesToSelectableOptions(resources));
-    console.log(responsiblePersons, "responsiblePersons");
   }, [resources]);
 
   if (!isOpen || !todo) return null;
