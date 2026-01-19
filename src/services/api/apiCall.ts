@@ -1,4 +1,4 @@
-export const AdminLoginCall = async (username: string, password: string) => {
+ export const AdminLoginCall = async (username: string, password: string) => {
   const formData = new URLSearchParams();
   formData.append("grant_type", "password");
   formData.append("username", username);
@@ -35,20 +35,75 @@ export const AdminLoginCall = async (username: string, password: string) => {
   return res.json();
 };
 
-export const getAllFamilies = async (familyId: string, token: string) => {
-  const res = await fetch(
-    `https://api.daysi.dk/api/Families/GetAllFamilies?familyId=${familyId}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "X-Source": "events-webpage" // ← Also add to other API calls for consistency
-      },
+
+import apiUrl from "@/config/apiUrl";
+
+interface ApiCallParameters {
+    url: string;
+    method?: "POST" | "GET" | "PUT" | "DELETE";
+    data?: any;
+    isFile?: boolean;
+    token?: string;
+}
+
+const apiCall = async ({
+    url,
+    method = "GET",
+    data = null,
+    isFile = false,
+    token
+}: ApiCallParameters) => {
+    const formData = new FormData();
+
+    if (isFile && data instanceof File) {
+        formData.append("file", data);
     }
-  );
 
-  if (!res.ok) {
-    throw new Error(`Failed to fetch families: ${res.status}`);
-  }
+    const headers = new Headers();
 
-  return res.json();
+    if (!isFile) headers.append("Content-Type", "application/json");
+    const authToken = token || localStorage.getItem("access_token");
+
+    if (authToken) headers.append("Authorization", `Bearer ${authToken}`);
+    const response = await fetch(`${apiUrl}${url}`, {
+        method,
+        headers,
+        body: isFile ? formData : data ? JSON.stringify(data) : undefined
+    });
+    if (response.status === 404)
+        return { status: false, data: response.statusText };
+    return response.json();
 };
+
+export const postCall =
+    (url: string) =>
+    (data = {}, token?: string) =>
+        apiCall({
+            url,
+            method: "POST",
+            data,
+            token
+        });
+
+export const putCall =
+    (url: string) =>
+    (data = {}) =>
+        apiCall({
+            url,
+            method: "PUT",
+            data
+        });
+
+export const getCall = (url: string) => apiCall({ url });
+
+export const deleteCall = (url: string) => apiCall({ url, method: "DELETE" });
+
+export const uploadCall = (url: string) => (data: any) =>
+    apiCall({
+        url,
+        data,
+        method: "POST",
+        isFile: true
+    });
+
+export default apiCall;

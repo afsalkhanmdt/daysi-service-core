@@ -45,6 +45,8 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
     SelectableOption[]
   >([]);
 
+  console.log(initialData, "initialData");
+
   const [formData, setFormData] = useState<AppointmentFormUI>({
     ...initialData, // Start with initial data if provided
     startDateOnly: initialData?.startDate
@@ -92,35 +94,52 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
     }));
   };
 
-  // Handler for responsible persons (multi-select with special mapping)
+  // Handler for responsible persons (multi-select)
   const handleResponsiblePersonsChange = (
     selectedPersons: SelectableOption[]
   ) => {
-    // Update the responsiblePersons state for UI
-    setResponsiblePersons((prev) =>
-      prev.map((person) => ({
-        ...person,
-        isSelected: selectedPersons.some((sp) => sp.id === person.id),
-      }))
-    );
-
-    // Update formData
-    setFormData((prev) => ({
-      ...prev,
-      participants: selectedPersons.map((person) => ({
-        localId: person.id,
-        memberId: person.memberId,
-      })),
-    }));
+    // Update the responsiblePersons state
+    setResponsiblePersons(selectedPersons);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Create a set of initial participant memberIds for quick lookup
+    const initialParticipantIds = new Set(
+      initialData?.participants?.map(
+        (p: any) => p.memberId || p.ParticipantId || p.id
+      ) || []
+    );
+
+    // Format participants properly for the API from responsiblePersons state
+    const formattedParticipants = responsiblePersons
+      .filter((person) => person.isSelected)
+      .map((person) => {
+        const participantData: any = {
+          localId: person.id,
+          memberId: person.memberId,
+        };
+
+        // Only add eventId if this participant was in the initial data
+        if (
+          initialParticipantIds.has(person.memberId) ||
+          initialParticipantIds.has(person.id)
+        ) {
+          participantData.eventId = initialData?.id;
+        }
+
+        return participantData;
+      });
+
+    // Create a copy of formData without the participants field
+    const { participants, ...formDataWithoutParticipants } = formData;
+
     const payload: UserEventCreateRequest = {
-      ...formData,
+      ...formDataWithoutParticipants,
       startDate: buildTimestamp(formData.startDateOnly, formData.startTimeOnly),
       endDate: buildTimestamp(formData.endDateOnly, formData.endTimeOnly),
+      participants: formattedParticipants, // Always use the formatted participants
     };
 
     delete (payload as any).startDateOnly;
@@ -128,6 +147,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
     delete (payload as any).endDateOnly;
     delete (payload as any).endTimeOnly;
 
+    console.log("Submitting payload:", payload); // Add this for debugging
     onSubmit(payload);
     onClose();
   };
@@ -181,14 +201,18 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
 
     // If we have initial participants, mark them as selected
     if (initialData?.participants && initialData.participants.length > 0) {
-      const selectedIds = initialData.participants.map(
-        (p: any) => p.id || p.memberId
+      // Create a set of selected memberIds for quick lookup
+      const selectedMemberIds = new Set(
+        initialData.participants.map(
+          (p: any) => p.memberId || p.ParticipantId || p.id
+        )
       );
+
       const updatedPersons = mappedPersons.map((person) => ({
         ...person,
         isSelected:
-          selectedIds.includes(person.id) ||
-          selectedIds.includes(person.memberId),
+          selectedMemberIds.has(person.memberId) ||
+          selectedMemberIds.has(person.id),
       }));
       setResponsiblePersons(updatedPersons);
     } else {
@@ -236,11 +260,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
               </div>
               <div className="flex items-center gap-2">
                 <ToggleSwitch
-                  checked={
-                    initialData?.extendedProps?.isSpecialEvent === 1
-                      ? true
-                      : false
-                  }
+                  checked={formData.isSpecialEvent === 1}
                   onChange={(checked) =>
                     handleToggleChange("isSpecialEvent", checked)
                   }
@@ -306,14 +326,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
           {/* Participants */}
           <MultipleSelector
             titleIconUrl={participantsIcon.src}
-            options={responsiblePersons.map((option) => ({
-              ...option,
-              isSelected:
-                formData.participants?.some(
-                  (participant: any) =>
-                    participant.ParticipantId === option.memberId
-                ) || false,
-            }))}
+            options={responsiblePersons}
             onSelectionChange={handleResponsiblePersonsChange}
             title="Select Responsible Persons"
             showSelectAll={true}

@@ -28,6 +28,7 @@ import "../../../../../i18n";
 import CreatePocketMoneyPopup from "./CreatePocketMoneyPopup";
 import { UserEventCreateRequest } from "@/app/types/appoinment";
 import { PMTaskCreateCommand } from "@/app/types/pocketMoney";
+import { createAppointmentCall } from "@/services/api";
 
 export type FamilyData = {
   Family: FamilyResponse;
@@ -52,7 +53,6 @@ const FamilyViewWrapper = ({
   const [isLangReady, setIsLangReady] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  // State for popup modals
   const [showCreateTodo, setShowCreateTodo] = useState(false);
   const [showCreateAppointment, setShowCreateAppointment] = useState(false);
   const [showCreatePocketMoney, setShowCreatePocketMoney] = useState(false);
@@ -99,11 +99,11 @@ const FamilyViewWrapper = ({
   // Handler functions for creating new items
   const handleCreateTodo = (todoData: any) => {
     console.log("Creating new todo:", todoData);
-    // Add your API call to create todo here
-    // Example: createTodoAPI(todoData).then(() => reload());
   };
 
-  const handleCreateAppointment = (appointmentData: UserEventCreateRequest) => {
+  const handleCreateAppointment = async (
+    appointmentData: UserEventCreateRequest
+  ) => {
     // Create a new object with all the added values
     const updatedAppointmentData = {
       ...appointmentData,
@@ -133,6 +133,9 @@ const FamilyViewWrapper = ({
       "Creating new appointment with updated data:",
       updatedAppointmentData
     );
+
+    const response = await createAppointmentCall(updatedAppointmentData);
+    console.log("Appointment creation response:", response);
 
     // Now call your API with the updated data
     // Example: createAppointmentAPI(updatedAppointmentData).then(() => reload());
@@ -302,6 +305,7 @@ const FamilyViewWrapper = ({
           data={familyDetails}
           currentDate={currentDate}
           setCurrentDate={setCurrentDate}
+          dataReload={reload}
         />
       </div>
 

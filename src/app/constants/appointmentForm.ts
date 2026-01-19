@@ -13,7 +13,7 @@ export const initialFormDataForAppointmentApi: UserEventCreateRequest = {
   location: "",
   specialEvent: undefined,
   repeat: RepeatEnum.Never,
-  repeatEndDate: "",
+  repeatEndDate: null,
   alert: AlertEnum.None,
   alarms: [],
   isForAll: 0,
