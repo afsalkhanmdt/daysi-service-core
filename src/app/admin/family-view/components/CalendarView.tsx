@@ -36,6 +36,7 @@ import { useResources } from "@/app/context/ResourceContext";
 import { UserEventCreateRequest } from "@/app/types/appoinment";
 import { PMData } from "@/app/types/pocketMoney";
 import { ToDoTaskType } from "@/app/types/todo";
+import { updateAppointmentCall } from "@/services/api";
 
 const memberOrder: Record<number, number> = {
   1: 0,
@@ -50,10 +51,12 @@ const CalendarView = ({
   data,
   currentDate,
   setCurrentDate,
+  dataReload,
 }: {
   data: FamilyData;
   currentDate: Date;
   setCurrentDate: Dispatch<SetStateAction<Date>>;
+  dataReload: () => void;
 }) => {
   const { resources, setMembers } = useResources();
 
@@ -92,20 +95,43 @@ const CalendarView = ({
   );
 
   const events: EventInput[] = useMemo(() => {
-    return data.Members.flatMap((member: MemberResponse) =>
-      member.Events.flatMap((event): EventInput[] => {
+    const allEvents: EventInput[] = [];
+    const seenEventMemberPairs = new Set<string>(); // Track eventId-memberId pairs
+    const duplicateWarnings = new Set<string>(); // Track already warned duplicates
+
+    data.Members.forEach((member: MemberResponse) => {
+      // Track events per member to avoid duplicates within same member
+      const memberEvents = new Map<string, any>();
+
+      member.Events.forEach((event) => {
+        const eventKey = `${event.Id}-${member.Id}`;
+
+        // Skip if we've already processed this event for this member
+        if (seenEventMemberPairs.has(eventKey)) {
+          if (!duplicateWarnings.has(eventKey)) {
+            console.warn(
+              `Skipping duplicate event ${event.Id} for member ${member.Id} (${member.FirstName})`
+            );
+            duplicateWarnings.add(eventKey);
+          }
+          return;
+        }
+
+        seenEventMemberPairs.add(eventKey);
+
+        // Your existing filtering logic
         if (
           member.MemberType === 1 &&
           event.EventParticipant?.length !== data.Members.length - 1
         ) {
-          return [];
+          return;
         }
 
         if (
           member.MemberType !== 1 &&
           event.EventParticipant?.length === data.Members.length - 1
         ) {
-          return [];
+          return;
         }
 
         let start = new Date(Number(event.Start));
@@ -182,9 +208,12 @@ const CalendarView = ({
           addInterval();
 
           while (currentStart <= repeatEnd) {
+            const recurrenceId = `${event.Id}-${currentStart.getTime()}-${
+              member.Id
+            }`;
             recurrenceEvents.push({
               ...baseEvent,
-              id: `${event.Id}-${currentStart.getTime()}`,
+              id: recurrenceId,
               start: new Date(currentStart),
               end: new Date(currentEnd),
               extendedProps: {
@@ -197,9 +226,27 @@ const CalendarView = ({
           }
         }
 
-        return [baseEvent, ...recurrenceEvents];
-      })
+        allEvents.push(baseEvent, ...recurrenceEvents);
+      });
+    });
+
+    // Debug: Log summary of events
+    console.log(`Total events processed: ${allEvents.length}`);
+    console.log(`Unique event-member pairs: ${seenEventMemberPairs.size}`);
+
+    // Check for any remaining duplicate IDs (should be 0)
+    const eventIds = allEvents.map((e) => e.id);
+    const duplicateIds = eventIds.filter(
+      (id, index) => eventIds.indexOf(id) !== index
     );
+    if (duplicateIds.length > 0) {
+      console.error(
+        `Found ${duplicateIds.length} duplicate event IDs in final array:`,
+        [...new Set(duplicateIds)]
+      );
+    }
+
+    return allEvents;
   }, [data.Members]);
 
   // Function to find the earliest event time for the current day
@@ -392,7 +439,9 @@ const CalendarView = ({
     };
   }, []);
 
-  const handleEditAppointment = (appointmentData: UserEventCreateRequest) => {
+  const handleEditAppointment = async (
+    appointmentData: UserEventCreateRequest
+  ) => {
     // Create a new object with all the added values
     const updatedAppointmentData = {
       ...appointmentData,
@@ -422,6 +471,11 @@ const CalendarView = ({
       "Creating new appointment with updated data:",
       updatedAppointmentData
     );
+
+    const response = await updateAppointmentCall(updatedAppointmentData);
+    if (response.ok) {
+      dataReload();
+    }
 
     // Now call your API with the updated data
     // Example: createAppointmentAPI(updatedAppointmentData).then(() => reload());
@@ -568,6 +622,13 @@ const CalendarView = ({
                       selectedAppointment.extendedProps.IsAllDayEvent,
                     isSpecialEvent:
                       selectedAppointment.extendedProps.IsSpecialEvent,
+                    isPrivateEvent:
+                      selectedAppointment.extendedProps.IsPrivateEvent,
+                    recurrenceRule: selectedAppointment.extendedProps
+                      .RecurrenceRule || {
+                      frequency: 0,
+                      interval: 1,
+                    },
                     repeat:
                       selectedAppointment.extendedProps.Repeat || undefined,
                     repeatEndDate:

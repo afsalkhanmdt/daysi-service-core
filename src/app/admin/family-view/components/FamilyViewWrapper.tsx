@@ -53,7 +53,6 @@ const FamilyViewWrapper = ({
   const [isLangReady, setIsLangReady] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  // State for popup modals
   const [showCreateTodo, setShowCreateTodo] = useState(false);
   const [showCreateAppointment, setShowCreateAppointment] = useState(false);
   const [showCreatePocketMoney, setShowCreatePocketMoney] = useState(false);
@@ -100,8 +99,6 @@ const FamilyViewWrapper = ({
   // Handler functions for creating new items
   const handleCreateTodo = (todoData: any) => {
     console.log("Creating new todo:", todoData);
-    // Add your API call to create todo here
-    // Example: createTodoAPI(todoData).then(() => reload());
   };
 
   const handleCreateAppointment = async (
@@ -137,7 +134,7 @@ const FamilyViewWrapper = ({
       updatedAppointmentData
     );
 
-    const response = await createAppointmentCall([updatedAppointmentData]);
+    const response = await createAppointmentCall(updatedAppointmentData);
     console.log("Appointment creation response:", response);
 
     // Now call your API with the updated data
@@ -308,6 +305,7 @@ const FamilyViewWrapper = ({
           data={familyDetails}
           currentDate={currentDate}
           setCurrentDate={setCurrentDate}
+          dataReload={reload}
         />
       </div>
 
