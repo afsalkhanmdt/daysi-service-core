@@ -101,7 +101,7 @@ export default function MultipleSelector({
     setOptions(updatedOptions);
     console.log(
       "Updated options:",
-      updatedOptions.map((o) => `${o.label}: ${o.isSelected}`)
+      updatedOptions.map((o) => `${o.label}: ${o.isSelected}`),
     );
 
     // Notify parent component about selection changes
@@ -182,7 +182,7 @@ export default function MultipleSelector({
   const badgeColorClass = getBadgeColorClass();
 
   return (
-    <div className={`w-full bg-white `}>
+    <div className={`w-full p-2   bg-blue-100 rounded-md`}>
       {title && (
         <div className="flex items-center gap-2 ">
           {titleIconUrl && (
@@ -249,7 +249,7 @@ export default function MultipleSelector({
           >
             <button
               type="button"
-              className={`relative px-3 py-2 rounded-full border transition-all duration-200 flex items-center space-x-2 max-w-full group ${
+              className={`relative px-3 py-2 bg-white rounded-full border transition-all duration-200 flex items-center space-x-2 max-w-full group ${
                 option.isSelected
                   ? `${borderColorClass} shadow-sm`
                   : "border-gray-300 hover:border-gray-400"

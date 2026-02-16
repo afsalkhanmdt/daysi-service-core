@@ -1,14 +1,17 @@
+"use client";
+
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import createAppointmentImage from "@/app/admin/assets/doctor-suitcase-with-a-cross-svgrepo-com 1.png";
 import SpecialEventIcon from "@/app/admin/assets/event-badged-1-svgrepo-com (1) 1.png";
-import { ToggleSwitch } from "./FormComponents/ToggleSwitch";
 import locationIcon from "@/app/admin/assets/location.png";
 import nameIcon from "@/app/admin/assets/name.png";
 import participantsIcon from "@/app/admin/assets/participantsIcon.png";
 import repeatIcon from "@/app/admin/assets/repeatIcon.png";
 import alarmIcon from "@/app/admin/assets/alarmIcon.png";
 import additionalNoteIcon from "@/app/admin/assets/name.png";
+
+import { ToggleSwitch } from "./FormComponents/ToggleSwitch";
 import MultipleSelector, {
   SelectableOption,
 } from "./FormComponents/MultipleSelector";
@@ -27,11 +30,12 @@ import {
 } from "@/app/constants/appointmentForm";
 
 const initialFormData: AppointmentFormUI = {
-  ...initialFormDataForAppointmentApi, // existing ExtendedProps object
+  ...initialFormDataForAppointmentApi,
   startDateOnly: "",
   startTimeOnly: "",
   endDateOnly: "",
   endTimeOnly: "",
+  location: "",
 };
 
 const CreateAppointmentPopup: React.FC<
@@ -46,18 +50,22 @@ const CreateAppointmentPopup: React.FC<
 
   const [formData, setFormData] = useState<AppointmentFormUI>(initialFormData);
 
-  // Generic handler for text inputs
+  const [locationLoading, setLocationLoading] = useState(false);
+
+  /* ==============================
+     Generic Handlers
+  ============================== */
+
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Generic handler for toggle switches
   const handleToggleChange = (
     field: keyof AppointmentFormUI,
-    checked: boolean
+    checked: boolean,
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -65,10 +73,9 @@ const CreateAppointmentPopup: React.FC<
     }));
   };
 
-  // Generic handler for single-select MultipleSelector components
   const handleSingleSelectChange = (
     field: keyof AppointmentFormUI,
-    selectedOptions: SelectableOption[]
+    selectedOptions: SelectableOption[],
   ) => {
     const selectedOption = selectedOptions.find((option) => option.isSelected);
     setFormData((prev) => ({
@@ -77,19 +84,16 @@ const CreateAppointmentPopup: React.FC<
     }));
   };
 
-  // Handler for responsible persons (multi-select with special mapping)
   const handleResponsiblePersonsChange = (
-    selectedPersons: SelectableOption[]
+    selectedPersons: SelectableOption[],
   ) => {
-    // Update the responsiblePersons state for UI
     setResponsiblePersons((prev) =>
       prev.map((person) => ({
         ...person,
         isSelected: selectedPersons.some((sp) => sp.id === person.id),
-      }))
+      })),
     );
 
-    // Update formData
     setFormData((prev) => ({
       ...prev,
       participants: selectedPersons.map((person) => ({
@@ -98,6 +102,58 @@ const CreateAppointmentPopup: React.FC<
       })),
     }));
   };
+
+  /* ==============================
+     GEOLOCATION INTEGRATION
+  ============================== */
+
+  const handleGetCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      return;
+    }
+
+    setLocationLoading(true);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+
+        let readableLocation = `${latitude}, ${longitude}`;
+
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
+          );
+          const data = await res.json();
+
+          if (data?.display_name) {
+            readableLocation = data.display_name;
+          }
+        } catch (error) {
+          console.log("Reverse geocoding failed.");
+        }
+
+        setFormData((prev) => ({
+          ...prev,
+          location: readableLocation,
+          lat: latitude,
+          lng: longitude,
+        }));
+
+        setLocationLoading(false);
+      },
+      (error) => {
+        console.error(error);
+        alert("Unable to retrieve your location.");
+        setLocationLoading(false);
+      },
+    );
+  };
+
+  /* ==============================
+     Submit & Close
+  ============================== */
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,7 +190,7 @@ const CreateAppointmentPopup: React.FC<
       <div className="bg-white rounded-lg w-full max-w-xl mx-4 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="border-b border-gray-200 bg-blue-200 m-2 px-6 py-4 rounded-lg flex gap-2">
-          <div className="rounded-full bg-white p-2 ">
+          <div className="rounded-full bg-white p-2">
             <Image
               src={createAppointmentImage}
               alt="createAppointmentImage"
@@ -147,41 +203,13 @@ const CreateAppointmentPopup: React.FC<
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Special Event Section with Switch */}
-          <div className=" border-gray-200">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="rounded-full bg-gray-100 p-2">
-                  <Image
-                    src={SpecialEventIcon}
-                    alt="createAppointmentImage"
-                    width={15}
-                    height={15}
-                  />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    Special event
-                  </h3>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <ToggleSwitch
-                  checked={formData.isSpecialEvent === 1 ? true : false}
-                  onChange={(checked) =>
-                    handleToggleChange("isSpecialEvent", checked)
-                  }
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Title and Location */}
-          <div className="flex gap-4">
+          {/* Title + Location */}
+          <div className="grid grid-cols-2 gap-4 bg-blue-100 p-2 rounded-md">
+            {/* Title */}
             <div>
-              <div className="flex items-center gap-2 ">
+              <div className="flex items-center gap-2">
                 <Image src={nameIcon} alt="Name" width={15} height={15} />
-                <label className="block text-lg font-medium mb-2">Name</label>
+                <label className="block text-lg font-medium">Name</label>
               </div>
               <input
                 type="text"
@@ -189,44 +217,53 @@ const CreateAppointmentPopup: React.FC<
                 placeholder="Appointment title"
                 value={formData.title}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 required
               />
             </div>
+
+            {/* Location */}
             <div>
-              <div className="flex items-center gap-2 ">
+              <div className="flex items-center gap-2">
                 <Image
                   src={locationIcon}
                   alt="Location"
                   width={15}
                   height={15}
                 />
-                <label className="block text-lg font-medium mb-2">
-                  Location
-                </label>
+                <label className="block text-lg font-medium">Location</label>
               </div>
-              <input
-                type="text"
-                name="location"
-                placeholder="Location"
-                value={formData.location}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-          </div>
 
-          {/* Private Toggle */}
-          <div className="flex justify-end items-center ">
-            <div className="flex items-center gap-2">
-              <label className="block text-sm font-medium">Private</label>
-              <ToggleSwitch
-                checked={formData.isPrivateEvent === 1 ? true : false}
-                onChange={(checked) =>
-                  handleToggleChange("isPrivateEvent", checked)
-                }
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  name="location"
+                  placeholder="Location"
+                  value={formData.location}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+
+                <button
+                  type="button"
+                  onClick={handleGetCurrentLocation}
+                  disabled={locationLoading}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 opacity-70 hover:opacity-100 transition"
+                >
+                  {locationLoading ? (
+                    <span className="text-xs">...</span>
+                  ) : (
+                    <Image
+                      src={locationIcon}
+                      alt="Get Current Location"
+                      width={15}
+                      height={15}
+                      className="cursor-pointer"
+                    />
+                  )}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -245,10 +282,10 @@ const CreateAppointmentPopup: React.FC<
           />
 
           {/* Dates and Times */}
-          <div>
+          <div className=" bg-blue-100 p-2 ">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-lg font-medium mb-2">from</label>
+                <label className="block text-lg font-medium">from</label>
                 <input
                   placeholder="Select Start date"
                   type="date"
@@ -260,7 +297,7 @@ const CreateAppointmentPopup: React.FC<
                 />
               </div>
               <div>
-                <label className="block text-lg font-medium mb-2">to</label>
+                <label className="block text-lg font-medium">to</label>
                 <input
                   placeholder="Select End date"
                   type="date"
@@ -275,9 +312,7 @@ const CreateAppointmentPopup: React.FC<
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-lg font-medium mb-2">
-                  Start Time
-                </label>
+                <label className="block text-lg font-medium">Start Time</label>
                 <input
                   type="time"
                   name="startTimeOnly"
@@ -288,9 +323,7 @@ const CreateAppointmentPopup: React.FC<
                 />
               </div>
               <div>
-                <label className="block text-lg font-medium mb-2">
-                  End Time
-                </label>
+                <label className="block text-lg font-medium ">End Time</label>
                 <input
                   type="time"
                   name="endTimeOnly"
@@ -338,7 +371,7 @@ const CreateAppointmentPopup: React.FC<
           />
 
           {/* Additional Notes */}
-          <div>
+          <div className=" bg-blue-100 p-2 rounded-md">
             <div className="flex items-center gap-2 ">
               <Image
                 src={additionalNoteIcon}
@@ -346,7 +379,7 @@ const CreateAppointmentPopup: React.FC<
                 width={15}
                 height={15}
               />
-              <label className="block text-lg font-medium mb-2">
+              <label className="block text-lg font-medium">
                 Additional Notes
               </label>
             </div>

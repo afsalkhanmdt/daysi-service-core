@@ -65,7 +65,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
 
   // Generic handler for text inputs
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -74,7 +74,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
   // Generic handler for toggle switches
   const handleToggleChange = (
     field: keyof AppointmentFormUI,
-    checked: boolean
+    checked: boolean,
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -85,7 +85,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
   // Generic handler for single-select MultipleSelector components
   const handleSingleSelectChange = (
     field: keyof AppointmentFormUI,
-    selectedOptions: SelectableOption[]
+    selectedOptions: SelectableOption[],
   ) => {
     const selectedOption = selectedOptions.find((option) => option.isSelected);
     setFormData((prev) => ({
@@ -96,7 +96,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
 
   // Handler for responsible persons (multi-select)
   const handleResponsiblePersonsChange = (
-    selectedPersons: SelectableOption[]
+    selectedPersons: SelectableOption[],
   ) => {
     // Update the responsiblePersons state
     setResponsiblePersons(selectedPersons);
@@ -108,8 +108,8 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
     // Create a set of initial participant memberIds for quick lookup
     const initialParticipantIds = new Set(
       initialData?.participants?.map(
-        (p: any) => p.memberId || p.ParticipantId || p.id
-      ) || []
+        (p: any) => p.memberId || p.ParticipantId || p.id,
+      ) || [],
     );
 
     // Format participants properly for the API from responsiblePersons state
@@ -204,8 +204,8 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
       // Create a set of selected memberIds for quick lookup
       const selectedMemberIds = new Set(
         initialData.participants.map(
-          (p: any) => p.memberId || p.ParticipantId || p.id
-        )
+          (p: any) => p.memberId || p.ParticipantId || p.id,
+        ),
       );
 
       const updatedPersons = mappedPersons.map((person) => ({
@@ -274,7 +274,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
             <div>
               <div className="flex items-center gap-2 ">
                 <Image src={nameIcon} alt="Name" width={15} height={15} />
-                <label className="block text-lg font-medium mb-2">Name</label>
+                <label className="block text-lg font-medium ">Name</label>
               </div>
               <input
                 type="text"
@@ -294,9 +294,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
                   width={15}
                   height={15}
                 />
-                <label className="block text-lg font-medium mb-2">
-                  Location
-                </label>
+                <label className="block text-lg font-medium">Location</label>
               </div>
               <input
                 type="text"
@@ -341,7 +339,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
           <div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-lg font-medium mb-2">from</label>
+                <label className="block text-lg font-medium">from</label>
                 <input
                   placeholder="Select Start date"
                   type="date"
@@ -353,7 +351,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
                 />
               </div>
               <div>
-                <label className="block text-lg font-medium mb-2">to</label>
+                <label className="block text-lg font-medium">to</label>
                 <input
                   placeholder="Select End date"
                   type="date"
@@ -368,9 +366,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-lg font-medium mb-2">
-                  Start Time
-                </label>
+                <label className="block text-lg font-medium">Start Time</label>
                 <input
                   type="time"
                   name="startTimeOnly"
@@ -381,9 +377,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
                 />
               </div>
               <div>
-                <label className="block text-lg font-medium mb-2">
-                  End Time
-                </label>
+                <label className="block text-lg font-medium">End Time</label>
                 <input
                   type="time"
                   name="endTimeOnly"
@@ -443,7 +437,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
                 width={15}
                 height={15}
               />
-              <label className="block text-lg font-medium mb-2">
+              <label className="block text-lg font-medium">
                 Additional Notes
               </label>
             </div>
