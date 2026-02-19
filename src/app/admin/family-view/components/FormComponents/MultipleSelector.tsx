@@ -182,7 +182,7 @@ export default function MultipleSelector({
   const badgeColorClass = getBadgeColorClass();
 
   return (
-    <div className={`w-full p-2   bg-blue-100 rounded-md`}>
+    <div className={`w-full p-2 bg-blue-100 rounded-md`}>
       {title && (
         <div className="flex items-center gap-2 ">
           {titleIconUrl && (
