@@ -41,7 +41,7 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
   const { resources } = useResources();
   // Main form state
   const [formData, setFormData] = useState<PMTaskCreateCommand>(
-    initialFormDataForPMTaskApi
+    initialFormDataForPMTaskApi,
   );
 
   // Separate states for each selector component
@@ -60,7 +60,7 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
       prev.map((option) => ({
         ...option,
         isSelected: repeatSequence.some((rs) => rs.id === option.id),
-      }))
+      })),
     );
   };
 
@@ -70,7 +70,7 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
       prev.map((task) => ({
         ...task,
         isSelected: selectedTasks.some((st) => st.id === task.id),
-      }))
+      })),
     );
 
     // Update formData with the selected task label
@@ -89,13 +89,13 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
 
   // Handler for responsible persons selection (MULTIPLE SELECT)
   const handleResponsiblePersonsChange = (
-    selectedPersons: SelectableOption[]
+    selectedPersons: SelectableOption[],
   ) => {
     setResponsiblePersons((prev) =>
       prev.map((person) => ({
         ...person,
         isSelected: selectedPersons.some((sp) => sp.id === person.id),
-      }))
+      })),
     );
 
     // Update formData with selected person labels
@@ -114,7 +114,7 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
   };
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -140,10 +140,10 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
 
     // Reset selector states
     setResponsiblePersons(
-      responsiblePersons.map((p) => ({ ...p, isSelected: false }))
+      responsiblePersons.map((p) => ({ ...p, isSelected: false })),
     );
     setStandardTasks(
-      standardTaskOptions.map((t) => ({ ...t, isSelected: false }))
+      standardTaskOptions.map((t) => ({ ...t, isSelected: false })),
     );
   };
 
@@ -211,7 +211,7 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
 
           {/* Pocket Money Amount */}
           <div>
-            <label className="block text-lg font-medium mb-2 text-gray-800">
+            <label className="block text-lg font-medium text-gray-800">
               Pocket Money Amount
             </label>
             <div className="flex gap-4">
@@ -286,7 +286,7 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
                 width={15}
                 height={15}
               />
-              <label className="block text-lg font-medium mb-2">
+              <label className="block text-lg font-medium">
                 Additional Notes
               </label>
             </div>

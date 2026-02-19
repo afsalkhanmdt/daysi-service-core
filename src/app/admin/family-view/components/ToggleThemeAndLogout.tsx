@@ -98,7 +98,7 @@ export default function ToggleThemeAndLogout({
 
         {/* Create Dropdown Menu */}
         {showCreateDropdown && (
-          <div className="absolute bottom-full -right-[200px] mb-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
+          <div className="absolute md:bottom-full md:-right-[200px] mb-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden justify-self-end">
             <div className="p-2 space-y-1">
               <button
                 onClick={() => handleCreateOptionClick(onNewAppointment)}
