@@ -35,7 +35,7 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
   onSubmit,
 }) => {
   const [formData, setFormData] = useState<ToDoCreateCommand>(
-    initialToDoCreateBody
+    initialToDoCreateBody,
   );
 
   // Component states for selector components
@@ -46,7 +46,7 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
 
   // Generic handler for text inputs
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -63,7 +63,7 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
   // Generic handler for toggle switches
   const handleToggleChange = (
     field: keyof ToDoCreateCommand,
-    checked: boolean
+    checked: boolean,
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -74,7 +74,7 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
   // Generic handler for single-select MultipleSelector components
   const handleSingleSelectChange = (
     field: keyof ToDoTaskType,
-    selectedOptions: SelectableOption[]
+    selectedOptions: SelectableOption[],
   ) => {
     const selectedOption = selectedOptions.find((option) => option.isSelected);
     setFormData((prev) => ({
@@ -84,14 +84,14 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
   };
 
   const handleResponsiblePersonsChange = (
-    selectedPersons: SelectableOption[]
+    selectedPersons: SelectableOption[],
   ) => {
     // Update the responsiblePersons state for UI
     setResponsiblePersons((prev) =>
       prev.map((person) => ({
         ...person,
         isSelected: selectedPersons.some((sp) => sp.id === person.id),
-      }))
+      })),
     );
 
     // Update formData
@@ -148,7 +148,7 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Description - With icon like other components */}
-          <div>
+          <div className="bg-blue-100 rounded-md p-2">
             <div className="flex items-center gap-2 mb-2">
               <Image
                 src={descriptionIcon}
@@ -194,7 +194,7 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
             selectedBadgeColor="green"
             singleSelect={false}
           />
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 bg-blue-100 rounded-md p-2">
             {/* Groups - Custom Dropdown */}
             <CustomDropdown
               options={groupOptions}
@@ -238,7 +238,7 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
           />
 
           {/* Note - With icon like other components */}
-          <div>
+          <div className="bg-blue-100 rounded-md p-2">
             <div className="flex items-center gap-2 mb-2">
               <Image
                 src={additionalNoteIcon}

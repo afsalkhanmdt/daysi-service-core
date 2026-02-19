@@ -186,7 +186,7 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
           />
 
           {/* Description */}
-          <div>
+          <div className="bg-blue-100 rounded-md p-2">
             <div className="flex items-center gap-2">
               <Image
                 src={DescriptionIcon}
@@ -210,7 +210,7 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
           </div>
 
           {/* Pocket Money Amount */}
-          <div>
+          <div className="bg-blue-100 rounded-md p-2">
             <label className="block text-lg font-medium text-gray-800">
               Pocket Money Amount
             </label>
@@ -236,7 +236,7 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
           </div>
 
           {/* Choose Responsible Section - MULTIPLE SELECT */}
-          <div>
+          <div className="bg-blue-100 rounded-md p-2">
             <div className="flex justify-end items-center mb-4">
               <div className="flex items-center gap-2">
                 <label className="block text-sm font-medium">
@@ -278,7 +278,7 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
           />
 
           {/* Additional Notes */}
-          <div>
+          <div className="bg-blue-100 rounded-md p-2">
             <div className="flex items-center gap-2">
               <Image
                 src={additionalNoteIcon}

@@ -42,7 +42,7 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
   pocketMoney,
 }) => {
   const [formData, setFormData] = useState<PMTaskCreateCommand>(
-    initialFormDataForPMTaskApi
+    initialFormDataForPMTaskApi,
   );
   const { resources } = useResources();
   const [responsiblePersons, setResponsiblePersons] = useState<
@@ -63,16 +63,16 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
       prev.map((person) => ({
         ...person,
         isSelected: mappedFormData.FamilyMembersPlanned.includes(
-          person.memberId!
+          person.memberId!,
         ),
-      }))
+      })),
     );
 
     setStandardTasks((prev) =>
       prev.map((task) => ({
         ...task,
         isSelected: task.label === mappedFormData.PMDescription,
-      }))
+      })),
     );
 
     const repeatMap: Record<number, string> = {
@@ -87,7 +87,7 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
       prev.map((option) => ({
         ...option,
         isSelected: option.label === repeatMap[mappedFormData.Repeat],
-      }))
+      })),
     );
   }, [pocketMoney]);
 
@@ -98,7 +98,7 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
       prev.map((option) => ({
         ...option,
         isSelected: selectedRepeat.some((rs) => rs.id === option.id),
-      }))
+      })),
     );
 
     // Update formData with selected repeat value
@@ -124,7 +124,7 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
       prev.map((task) => ({
         ...task,
         isSelected: selectedTasks.some((st) => st.id === task.id),
-      }))
+      })),
     );
 
     // Update formData with the selected task label
@@ -143,13 +143,13 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
 
   // Handler for responsible persons selection (MULTIPLE SELECT)
   const handleResponsiblePersonsChange = (
-    selectedPersons: SelectableOption[]
+    selectedPersons: SelectableOption[],
   ) => {
     setResponsiblePersons((prev) =>
       prev.map((person) => ({
         ...person,
         isSelected: selectedPersons.some((sp) => sp.id === person.id),
-      }))
+      })),
     );
 
     setFormData((prev) => ({
@@ -160,7 +160,7 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
 
   // Handler for description change
   const handleDescriptionChange = (
-    e: React.ChangeEvent<HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLTextAreaElement>,
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -255,7 +255,7 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
           />
 
           {/* Description */}
-          <div>
+          <div className="bg-blue-100 rounded-md p-2">
             <div className="flex items-center gap-2 mb-2">
               <Image
                 src={DescriptionIcon}
@@ -277,7 +277,7 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
           </div>
 
           {/* Pocket Money Amount */}
-          <div>
+          <div className="bg-blue-100 rounded-md p-2">
             <div className="flex items-center gap-2 mb-2">
               <label className="block text-lg font-medium text-gray-800">
                 Pocket Money Amount
@@ -336,7 +336,7 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
           />
 
           {/* Additional Notes */}
-          <div>
+          <div className="bg-blue-100 rounded-md p-2">
             <div className="flex items-center gap-2 mb-2">
               <Image
                 src={additionalNoteIcon}
