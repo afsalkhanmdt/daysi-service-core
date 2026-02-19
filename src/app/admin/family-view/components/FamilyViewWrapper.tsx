@@ -8,6 +8,9 @@ import CalendarView from "@/app/admin/family-view/components/CalendarView";
 import CelebrationDisplayCard from "@/app/admin/family-view/components/CelebrationDisplayCard";
 import PMDisplayCard from "./PMDisplayCard";
 import ToggleThemeAndLogout from "./ToggleThemeAndLogout";
+import CreateTodoPopup from "./CreateTodoPopup"; // Import your popup components
+import CreateAppointmentPopup from "./CreateAppointmentPopup";
+// import CreatePocketMoneyPopup from "./CreatePocketMoneyPopup"; // Import when ready
 
 import danishAndNorwegianLogo from "@/app/admin/assets/DaysiDanishLogo.png";
 import enLogo from "@/app/admin/assets/DaysiEnLogo.png";
@@ -22,6 +25,10 @@ import { MemberResponse } from "@/app/types/familyMemberTypes";
 import { useTranslation } from "react-i18next";
 import i18next from "i18next";
 import "../../../../../i18n";
+import CreatePocketMoneyPopup from "./CreatePocketMoneyPopup";
+import { UserEventCreateRequest } from "@/app/types/appoinment";
+import { PMTaskCreateCommand } from "@/app/types/pocketMoney";
+import { createAppointmentCall } from "@/services/api";
 
 export type FamilyData = {
   Family: FamilyResponse;
@@ -45,6 +52,11 @@ const FamilyViewWrapper = ({
   const [familyDetails, setFamilyDetails] = useState<FamilyData | null>(null);
   const [isLangReady, setIsLangReady] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
+
+  const [showCreateTodo, setShowCreateTodo] = useState(false);
+  const [showCreateAppointment, setShowCreateAppointment] = useState(false);
+  const [showCreatePocketMoney, setShowCreatePocketMoney] = useState(false);
+
   const { t } = useTranslation("common");
 
   useEffect(() => {
@@ -83,6 +95,74 @@ const FamilyViewWrapper = ({
     }, AUTO_REFRESH_INTERVAL);
     return () => clearInterval(interval);
   }, [reload]);
+
+  // Handler functions for creating new items
+  const handleCreateTodo = (todoData: any) => {
+    console.log("Creating new todo:", todoData);
+  };
+
+  const handleCreateAppointment = async (
+    appointmentData: UserEventCreateRequest
+  ) => {
+    // Create a new object with all the added values
+    const updatedAppointmentData = {
+      ...appointmentData,
+      addedBy: familyDetails?.Family.MemberId || "",
+      familyUserId: userId,
+      familyId: Number(familyId),
+      locale:
+        familyDetails?.Members?.find((m) => m.MemberId === userId)?.Locale ||
+        "en",
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      offSet: dayjs().format("Z"),
+      eventsUpdatedOn: new Date().toISOString(),
+      // Add other default values you need
+      participants: appointmentData.participants || [],
+      isForAll: appointmentData.isForAll || 0,
+      isAllDayEvent: appointmentData.isAllDayEvent || 0,
+      isSpecialEvent: appointmentData.isSpecialEvent || 0,
+      isPrivateEvent: appointmentData.isPrivateEvent || 0,
+      recurrenceRule: appointmentData.recurrenceRule || {
+        frequency: 0,
+        interval: 1,
+      },
+      noPush: appointmentData.noPush || false,
+    };
+
+    console.log(
+      "Creating new appointment with updated data:",
+      updatedAppointmentData
+    );
+
+    const response = await createAppointmentCall(updatedAppointmentData);
+    console.log("Appointment creation response:", response);
+
+    // Now call your API with the updated data
+    // Example: createAppointmentAPI(updatedAppointmentData).then(() => reload());
+  };
+
+  const handleCreatePocketMoney = (pocketMoneyData: PMTaskCreateCommand) => {
+    const updatedPocketMoneyData = {
+      ...pocketMoneyData,
+      familyId: Number(familyId),
+      CreatedBy: userId || "",
+      PMAmount: Number(pocketMoneyData.PMAmount) || 0,
+      Interval: Number(pocketMoneyData.Interval) || 0,
+      ActivityDate: pocketMoneyData.ActivityDate
+        ? new Date(pocketMoneyData.ActivityDate).toISOString()
+        : new Date().toISOString(),
+      FirstComeFirstServe: Boolean(pocketMoneyData.FirstComeFirstServe),
+      PMDescription: pocketMoneyData.PMDescription || "",
+      Note: pocketMoneyData.Note || "",
+      Repeat: pocketMoneyData.Repeat || "none", // Assuming RepeatEnum has a default
+      FamilyMembersPlanned: pocketMoneyData.FamilyMembersPlanned || [],
+    };
+
+    console.log(
+      "Creating new pocket money with updated data:",
+      updatedPocketMoneyData
+    );
+  };
 
   if (!familyDetails || !isLangReady) {
     return (
@@ -192,14 +272,32 @@ const FamilyViewWrapper = ({
           </div>
         </div>
 
-        <ToggleThemeAndLogout reload={reload} />
+        {/* Updated ToggleThemeAndLogout with create functionality */}
+        <ToggleThemeAndLogout
+          reload={reload}
+          onNewAppointment={() => setShowCreateAppointment(true)}
+          onNewToDo={() => setShowCreateTodo(true)}
+          onNewPocketMoney={() => setShowCreatePocketMoney(true)}
+        />
       </div>
 
       <div className="sm:hidden w-full flex justify-between p-2">
         <div className="grid place-items-center">
-          <Image src={mainIcon.src} alt="mainIcon" width={120} height={48} />
+          <Image
+            unoptimized
+            src={mainIcon.src}
+            alt="mainIcon"
+            width={120}
+            height={48}
+          />
         </div>
-        <ToggleThemeAndLogout reload={reload} />
+        {/* Mobile version with create functionality */}
+        <ToggleThemeAndLogout
+          reload={reload}
+          onNewAppointment={() => setShowCreateAppointment(true)}
+          onNewToDo={() => setShowCreateTodo(true)}
+          onNewPocketMoney={() => setShowCreatePocketMoney(true)}
+        />
       </div>
 
       <div className="flex-1 min-w-0 sm:h-full">
@@ -207,8 +305,29 @@ const FamilyViewWrapper = ({
           data={familyDetails}
           currentDate={currentDate}
           setCurrentDate={setCurrentDate}
+          dataReload={reload}
         />
       </div>
+
+      {/* Popup Modals */}
+
+      <CreateAppointmentPopup
+        isOpen={showCreateAppointment}
+        onClose={() => setShowCreateAppointment(false)}
+        onSubmit={handleCreateAppointment}
+      />
+
+      <CreateTodoPopup
+        isOpen={showCreateTodo}
+        onClose={() => setShowCreateTodo(false)}
+        onSubmit={handleCreateTodo}
+      />
+
+      <CreatePocketMoneyPopup
+        isOpen={showCreatePocketMoney}
+        onClose={() => setShowCreatePocketMoney(false)}
+        onSubmit={handleCreatePocketMoney}
+      />
     </div>
   );
 };

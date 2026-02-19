@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { AdminLoginCall } from "@/services/api/apiCall";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -10,6 +9,7 @@ import passwordPlaceholderLogo from "../assets/inputLockIcon.svg";
 import danishAndNorwegianLogo from "@/app/admin/assets/DaysiDanishLogo.png";
 import enLogo from "@/app/admin/assets/DaysiEnLogo.png";
 import swedishLogo from "@/app/admin/assets/DaysiSwedishLogo.png";
+import { AdminLoginCall } from "@/services/api/apiCall";
 
 const Login = () => {
   const [username, setUsername] = useState("");

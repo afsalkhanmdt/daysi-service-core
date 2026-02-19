@@ -1,4 +1,5 @@
 "use client";
+import dayjs from "dayjs";
 
 import FullCalendar from "@fullcalendar/react";
 import resourceTimeGridPlugin from "@fullcalendar/resource-timegrid";
@@ -28,8 +29,14 @@ import MobileEventAndScrollBar from "./MobileEventAndScrollBar";
 import DateScrollAndDisplay from "./DateScrollAndDisplay";
 import { EventInput } from "@fullcalendar/core";
 import { useTranslation } from "react-i18next";
-import { PMData } from "@/app/types/ToDoAndPMTypes";
 import ToDoAndPMComponent from "./ToDoAndPMComponent";
+import EditAppointmentPopup from "./EditAppointmentPopup";
+import { EventApi } from "@fullcalendar/core";
+import { useResources } from "@/app/context/ResourceContext";
+import { UserEventCreateRequest } from "@/app/types/appoinment";
+import { PMData } from "@/app/types/pocketMoney";
+import { ToDoTaskType } from "@/app/types/todo";
+import { updateAppointmentCall } from "@/services/api";
 
 const memberOrder: Record<number, number> = {
   1: 0,
@@ -40,41 +47,24 @@ const memberOrder: Record<number, number> = {
   5: 5,
 };
 
-export type ToDoTaskType = {
-  ToDoTaskId: number;
-  FamilyId: number;
-  CreatedBy: string;
-  AssignedTo: string;
-  ToDoGroupId: number;
-  Description: string;
-  Note: string;
-  Private: boolean;
-  CreatedDate: string;
-  ClosedDate: string | null;
-  Status: number;
-  UpdatedOn: string;
-  IsForAll: boolean;
-};
-
-const pad = (n: number) => String(n).padStart(2, "0");
-
-// convert minutes-from-day-start to "HH:MM:SS"; allow 1440 -> "24:00:00"
-// const formatMinutesToTime = (mins: number) => {
-//   if (mins >= 1440) return "24:00:00";
-//   const h = Math.floor(mins / 60);
-//   const m = Math.floor(mins % 60);
-//   return `${pad(h)}:${pad(m)}:00`;
-// };
-
 const CalendarView = ({
   data,
   currentDate,
   setCurrentDate,
+  dataReload,
 }: {
   data: FamilyData;
   currentDate: Date;
   setCurrentDate: Dispatch<SetStateAction<Date>>;
+  dataReload: () => void;
 }) => {
+  const { resources, setMembers } = useResources();
+
+  const formattedResources = resources.map((r) => ({
+    ...r,
+    id: String(r.id),
+  }));
+
   const { t } = useTranslation("common");
   const calendarRef = useRef<any>(null);
   const calendarContainerRef = useRef<HTMLDivElement>(null);
@@ -83,55 +73,15 @@ const CalendarView = ({
   const familyId = searchParams.get("familyId");
   const previousDateRef = useRef<Date>(currentDate);
 
+  const [showEditAppointment, setShowEditAppointment] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] =
+    useState<EventApi | null>(null);
+
   const { data: PMTaskDetails } = useFetch<PMData>(
     `PocketMoney/GetPMTasks?familyId=${familyId}`
   );
   const { data: todoData } = useFetch<ToDoTaskType[]>(
     `ToDo/GetToDos?familyId=${familyId}`
-  );
-
-  const sortedMembers = useMemo(() => {
-    return [...data.Members].sort((a, b) => {
-      const aType = a.MemberType;
-      const bType = b.MemberType;
-
-      // Family first
-      if (aType === 1 && bType !== 1) return -1;
-      if (bType === 1 && aType !== 1) return 1;
-
-      // Admin second
-      if (aType === 0 && bType !== 0) return -1;
-      if (bType === 0 && aType !== 0) return 1;
-
-      // For all others (normal members), sort by birthdate (eldest first)
-      if (aType > 1 && bType > 1) {
-        const aDate = new Date(a.Birthdate || "");
-        const bDate = new Date(b.Birthdate || "");
-        return aDate.getTime() - bDate.getTime(); // earlier = older
-      }
-
-      // keep relative order if all else equal
-      return 0;
-    });
-  }, [data.Members]);
-
-  const resources = useMemo(
-    () =>
-      sortedMembers.map((member, index) => ({
-        id: String(member.Id),
-        title: member.FirstName,
-        image: member.ResourceUrl,
-        sortOrder: index,
-        color: member.ColorCode
-          ? member.ColorCode.slice(-6) // take last 6 chars
-          : "000000",
-      })),
-    [sortedMembers]
-  );
-
-  const allMemberIds = useMemo(
-    () => data.Members.map((m) => String(m.Id)),
-    [data.Members]
   );
 
   const imageUrls = useMemo(
@@ -145,31 +95,78 @@ const CalendarView = ({
   );
 
   const events: EventInput[] = useMemo(() => {
-    const extractedEvents = data.Members.flatMap((member: MemberResponse) =>
-      member.Events.flatMap((event: any): EventInput[] => {
+    const allEvents: EventInput[] = [];
+    const seenEventMemberPairs = new Set<string>(); // Track eventId-memberId pairs
+    const duplicateWarnings = new Set<string>(); // Track already warned duplicates
+
+    data.Members.forEach((member: MemberResponse) => {
+      // Track events per member to avoid duplicates within same member
+      const memberEvents = new Map<string, any>();
+
+      member.Events.forEach((event) => {
+        const eventKey = `${event.Id}-${member.Id}`;
+
+        // Skip if we've already processed this event for this member
+        if (seenEventMemberPairs.has(eventKey)) {
+          if (!duplicateWarnings.has(eventKey)) {
+            console.warn(
+              `Skipping duplicate event ${event.Id} for member ${member.Id} (${member.FirstName})`
+            );
+            duplicateWarnings.add(eventKey);
+          }
+          return;
+        }
+
+        seenEventMemberPairs.add(eventKey);
+
+        // Your existing filtering logic
         if (
           member.MemberType === 1 &&
           event.EventParticipant?.length !== data.Members.length - 1
         ) {
-          return [];
+          return;
         }
 
         if (
           member.MemberType !== 1 &&
           event.EventParticipant?.length === data.Members.length - 1
         ) {
-          return [];
+          return;
         }
 
         let start = new Date(Number(event.Start));
         let end = new Date(Number(event.End));
 
         if (event.IsAllDayEvent === 1) {
-          const day = new Date(Number(event.Start));
+          const day = new Date(start);
           start = new Date(day.setHours(0, 0, 0, 0));
           end = new Date(day.setHours(24, 0, 0, 0));
         }
 
+        /* ==========================
+         Base Event
+      ========================== */
+        const baseEvent: EventInput = {
+          id: String(event.Id),
+          resourceId: String(member.Id),
+          title: event.Title,
+          start,
+          end,
+          display: "block",
+          extendedProps: {
+            ...event,
+            participants: event.EventParticipant,
+            externalCalender: event.ExternalCalendarName,
+            userColorCode: member.ColorCode || "000000",
+            description: event.Description || "",
+            location: event.Location || "",
+            isRecurrence: false,
+          },
+        };
+
+        /* ==========================
+         Recurrence Events
+      ========================== */
         const recurrenceEvents: EventInput[] = [];
         const rule = event.RecurrenceRule;
         const repeatEnd = event.RepeatEndDate
@@ -177,106 +174,79 @@ const CalendarView = ({
           : null;
 
         if (rule && rule.Frequency > 0 && repeatEnd) {
-          const freq = rule.Frequency; // 1=daily, 2=weekly, 3=monthly, 4=yearly
-          const interval = rule.Interval || 1;
           let currentStart = new Date(start);
           let currentEnd = new Date(end);
 
-          // Skip the base event by moving to the *next* recurrence
-          switch (freq) {
-            case 1: // daily
-              currentStart.setDate(currentStart.getDate() + interval);
-              currentEnd.setDate(currentEnd.getDate() + interval);
-              break;
-            case 2: // weekly
-              currentStart.setDate(currentStart.getDate() + 7 * interval);
-              currentEnd.setDate(currentEnd.getDate() + 7 * interval);
-              break;
-            case 3: // monthly
-              currentStart.setMonth(currentStart.getMonth() + interval);
-              currentEnd.setMonth(currentEnd.getMonth() + interval);
-              break;
-            case 4: // yearly
-              currentStart.setFullYear(currentStart.getFullYear() + interval);
-              currentEnd.setFullYear(currentEnd.getFullYear() + interval);
-              break;
-          }
+          const addInterval = () => {
+            switch (rule.Frequency) {
+              case 1:
+                currentStart.setDate(currentStart.getDate() + rule.Interval);
+                currentEnd.setDate(currentEnd.getDate() + rule.Interval);
+                break;
+              case 2:
+                currentStart.setDate(
+                  currentStart.getDate() + 7 * rule.Interval
+                );
+                currentEnd.setDate(currentEnd.getDate() + 7 * rule.Interval);
+                break;
+              case 3:
+                currentStart.setMonth(currentStart.getMonth() + rule.Interval);
+                currentEnd.setMonth(currentEnd.getMonth() + rule.Interval);
+                break;
+              case 4:
+                currentStart.setFullYear(
+                  currentStart.getFullYear() + rule.Interval
+                );
+                currentEnd.setFullYear(
+                  currentEnd.getFullYear() + rule.Interval
+                );
+                break;
+            }
+          };
+
+          // skip base event
+          addInterval();
 
           while (currentStart <= repeatEnd) {
+            const recurrenceId = `${event.Id}-${currentStart.getTime()}-${
+              member.Id
+            }`;
             recurrenceEvents.push({
-              id: `${event.Id}-${currentStart.getTime()}`,
-              resourceId: String(member.Id),
-              title: event.Title,
+              ...baseEvent,
+              id: recurrenceId,
               start: new Date(currentStart),
               end: new Date(currentEnd),
-              display: "block",
               extendedProps: {
-                ...event,
-                participants: event.EventParticipant,
-                externalCalender: event.ExternalCalendarName,
-                userColorCode: member.ColorCode || "000000",
-                description: event.Description || "",
-                location: event.Location || "",
+                ...baseEvent.extendedProps,
                 isRecurrence: true,
               },
             });
 
-            // Increment for the next recurrence
-            switch (freq) {
-              case 1:
-                currentStart.setDate(currentStart.getDate() + interval);
-                currentEnd.setDate(currentEnd.getDate() + interval);
-                break;
-              case 2:
-                currentStart.setDate(currentStart.getDate() + 7 * interval);
-                currentEnd.setDate(currentEnd.getDate() + 7 * interval);
-                break;
-              case 3:
-                currentStart.setMonth(currentStart.getMonth() + interval);
-                currentEnd.setMonth(currentEnd.getMonth() + interval);
-                break;
-              case 4:
-                currentStart.setFullYear(currentStart.getFullYear() + interval);
-                currentEnd.setFullYear(currentEnd.getFullYear() + interval);
-                break;
-            }
+            addInterval();
           }
-
-          // console.log(" Recurring event created:", {
-          //   title: event.Title,
-          //   eventStart: event.LocalStartDate,
-          //   frequency: freq,
-          //   interval,
-          //   repeatEnd,
-          //   occurrences: recurrenceEvents.length,
-          // });
         }
 
-        // the original (base) event
-        return [
-          {
-            id: event.Id,
-            resourceId: String(member.Id),
-            title: event.Title,
-            start,
-            end,
-            display: "block",
-            extendedProps: {
-              ...event,
-              participants: event.EventParticipant,
-              externalCalender: event.ExternalCalendarName,
-              userColorCode: member.ColorCode || "000000",
-              description: event.Description || "",
-              location: event.Location || "",
-              isRecurrence: false,
-            },
-          },
-          ...recurrenceEvents,
-        ];
-      })
-    );
+        allEvents.push(baseEvent, ...recurrenceEvents);
+      });
+    });
 
-    return extractedEvents;
+    // Debug: Log summary of events
+    console.log(`Total events processed: ${allEvents.length}`);
+    console.log(`Unique event-member pairs: ${seenEventMemberPairs.size}`);
+
+    // Check for any remaining duplicate IDs (should be 0)
+    const eventIds = allEvents.map((e) => e.id);
+    const duplicateIds = eventIds.filter(
+      (id, index) => eventIds.indexOf(id) !== index
+    );
+    if (duplicateIds.length > 0) {
+      console.error(
+        `Found ${duplicateIds.length} duplicate event IDs in final array:`,
+        [...new Set(duplicateIds)]
+      );
+    }
+
+    return allEvents;
   }, [data.Members]);
 
   // Function to find the earliest event time for the current day
@@ -429,13 +399,6 @@ const CalendarView = ({
       const slotLanes = calendarContainerRef.current?.querySelectorAll(
         ".fc-timegrid-slots table tr"
       );
-      if (slotLanes) {
-        console.log("Slot lanes found:", slotLanes.length);
-        console.log(
-          "First slot time:",
-          slotLanes[0]?.querySelector(".fc-timegrid-slot-label")?.textContent
-        );
-      }
     }, 500);
 
     return () => clearTimeout(timeout);
@@ -475,83 +438,54 @@ const CalendarView = ({
       scrollContainer?.removeEventListener("scroll", handleScroll);
     };
   }, []);
-  // useEffect(() => {
-  //   const handleResize = () => {
-  //     if (calendarRef.current?.getApi) {
-  //       const calendarApi = calendarRef.current.getApi();
 
-  //       // Force calendar to update its dimensions
-  //       setTimeout(() => {
-  //         calendarApi.updateSize();
+  const handleEditAppointment = async (
+    appointmentData: UserEventCreateRequest
+  ) => {
+    // Create a new object with all the added values
+    const updatedAppointmentData = {
+      ...appointmentData,
+      addedBy: data?.Family.MemberId,
+      familyUserId: data.Family.MemberId,
+      familyId: Number(familyId),
+      locale:
+        data?.Members?.find((m) => m.MemberId === data.Family.MemberId)
+          ?.Locale || "en",
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      offSet: dayjs().format("Z"),
+      eventsUpdatedOn: new Date().toISOString(),
+      // Add other default values you need
+      participants: appointmentData.participants || [],
+      isForAll: appointmentData.isForAll || 0,
+      isAllDayEvent: appointmentData.isAllDayEvent || 0,
+      isSpecialEvent: appointmentData.isSpecialEvent || 0,
+      isPrivateEvent: appointmentData.isPrivateEvent || 0,
+      recurrenceRule: appointmentData.recurrenceRule || {
+        frequency: 0,
+        interval: 1,
+      },
+      noPush: appointmentData.noPush || false,
+    };
 
-  //         // Additional forced reflow for the calendar
-  //         const calendarEl =
-  //           calendarContainerRef.current?.querySelector(".fc-timegrid-body");
-  //         if (calendarEl) {
-  //           // Trigger reflow
-  //           (calendarEl as HTMLElement).style.display = "none";
-  //           (calendarEl as HTMLElement).offsetHeight; // Force reflow
-  //           (calendarEl as HTMLElement).style.display = "";
-  //         }
-  //       }, 100);
-  //     }
-  //   };
+    console.log(
+      "Creating new appointment with updated data:",
+      updatedAppointmentData
+    );
 
-  //   // Add event listeners
-  //   window.addEventListener("resize", handleResize);
-  //   window.addEventListener("orientationchange", handleResize);
+    const response = await updateAppointmentCall(updatedAppointmentData);
+    if (response.ok) {
+      dataReload();
+    }
 
-  //   // Initial calculation after mount
-  //   const initTimer = setTimeout(() => {
-  //     handleResize();
-  //   }, 500);
+    // Now call your API with the updated data
+    // Example: createAppointmentAPI(updatedAppointmentData).then(() => reload());
+  };
 
-  //   return () => {
-  //     window.removeEventListener("resize", handleResize);
-  //     window.removeEventListener("orientationchange", handleResize);
-  //     clearTimeout(initTimer);
-  //   };
-  // }, []);
-
-  // // Add this useEffect to handle initial load stretching
-  // useEffect(() => {
-  //   // Force a recalculation after the calendar has rendered
-  //   const timer = setTimeout(() => {
-  //     if (calendarRef.current?.getApi) {
-  //       const calendarApi = calendarRef.current.getApi();
-  //       calendarApi.updateSize();
-
-  //       // Additional DOM manipulation to ensure proper stretching
-  //       const resourceCols =
-  //         calendarContainerRef.current?.querySelectorAll(".fc-timegrid-col");
-  //       const resourceHeaders =
-  //         calendarContainerRef.current?.querySelectorAll(".fc-resource");
-
-  //       if (resourceCols && resourceHeaders) {
-  //         // Calculate available width
-  //         const container = calendarContainerRef.current;
-  //         if (container) {
-  //           const availableWidth = container.clientWidth - 50; // Subtract time axis
-  //           const columnCount = resourceCols.length;
-  //           const calculatedWidth = Math.max(350, availableWidth / columnCount);
-
-  //           // Apply calculated width
-  //           resourceCols.forEach((col: Element) => {
-  //             (col as HTMLElement).style.minWidth = "350px";
-  //             (col as HTMLElement).style.flex = `1 1 ${calculatedWidth}px`;
-  //           });
-
-  //           resourceHeaders.forEach((header: Element) => {
-  //             (header as HTMLElement).style.minWidth = "350px";
-  //             (header as HTMLElement).style.flex = `1 1 ${calculatedWidth}px`;
-  //           });
-  //         }
-  //       }
-  //     }
-  //   }, 1000);
-
-  //   return () => clearTimeout(timer);
-  // }, [resources.length, currentDate]);
+  useEffect(() => {
+    if (data?.Members?.length) {
+      setMembers(data.Members);
+    }
+  }, [data.Members, setMembers]);
 
   return (
     <div className="sm:p-2.5 bg-slate-100 flex flex-col sm:h-full sm:rounded-xl">
@@ -606,12 +540,13 @@ const CalendarView = ({
           eventOverlap={false}
           slotEventOverlap={false}
           headerToolbar={false}
-          resources={resources}
+          resources={formattedResources}
           events={events}
           resourceLabelContent={(arg) => (
             <div className="flex justify-between items-center w-full ">
               <div className="flex gap-1.5 items-center">
                 <Image
+                  unoptimized
                   src={arg.resource._resource.extendedProps.image || dp.src}
                   alt={arg.resource._resource.title || ""}
                   width={28}
@@ -646,13 +581,71 @@ const CalendarView = ({
               .filter((img): img is string => Boolean(img));
 
             return (
-              <EventCardUI
-                eventInfo={eventInfo}
-                participantImages={participantImages}
-              />
+              <div
+                onClick={() => {
+                  setSelectedAppointment(eventInfo.event);
+                  setShowEditAppointment(true);
+                }}
+                className={`h-full border-t-4 rounded-xl border-sky-500 ${
+                  eventInfo.event.extendedProps.ExternalCalendarName
+                    ? "bg-slate-200"
+                    : "bg-white"
+                }  shadow-sm overflow-auto min-h-32 w-full max-w-96`}
+              >
+                <EventCardUI
+                  eventInfo={eventInfo}
+                  participantImages={participantImages}
+                />
+              </div>
             );
           }}
         />
+
+        {showEditAppointment && selectedAppointment && (
+          <EditAppointmentPopup
+            isOpen={showEditAppointment}
+            onClose={() => {
+              setShowEditAppointment(false);
+              setSelectedAppointment(null);
+            }}
+            onSubmit={handleEditAppointment}
+            initialData={
+              selectedAppointment
+                ? {
+                    id: selectedAppointment.id,
+                    title: selectedAppointment.title,
+                    startDate: selectedAppointment.start || undefined,
+                    endDate: selectedAppointment.end || undefined,
+                    description: selectedAppointment.extendedProps.description,
+                    location: selectedAppointment.extendedProps.location,
+                    isAllDayEvent:
+                      selectedAppointment.extendedProps.IsAllDayEvent,
+                    isSpecialEvent:
+                      selectedAppointment.extendedProps.IsSpecialEvent,
+                    isPrivateEvent:
+                      selectedAppointment.extendedProps.IsPrivateEvent,
+                    recurrenceRule: selectedAppointment.extendedProps
+                      .RecurrenceRule || {
+                      frequency: 0,
+                      interval: 1,
+                    },
+                    repeat:
+                      selectedAppointment.extendedProps.Repeat || undefined,
+                    repeatEndDate:
+                      selectedAppointment.extendedProps.RepeatEndDate,
+                    alert: selectedAppointment.extendedProps.Alert || undefined,
+                    alarms:
+                      selectedAppointment.extendedProps.Alarms || undefined,
+                    participants:
+                      selectedAppointment.extendedProps.participants,
+                    externalCalendarName:
+                      selectedAppointment.extendedProps.ExternalCalendarName,
+                  }
+                : undefined
+            }
+          />
+        )}
+
         {PMTaskDetails && todoData && (
           <div className="absolute bottom-0  hidden sm:block w-full z-20">
             <ToDoAndPMComponent
