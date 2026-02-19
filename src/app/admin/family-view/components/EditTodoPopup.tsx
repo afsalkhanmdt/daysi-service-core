@@ -31,7 +31,7 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
   onSubmit,
 }) => {
   const [formData, setFormData] = useState<ToDoCreateCommand>(
-    initialToDoCreateBody
+    initialToDoCreateBody,
   );
 
   const { resources } = useResources();
@@ -56,7 +56,7 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
       prev.map((person) => ({
         ...person,
         isSelected: mapped.assignedTo?.includes(String(person.memberId)),
-      }))
+      })),
     );
 
     const isClosed = todo.Status === 1 || todo.Status === 2;
@@ -67,14 +67,14 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
         isSelected: isClosed
           ? option.label === "Close"
           : option.label === "Open",
-      }))
+      })),
     );
   }, [todo, responsiblePersons.length]);
 
   /* ---------- Handlers ---------- */
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -89,7 +89,7 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
 
   const handleToggleChange = (
     field: keyof ToDoCreateCommand,
-    checked: boolean
+    checked: boolean,
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -98,13 +98,13 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
   };
 
   const handleResponsiblePersonsChange = (
-    selectedPersons: SelectableOption[]
+    selectedPersons: SelectableOption[],
   ) => {
     setResponsiblePersons((prev) =>
       prev.map((person) => ({
         ...person,
         isSelected: selectedPersons.some((sp) => sp.id === person.id),
-      }))
+      })),
     );
 
     setFormData((prev) => ({
@@ -142,7 +142,7 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          <div>
+          <div className="bg-blue-100 rounded-md p-2">
             <div className="flex items-center gap-2 mb-2">
               <Image
                 src={descriptionIcon}
@@ -182,15 +182,16 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
             showImages
             singleSelect={false}
           />
-
-          <CustomDropdown
-            options={groupOptions}
-            selectedValue={String(formData.toDoGroupId)}
-            onSelect={handleGroupSelect}
-            placeholder="Select a group"
-            title="Groups"
-            iconUrl={groupIcon.src}
-          />
+          <div className="grid grid-cols-2 gap-4 bg-blue-100 rounded-md p-2">
+            <CustomDropdown
+              options={groupOptions}
+              selectedValue={String(formData.toDoGroupId)}
+              onSelect={handleGroupSelect}
+              placeholder="Select a group"
+              title="Groups"
+              iconUrl={groupIcon.src}
+            />
+          </div>
 
           <MultipleSelector
             options={statuses}
@@ -199,7 +200,7 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
                 prev.map((s) => ({
                   ...s,
                   isSelected: selected.some((sel) => sel.id === s.id),
-                }))
+                })),
               )
             }
             title="Status"
@@ -208,7 +209,7 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
             singleSelect
           />
 
-          <div>
+          <div className="bg-blue-100 rounded-md p-2">
             <div className="flex items-center gap-2 mb-2">
               <Image
                 src={additionalNoteIcon}
