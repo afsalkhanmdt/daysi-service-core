@@ -243,10 +243,10 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Choose Standard Task - SINGLE SELECT */}
           <MultipleSelector
-            titleIconUrl={name.src}
+            subHeadingIcon={name.src}
             options={standardTasks}
             onSelectionChange={handleStandardTaskChange}
-            title="Choose Standard Task"
+            subHeading="Choose Standard Task"
             showSelectAll={false}
             showCount={true}
             selectedBorderColor="green"
@@ -309,10 +309,10 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
 
           {/* Choose Responsible Persons - MULTIPLE SELECT */}
           <MultipleSelector
-            titleIconUrl={participantsIcon.src}
+            subHeadingIcon={participantsIcon.src}
             options={responsiblePersons}
             onSelectionChange={handleResponsiblePersonsChange}
-            title="Select Responsible Persons"
+            subHeading="Select Responsible Persons"
             showSelectAll={true}
             showCount={true}
             showImages={true}
@@ -323,10 +323,10 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
 
           {/* Repeat Options */}
           <MultipleSelector
-            titleIconUrl={repeatIcon.src}
+            subHeadingIcon={repeatIcon.src}
             options={repeatSequence}
             onSelectionChange={handleRepeatChange}
-            title="Repeat Sequence"
+            subHeading="Repeat Sequence"
             showSelectAll={false}
             showCount={true}
             showImages={false}
