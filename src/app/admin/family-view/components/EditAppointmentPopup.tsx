@@ -355,10 +355,10 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
 
           {/* Participants */}
           <MultipleSelector
-            titleIconUrl={participantsIcon.src}
+            subHeadingIcon={participantsIcon.src}
             options={responsiblePersons}
             onSelectionChange={handleResponsiblePersonsChange}
-            title="Select Responsible Persons"
+            subHeading="Select Responsible Persons"
             showSelectAll={true}
             showCount={true}
             showImages={true}
@@ -390,7 +390,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
 
           {/* Repeat Sequence */}
           <MultipleSelector
-            titleIconUrl={repeatIcon.src}
+            subHeadingIcon={repeatIcon.src}
             options={REPEAT_OPTIONS.map((option) => ({
               ...option,
               isSelected: option.id === formData.repeat,
@@ -398,7 +398,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
             onSelectionChange={(selected) =>
               handleSingleSelectChange("repeat", selected)
             }
-            title="Repeat Sequence"
+            subHeading="Repeat Sequence"
             showSelectAll={true}
             showCount={true}
             showImages={false}
@@ -409,7 +409,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
 
           {/* Alarm */}
           <MultipleSelector
-            titleIconUrl={alarmIcon.src}
+            subHeadingIcon={alarmIcon.src}
             options={ALERT_OPTIONS.map((option) => ({
               ...option,
               isSelected: option.id === formData.alert,
@@ -417,7 +417,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
             onSelectionChange={(selected) => {
               handleSingleSelectChange("alert", selected);
             }}
-            title="Alarm"
+            subHeading="Alarm"
             showSelectAll={true}
             showCount={true}
             showImages={false}

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import SpecialEventIcon from "@/app/admin/assets/event-badged-1-svgrepo-com (1) 1.png";
 import createAppointmentImage from "@/app/admin/assets/doctor-suitcase-with-a-cross-svgrepo-com 1.png";
 import nameIcon from "@/app/admin/assets/name.png";
@@ -9,6 +9,7 @@ import participantsIcon from "@/app/admin/assets/participantsIcon.png";
 import repeatIcon from "@/app/admin/assets/repeatIcon.png";
 import alarmIcon from "@/app/admin/assets/alarmIcon.png";
 import additionalNoteIcon from "@/app/admin/assets/name.png";
+import closeIcon from "@/app/admin/assets/close-428.png";
 
 import { ToggleSwitch } from "./FormComponents/ToggleSwitch";
 import MultipleSelector, {
@@ -49,6 +50,7 @@ const CreateAppointmentPopup: React.FC<
     SelectableOption[]
   >([]);
 
+  const modalRef = useRef<HTMLDivElement>(null);
   const [formData, setFormData] = useState<AppointmentFormUI>(initialFormData);
 
   /* ==============================
@@ -130,14 +132,36 @@ const CreateAppointmentPopup: React.FC<
     delete (payload as any).endTimeOnly;
 
     onSubmit(payload);
-    onClose();
-    setFormData(initialFormData);
+    handleClose();
   };
 
   const handleClose = () => {
     onClose();
     setFormData(initialFormData);
   };
+
+  // Handle click on overlay - simplified with stopPropagation
+  const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Close only if clicking the overlay itself, not its children
+    if (e.target === e.currentTarget) {
+      handleClose();
+    }
+  };
+
+  // Handle escape key
+  useEffect(() => {
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && isOpen) {
+        handleClose();
+      }
+    };
+
+    document.addEventListener("keydown", handleEscapeKey);
+
+    return () => {
+      document.removeEventListener("keydown", handleEscapeKey);
+    };
+  }, [isOpen, handleClose]);
 
   useEffect(() => {
     setResponsiblePersons(mapResourcesToSelectableOptions(resources));
@@ -146,113 +170,151 @@ const CreateAppointmentPopup: React.FC<
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg w-full max-w-xl mx-4 max-h-[90vh] overflow-y-auto">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      onClick={handleOverlayClick}
+    >
+      <div
+        ref={modalRef}
+        className="bg-white rounded-lg w-full max-w-5xl mx-4 max-h-[100vh] overflow-y-auto relative"
+        onClick={(e) => e.stopPropagation()} // Prevent clicks inside from closing
+      >
         {/* Header */}
-        <div className="border-b border-gray-200 bg-blue-200 m-2 px-6 py-4 rounded-lg flex gap-2">
-          <div className="rounded-full bg-white p-2">
-            <Image
-              src={createAppointmentImage}
-              alt="createAppointmentImage"
-              width={15}
-              height={15}
-            />
+        <div className="sticky top-0 z-10 p-3 bg-white">
+          <div className="border-b border-gray-200 bg-blue-200  px-6 py-4 rounded-lg flex justify-between items-center ">
+            <div className="flex gap-2">
+              <div className="rounded-full bg-white p-2">
+                <Image
+                  src={createAppointmentImage}
+                  alt="createAppointmentImage"
+                  width={15}
+                  height={15}
+                />
+              </div>
+              <h2 className="text-xl font-semibold">Create Appointment</h2>
+            </div>
+            {/* Close Icon */}
+            <button
+              onClick={handleClose}
+              className="rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200 grid place-items-center"
+              aria-label="Close"
+            >
+              <Image
+                src={closeIcon}
+                alt="Close"
+                width={30}
+                height={30}
+                className="text-gray-600"
+              />
+            </button>
           </div>
-          <h2 className="text-xl font-semibold">Create Appointment</h2>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Special Event Section with Switch */}
-          <div className=" border-gray-200 grid grid-cols-2 gap-4 bg-blue-100 p-2 rounded-md">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="rounded-full bg-gray-100 p-2">
-                  <Image
-                    src={SpecialEventIcon}
-                    alt="SpecialEventIcon"
-                    width={15}
-                    height={15}
+        <form onSubmit={handleSubmit} className="p-3 space-y-6">
+          {/* Title + Location +Special Event Section with Switch */}
+          <div>
+            <div className="flex items-center gap-2 pb-1 ">
+              <Image
+                src={participantsIcon}
+                alt="createAppointmentImage"
+                width={15}
+                height={15}
+              />
+
+              <label className="block text-2xl font-semibold ">
+                Appointment Type & Name
+              </label>
+            </div>
+            <div className=" border-gray-200 grid grid-cols-2 gap-4 bg-blue-100 p-2 rounded-md">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-full bg-gray-100 p-2">
+                    <Image
+                      src={SpecialEventIcon}
+                      alt="SpecialEventIcon"
+                      width={15}
+                      height={15}
+                    />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800">
+                      Special event
+                    </h3>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <ToggleSwitch
+                    checked={formData.isSpecialEvent === 1}
+                    onChange={(checked) =>
+                      handleToggleChange("isSpecialEvent", checked)
+                    }
                   />
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    Special event
-                  </h3>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-full bg-gray-100 p-2">
+                    <Image
+                      src={SpecialEventIcon}
+                      alt="SpecialEventIcon"
+                      width={15}
+                      height={15}
+                    />
+                  </div>
+                  <label className="block text-sm font-medium">Private</label>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <ToggleSwitch
-                  checked={formData.isSpecialEvent === 1}
-                  onChange={(checked) =>
-                    handleToggleChange("isSpecialEvent", checked)
-                  }
-                />
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="rounded-full bg-gray-100 p-2">
-                  <Image
-                    src={SpecialEventIcon}
-                    alt="SpecialEventIcon"
-                    width={15}
-                    height={15}
+
+                <div className="flex items-center gap-2">
+                  <ToggleSwitch
+                    checked={formData.isPrivateEvent === 1 ? true : false}
+                    onChange={(checked) =>
+                      handleToggleChange("isPrivateEvent", checked)
+                    }
                   />
                 </div>
-                <label className="block text-sm font-medium">Private</label>
               </div>
-
-              <div className="flex items-center gap-2">
-                <ToggleSwitch
-                  checked={formData.isPrivateEvent === 1 ? true : false}
-                  onChange={(checked) =>
-                    handleToggleChange("isPrivateEvent", checked)
-                  }
+            </div>
+            <div className="grid grid-cols-2 gap-4 bg-blue-100 p-2 rounded-md">
+              {/* Title */}
+              <div>
+                <div className="flex items-center gap-2">
+                  <Image src={nameIcon} alt="Name" width={15} height={15} />
+                  <label className="block text-lg font-medium">Name</label>
+                </div>
+                <input
+                  type="text"
+                  name="title"
+                  placeholder="Appointment title"
+                  value={formData.title}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  required
                 />
               </div>
-            </div>
-          </div>
 
-          {/* Title + Location */}
-          <div className="grid grid-cols-2 gap-4 bg-blue-100 p-2 rounded-md">
-            {/* Title */}
-            <div>
-              <div className="flex items-center gap-2">
-                <Image src={nameIcon} alt="Name" width={15} height={15} />
-                <label className="block text-lg font-medium">Name</label>
+              {/* Location using LocationInput component */}
+              <div>
+                <div className="flex items-center gap-2">
+                  <label className="block text-lg font-medium">Location</label>
+                </div>
+                <LocationInput
+                  value={formData?.location || ""}
+                  onChange={handleLocationChange}
+                  placeholder="Location"
+                  required
+                />
               </div>
-              <input
-                type="text"
-                name="title"
-                placeholder="Appointment title"
-                value={formData.title}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                required
-              />
-            </div>
-
-            {/* Location using LocationInput component */}
-            <div>
-              <div className="flex items-center gap-2">
-                <label className="block text-lg font-medium">Location</label>
-              </div>
-              <LocationInput
-                value={formData?.location || ""}
-                onChange={handleLocationChange}
-                placeholder="Location"
-                required
-              />
             </div>
           </div>
 
           {/* Participants */}
           <MultipleSelector
-            titleIconUrl={participantsIcon.src}
+            mainHeading="Choose Participants"
+            subHeadingIcon={participantsIcon.src}
             options={responsiblePersons}
             onSelectionChange={handleResponsiblePersonsChange}
-            title="Select Responsible Persons"
+            subHeading="Select Responsible Persons"
             showSelectAll={true}
             showCount={true}
             showImages={true}
@@ -284,7 +346,8 @@ const CreateAppointmentPopup: React.FC<
 
           {/* Repeat Sequence */}
           <MultipleSelector
-            titleIconUrl={repeatIcon.src}
+            mainHeading="Recurring Configuration"
+            subHeadingIcon={repeatIcon.src}
             options={REPEAT_OPTIONS.map((option) => ({
               ...option,
               isSelected: option.id === formData.repeat,
@@ -292,7 +355,7 @@ const CreateAppointmentPopup: React.FC<
             onSelectionChange={(selected) =>
               handleSingleSelectChange("repeat", selected)
             }
-            title="Repeat Sequence"
+            subHeading="Repeat Sequence"
             showSelectAll={true}
             showCount={true}
             showImages={false}
@@ -303,7 +366,9 @@ const CreateAppointmentPopup: React.FC<
 
           {/* Alarm */}
           <MultipleSelector
-            titleIconUrl={alarmIcon.src}
+            mainHeading="Notification"
+            subHeading="Alarm"
+            subHeadingIcon={alarmIcon.src}
             options={ALERT_OPTIONS.map((option) => ({
               ...option,
               isSelected: option.id === formData.alert,
@@ -311,7 +376,6 @@ const CreateAppointmentPopup: React.FC<
             onSelectionChange={(selected) =>
               handleSingleSelectChange("alert", selected)
             }
-            title="Alarm"
             showSelectAll={true}
             showCount={true}
             showImages={false}
@@ -321,30 +385,43 @@ const CreateAppointmentPopup: React.FC<
           />
 
           {/* Additional Notes */}
-          <div className="bg-blue-100 p-2 rounded-md">
-            <div className="flex items-center gap-2">
+          <div>
+            <div className="flex items-center gap-2 pb-1 ">
               <Image
-                src={additionalNoteIcon}
-                alt="Notes"
+                src={participantsIcon}
+                alt="createAppointmentImage"
                 width={15}
                 height={15}
               />
-              <label className="block text-lg font-medium">
-                Additional Notes
+
+              <label className="block text-2xl font-semibold ">
+                Additional Description
               </label>
             </div>
-            <textarea
-              name="description"
-              onChange={handleInputChange}
-              placeholder="Any additional information..."
-              rows={2}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={formData.description}
-            />
+            <div className="bg-blue-100 p-2 rounded-md">
+              <div className="flex items-center gap-2">
+                <Image
+                  src={additionalNoteIcon}
+                  alt="Notes"
+                  width={15}
+                  height={15}
+                />
+                <label className="block text-lg font-medium">
+                  Additional Notes
+                </label>
+              </div>
+              <textarea
+                name="description"
+                onChange={handleInputChange}
+                placeholder="Any additional information..."
+                rows={2}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={formData.description}
+              />
+            </div>
           </div>
-
           {/* Buttons */}
-          <div className="border-t border-gray-200 pt-4">
+          <div className="border-t sticky bottom-0 bg-white p-3">
             <div className="flex justify-end space-x-3">
               <button
                 type="button"

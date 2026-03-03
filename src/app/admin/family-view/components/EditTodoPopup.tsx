@@ -173,10 +173,10 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
 
           {/* Responsible Persons */}
           <MultipleSelector
-            titleIconUrl={participantsIcon.src}
+            subHeadingIcon={participantsIcon.src}
             options={responsiblePersons}
             onSelectionChange={handleResponsiblePersonsChange}
-            title="Select Responsible Persons"
+            subHeading="Select Responsible Persons"
             showSelectAll
             showCount
             showImages
@@ -203,7 +203,7 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
                 })),
               )
             }
-            title="Status"
+            subHeading="Status"
             showSelectAll={false}
             showCount
             singleSelect
