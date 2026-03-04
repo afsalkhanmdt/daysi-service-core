@@ -19,7 +19,7 @@ export const initialFormDataForAppointmentApi: UserEventCreateRequest = {
   isForAll: 0,
   isAllDayEvent: 0,
   isSpecialEvent: 0,
-  isPrivateEvent: 0,
+  isPrivateEvent: 1,
   eventPerson: "",
   eventsUpdatedOn: "",
   localStartDate: "",

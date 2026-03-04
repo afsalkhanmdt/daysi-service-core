@@ -22,7 +22,6 @@ export default function ToggleThemeAndLogout({
   const router = useRouter();
   const [isDark, setIsDark] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [showCreateDropdown, setShowCreateDropdown] = useState(false);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -61,129 +60,102 @@ export default function ToggleThemeAndLogout({
     reload();
   };
 
-  const handleCreateOptionClick = (action: () => void) => {
-    action();
-    setShowCreateDropdown(false);
-  };
-
   return (
     <div className="grid grid-flow-col sm:grid-flow-row border-t border-slate-100 dark:border-gray-700 sm:p-1.5 gap-1.5 place-items-center">
-      {/* Create Button with Dropdown */}
-      <div className="relative w-full">
-        <button
-          onClick={() => setShowCreateDropdown(!showCreateDropdown)}
-          className={`sm:flex sm:justify-between sm:shadow-md ${
-            isDark ? `shadow-gray-900` : `shadow-gray-300`
-          } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors`}
+      {/* New Appointment Button */}
+      <button
+        onClick={onNewAppointment}
+        className={`sm:flex sm:justify-between sm:shadow-md ${
+          isDark ? `shadow-gray-900` : `shadow-gray-300`
+        } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors dark:bg-blue-900 bg-blue-500`}
+      >
+        <div className="sm:block hidden text-center  font-semibold text-sm dark:text-stone-200 text-stone-800">
+          {t("Create Appointment Task")}
+        </div>
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
         >
-          <div className="sm:block hidden text-center font-semibold text-sm text-stone-500">
-            {t("Create")}
-          </div>
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M12 5V19M5 12H19"
-              stroke={`${isDark ? `white` : `#228FE5`}`}
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
+          <path
+            d="M8 2V5M16 2V5M3.5 9.09H20.5M21 8.5V17C21 20 19.5 22 16 22H8C4.5 22 3 20 3 17V8.5C3 5.5 4.5 3.5 8 3.5H16C19.5 3.5 21 5.5 21 8.5Z"
+            stroke={`${isDark ? `white` : `#27272a`}`}
+            strokeWidth="1.5"
+            strokeMiterlimit="10"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M15.6947 13.7H15.7037M15.6947 16.7H15.7037M11.9955 13.7H12.0045M11.9955 16.7H12.0045M8.29431 13.7H8.30329M8.29431 16.7H8.30329"
+            stroke={`${isDark ? `white` : `#27272a`}`}
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
 
-        {/* Create Dropdown Menu */}
-        {showCreateDropdown && (
-          <div className="absolute md:bottom-full md:-right-[200px] mb-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden justify-self-end">
-            <div className="p-2 space-y-1">
-              <button
-                onClick={() => handleCreateOptionClick(onNewAppointment)}
-                className="w-full text-left px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 flex items-center gap-2"
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M8 2V5M16 2V5M3.5 9.09H20.5M21 8.5V17C21 20 19.5 22 16 22H8C4.5 22 3 20 3 17V8.5C3 5.5 4.5 3.5 8 3.5H16C19.5 3.5 21 5.5 21 8.5Z"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeMiterlimit="10"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M15.6947 13.7H15.7037M15.6947 16.7H15.7037M11.9955 13.7H12.0045M11.9955 16.7H12.0045M8.29431 13.7H8.30329M8.29431 16.7H8.30329"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                New Appointment
-              </button>
+      {/* New ToDo Button */}
+      <button
+        onClick={onNewToDo}
+        className={`sm:flex sm:justify-between sm:shadow-md ${
+          isDark ? `shadow-gray-900` : `shadow-gray-300`
+        } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors dark:bg-blue-900 bg-blue-500`}
+      >
+        <div className="sm:block hidden text-center font-semibold text-sm dark:text-stone-200 text-stone-800">
+          {t("Create ToDo Task")}
+        </div>
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M8 12H16M8 16H16M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z"
+            stroke={`${isDark ? `white` : `#27272a`}`}
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
 
-              <button
-                onClick={() => handleCreateOptionClick(onNewToDo)}
-                className="w-full text-left px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 flex items-center gap-2"
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M8 12H16M8 16H16M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                New ToDo
-              </button>
-
-              <button
-                onClick={() => handleCreateOptionClick(onNewPocketMoney)}
-                className="w-full text-left px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 flex items-center gap-2"
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M8 14C8 14 9.5 16 12 16C14.5 16 16 14 16 14M12 8.5V8M12 8C12.5523 8 13 8.44772 13 9C13 9.55228 12.5523 10 12 10C11.4477 10 11 9.55228 11 9C11 8.44772 11.4477 8 12 8ZM22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                New Pocket Money
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
+      {/* New Pocket Money Button */}
+      <button
+        onClick={onNewPocketMoney}
+        className={`sm:flex sm:justify-between sm:shadow-md ${
+          isDark ? `shadow-gray-900` : `shadow-gray-300`
+        } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors dark:bg-blue-900 bg-blue-500`}
+      >
+        <div className="sm:block hidden text-center font-semibold text-sm dark:text-stone-200 text-stone-800">
+          {t("Create PocketMoney Task")}
+        </div>
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M8 14C8 14 9.5 16 12 16C14.5 16 16 14 16 14M12 8.5V8M12 8C12.5523 8 13 8.44772 13 9C13 9.55228 12.5523 10 12 10C11.4477 10 11 9.55228 11 9C11 8.44772 11.4477 8 12 8ZM22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z"
+            stroke={`${isDark ? `white` : `#27272a`}`}
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
       {/* Refresh Button */}
       <button
         onClick={handleRefresh}
         className={`sm:flex sm:justify-between sm:shadow-md sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full transform transition-all duration-150 active:scale-95 ${
           refreshing ? "scale-90" : "scale-100"
-        }`}
+        } ${isDark ? `shadow-gray-900` : `shadow-gray-300`}`}
       >
         <div className="sm:block hidden text-center font-semibold text-sm text-stone-500">
           {t("Refresh")}
@@ -277,14 +249,6 @@ export default function ToggleThemeAndLogout({
           />
         </svg>
       </button>
-
-      {/* Overlay to close dropdown when clicking outside */}
-      {showCreateDropdown && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setShowCreateDropdown(false)}
-        />
-      )}
     </div>
   );
 }
