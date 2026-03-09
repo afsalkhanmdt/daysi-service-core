@@ -11,7 +11,6 @@ import closeIcon from "@/app/admin/assets/close-428.png";
 import { ToggleSwitch } from "./FormComponents/ToggleSwitch";
 import additionalNoteIcon from "@/app/admin/assets/name.png";
 import participantsIcon from "@/app/admin/assets/participantsIcon.png";
-import DescriptionIcon from "@/app/admin/assets/descriptionIcon.png";
 import repeatIcon from "@/app/admin/assets/repeatIcon.png";
 import name from "@/app/admin/assets/name.png";
 import alarmIcon from "@/app/admin/assets/alarmIcon.png";
@@ -76,30 +75,30 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
     if (selectedOption) {
       setFormData((prev) => ({
         ...prev,
-        repeat: selectedOption.id,
+        Repeat: selectedOption.id,
       }));
     }
   };
 
-  const handleAlarmChange = (selectedOptions: SelectableOption[]) => {
-    setAlarmOptions((prev) =>
-      prev.map((option) => ({
-        ...option,
-        isSelected: selectedOptions.some(
-          (selected) => selected.id === option.id,
-        ),
-      })),
-    );
+  // const handleAlarmChange = (selectedOptions: SelectableOption[]) => {
+  //   setAlarmOptions((prev) =>
+  //     prev.map((option) => ({
+  //       ...option,
+  //       isSelected: selectedOptions.some(
+  //         (selected) => selected.id === option.id,
+  //       ),
+  //     })),
+  //   );
 
-    // Update formData with selected alarm option
-    const selectedOption = selectedOptions.find((opt) => opt.isSelected);
-    if (selectedOption) {
-      setFormData((prev) => ({
-        ...prev,
-        alert: selectedOption.id,
-      }));
-    }
-  };
+  //   // Update formData with selected alarm option
+  //   const selectedOption = selectedOptions.find((opt) => opt.isSelected);
+  //   if (selectedOption) {
+  //     setFormData((prev) => ({
+  //       ...prev,
+  //       alert: selectedOption.id,
+  //     }));
+  //   }
+  // };
 
   // Handler for standard task selection (SINGLE SELECT)
   const handleStandardTaskChange = (selectedTasks: SelectableOption[]) => {
@@ -114,14 +113,12 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
     if (selectedTasks.length > 0) {
       setFormData((prev) => ({
         ...prev,
-        standardTask: selectedTasks[0].label,
-        title: selectedTasks[0].label, // Also set title for consistency
+        PMDescription: selectedTasks[0].label,
       }));
     } else {
       setFormData((prev) => ({
         ...prev,
-        standardTask: "",
-        title: "",
+        PMDescription: "",
       }));
     }
   };
@@ -148,7 +145,7 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
   const handleFirstComeFirstServeToggle = (checked: boolean) => {
     setFormData((prev) => ({
       ...prev,
-      firstComeFirstServe: checked,
+      FirstComeFirstServe: checked,
     }));
   };
 
@@ -436,7 +433,7 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
           </div>
 
           {/* Notification */}
-          <div>
+          {/* <div>
             <div className="flex items-center gap-2 pb-1">
               <Image
                 src={participantsIcon}
@@ -462,7 +459,7 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
                 singleSelect={true}
               />
             </div>
-          </div>
+          </div> */}
 
           {/* Additional Notes */}
           <div>

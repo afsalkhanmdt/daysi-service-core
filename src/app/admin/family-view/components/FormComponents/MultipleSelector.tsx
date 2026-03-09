@@ -215,8 +215,8 @@ export default function MultipleSelector({
 
         {/* Hide select all/clear all in single select mode */}
         {(showSelectAll || showCount) && !singleSelect && (
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-3">
+          <div>
+            <div className="flex items-center justify-between">
               {showCount && (
                 <span className="text-sm text-gray-500">
                   {selectedCount} of {options.length} selected
@@ -246,8 +246,8 @@ export default function MultipleSelector({
 
         {/* Show different message for single select mode */}
         {singleSelect && showCount && (
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-3">
+          <div>
+            <div className="flex items-center justify-between">
               <span className="text-sm text-gray-500">
                 {selectedCount > 0 ? "1 selected" : "Select one option"}
               </span>

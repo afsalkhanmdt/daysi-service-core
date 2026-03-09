@@ -29,6 +29,7 @@ import CreatePocketMoneyPopup from "./CreatePocketMoneyPopup";
 import { UserEventCreateRequest } from "@/app/types/appoinment";
 import { PMTaskCreateCommand } from "@/app/types/pocketMoney";
 import { createAppointmentCall } from "@/services/api";
+import { createPocketMoneyTaskCall } from "@/services/api";
 
 export type FamilyData = {
   Family: FamilyResponse;
@@ -46,7 +47,7 @@ const FamilyViewWrapper = ({
   userId?: string;
 }) => {
   const { data: apiData, reload } = useFetch<FamilyData>(
-    `Families/GetAllFamilies?familyId=${familyId}`
+    `Families/GetAllFamilies?familyId=${familyId}`,
   );
 
   const [familyDetails, setFamilyDetails] = useState<FamilyData | null>(null);
@@ -79,7 +80,7 @@ const FamilyViewWrapper = ({
 
   useEffect(() => {
     const userLanguage = familyDetails?.Members?.find(
-      (m) => m.MemberId === userId
+      (m) => m.MemberId === userId,
     )?.Locale;
     if (userLanguage) {
       i18next.changeLanguage(userLanguage).then(() => setIsLangReady(true));
@@ -102,7 +103,7 @@ const FamilyViewWrapper = ({
   };
 
   const handleCreateAppointment = async (
-    appointmentData: UserEventCreateRequest
+    appointmentData: UserEventCreateRequest,
   ) => {
     // Create a new object with all the added values
     const updatedAppointmentData = {
@@ -131,7 +132,7 @@ const FamilyViewWrapper = ({
 
     console.log(
       "Creating new appointment with updated data:",
-      updatedAppointmentData
+      updatedAppointmentData,
     );
 
     const response = await createAppointmentCall(updatedAppointmentData);
@@ -141,10 +142,12 @@ const FamilyViewWrapper = ({
     // Example: createAppointmentAPI(updatedAppointmentData).then(() => reload());
   };
 
-  const handleCreatePocketMoney = (pocketMoneyData: PMTaskCreateCommand) => {
+  const handleCreatePocketMoney = async (
+    pocketMoneyData: PMTaskCreateCommand,
+  ) => {
     const updatedPocketMoneyData = {
       ...pocketMoneyData,
-      familyId: Number(familyId),
+      FamilyId: Number(familyId),
       CreatedBy: userId || "",
       PMAmount: Number(pocketMoneyData.PMAmount) || 0,
       Interval: Number(pocketMoneyData.Interval) || 0,
@@ -160,8 +163,10 @@ const FamilyViewWrapper = ({
 
     console.log(
       "Creating new pocket money with updated data:",
-      updatedPocketMoneyData
+      updatedPocketMoneyData,
     );
+    const response = await createPocketMoneyTaskCall([updatedPocketMoneyData]);
+    console.log("pocketMoneyTask creation response:", response);
   };
 
   if (!familyDetails || !isLangReady) {
@@ -174,7 +179,7 @@ const FamilyViewWrapper = ({
 
   const mainEvents =
     familyDetails?.Members.flatMap((member: MemberResponse) =>
-      member.Events.filter((event: any) => event.IsSpecialEvent === 1)
+      member.Events.filter((event: any) => event.IsSpecialEvent === 1),
     ) ?? [];
 
   const uniqueEvents = mainEvents.filter((event, index, self) => {
@@ -185,7 +190,7 @@ const FamilyViewWrapper = ({
           e.Start === event.Start &&
           e.End === event.End &&
           e.EventPerson === event.EventPerson &&
-          e.IsSpecialEvent === event.IsSpecialEvent
+          e.IsSpecialEvent === event.IsSpecialEvent,
       )
     );
   });
@@ -210,7 +215,7 @@ const FamilyViewWrapper = ({
       acc[member.FirstName] = member.ResourceUrl || dp.src;
       return acc;
     },
-    {}
+    {},
   );
 
   return (
@@ -223,9 +228,9 @@ const FamilyViewWrapper = ({
                 ?.Locale === "en"
                 ? enLogo.src
                 : familyDetails?.Members?.find((m) => m.MemberId === userId)
-                    ?.Locale === "sv"
-                ? swedishLogo.src
-                : danishAndNorwegianLogo.src
+                      ?.Locale === "sv"
+                  ? swedishLogo.src
+                  : danishAndNorwegianLogo.src
             }
             alt="mainIcon"
             width={1200}
