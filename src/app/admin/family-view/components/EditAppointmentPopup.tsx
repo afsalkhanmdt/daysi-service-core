@@ -55,12 +55,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
   // Add loading state for location
   const [locationLoading, setLocationLoading] = useState(false);
 
-  console.log("Initial data received:", initialData);
-
   const [formData, setFormData] = useState<AppointmentFormUI>(() => {
-    // Log what we're initializing with
-    console.log("Initializing form with location:", initialData?.location);
-
     return {
       ...initialData,
       startDateOnly: initialData?.startDate
@@ -83,13 +78,6 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
     lat?: number,
     lng?: number,
   ) => {
-    console.log(
-      "Location changed to:",
-      location,
-      "with coordinates:",
-      lat,
-      lng,
-    );
     setFormData((prev) => ({
       ...prev,
       location,
@@ -177,7 +165,6 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
     delete (payload as any).endDateOnly;
     delete (payload as any).endTimeOnly;
 
-    console.log("Submitting payload:", payload);
     onSubmit(payload);
     onClose();
   };
@@ -189,15 +176,6 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
   // Initialize form when initialData changes
   useEffect(() => {
     if (initialData && isOpen) {
-      console.log("Setting form data with location:", initialData.location);
-
-      // Check if the location is coordinates
-      if (initialData.location && isCoordinateString(initialData.location)) {
-        console.log(
-          "Location appears to be coordinates, will be reverse geocoded",
-        );
-      }
-
       setFormData({
         ...initialData,
         startDateOnly: initialData.startDate
