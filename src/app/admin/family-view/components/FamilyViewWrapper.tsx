@@ -28,8 +28,9 @@ import "../../../../../i18n";
 import CreatePocketMoneyPopup from "./CreatePocketMoneyPopup";
 import { UserEventCreateRequest } from "@/app/types/appoinment";
 import { PMTaskCreateCommand } from "@/app/types/pocketMoney";
-import { createAppointmentCall } from "@/services/api";
+import { createAppointmentCall, createToDoTaskCall } from "@/services/api";
 import { createPocketMoneyTaskCall } from "@/services/api";
+import { ToDoCreateCommand } from "@/app/types/todo";
 
 export type FamilyData = {
   Family: FamilyResponse;
@@ -98,8 +99,23 @@ const FamilyViewWrapper = ({
   }, [reload]);
 
   // Handler functions for creating new items
-  const handleCreateTodo = (todoData: any) => {
-    console.log("Creating new todo:", todoData);
+  const handleCreateTodo = async (todoData: ToDoCreateCommand) => {
+    const updatedTodoData: ToDoCreateCommand = {
+      ...todoData,
+      familyId: Number(familyId),
+      createdBy: userId || "",
+      assignedTo: todoData.assignedTo || [],
+      description: todoData.description || "",
+      note: todoData.note || "",
+      private: Number(todoData.private) || 0,
+      isForAll: todoData.isForAll ?? false,
+    };
+
+    // call your API
+    const response = await createToDoTaskCall(updatedTodoData);
+
+    // optionally refresh data
+    reload();
   };
 
   const handleCreateAppointment = async (
@@ -130,13 +146,7 @@ const FamilyViewWrapper = ({
       noPush: appointmentData.noPush || false,
     };
 
-    console.log(
-      "Creating new appointment with updated data:",
-      updatedAppointmentData,
-    );
-
     const response = await createAppointmentCall(updatedAppointmentData);
-    console.log("Appointment creation response:", response);
 
     // Now call your API with the updated data
     // Example: createAppointmentAPI(updatedAppointmentData).then(() => reload());
@@ -161,12 +171,7 @@ const FamilyViewWrapper = ({
       FamilyMembersPlanned: pocketMoneyData.FamilyMembersPlanned || [],
     };
 
-    console.log(
-      "Creating new pocket money with updated data:",
-      updatedPocketMoneyData,
-    );
     const response = await createPocketMoneyTaskCall([updatedPocketMoneyData]);
-    console.log("pocketMoneyTask creation response:", response);
   };
 
   if (!familyDetails || !isLangReady) {

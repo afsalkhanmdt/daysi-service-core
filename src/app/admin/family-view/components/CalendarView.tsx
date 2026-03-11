@@ -78,10 +78,10 @@ const CalendarView = ({
     useState<EventApi | null>(null);
 
   const { data: PMTaskDetails } = useFetch<PMData>(
-    `PocketMoney/GetPMTasks?familyId=${familyId}`
+    `PocketMoney/GetPMTasks?familyId=${familyId}`,
   );
   const { data: todoData } = useFetch<ToDoTaskType[]>(
-    `ToDo/GetToDos?familyId=${familyId}`
+    `ToDo/GetToDos?familyId=${familyId}`,
   );
 
   const imageUrls = useMemo(
@@ -91,7 +91,7 @@ const CalendarView = ({
         name: member.FirstName,
         imageUrl: member.ResourceUrl || dp.src,
       })),
-    [data.Members]
+    [data.Members],
   );
 
   const events: EventInput[] = useMemo(() => {
@@ -110,7 +110,7 @@ const CalendarView = ({
         if (seenEventMemberPairs.has(eventKey)) {
           if (!duplicateWarnings.has(eventKey)) {
             console.warn(
-              `Skipping duplicate event ${event.Id} for member ${member.Id} (${member.FirstName})`
+              `Skipping duplicate event ${event.Id} for member ${member.Id} (${member.FirstName})`,
             );
             duplicateWarnings.add(eventKey);
           }
@@ -185,7 +185,7 @@ const CalendarView = ({
                 break;
               case 2:
                 currentStart.setDate(
-                  currentStart.getDate() + 7 * rule.Interval
+                  currentStart.getDate() + 7 * rule.Interval,
                 );
                 currentEnd.setDate(currentEnd.getDate() + 7 * rule.Interval);
                 break;
@@ -195,10 +195,10 @@ const CalendarView = ({
                 break;
               case 4:
                 currentStart.setFullYear(
-                  currentStart.getFullYear() + rule.Interval
+                  currentStart.getFullYear() + rule.Interval,
                 );
                 currentEnd.setFullYear(
-                  currentEnd.getFullYear() + rule.Interval
+                  currentEnd.getFullYear() + rule.Interval,
                 );
                 break;
             }
@@ -230,19 +230,15 @@ const CalendarView = ({
       });
     });
 
-    // Debug: Log summary of events
-    console.log(`Total events processed: ${allEvents.length}`);
-    console.log(`Unique event-member pairs: ${seenEventMemberPairs.size}`);
-
     // Check for any remaining duplicate IDs (should be 0)
     const eventIds = allEvents.map((e) => e.id);
     const duplicateIds = eventIds.filter(
-      (id, index) => eventIds.indexOf(id) !== index
+      (id, index) => eventIds.indexOf(id) !== index,
     );
     if (duplicateIds.length > 0) {
       console.error(
         `Found ${duplicateIds.length} duplicate event IDs in final array:`,
-        [...new Set(duplicateIds)]
+        [...new Set(duplicateIds)],
       );
     }
 
@@ -282,7 +278,7 @@ const CalendarView = ({
 
     // Get the actual slot elements to measure real height
     const slotLanes = calendarContainerRef.current?.querySelectorAll(
-      ".fc-timegrid-slots table tr"
+      ".fc-timegrid-slots table tr",
     );
 
     if (!slotLanes || slotLanes.length === 0) {
@@ -301,7 +297,7 @@ const CalendarView = ({
 
     // Calculate which slot the event falls into
     const slotIndex = Math.floor(
-      totalMinutesFromMidnight / slotDurationMinutes
+      totalMinutesFromMidnight / slotDurationMinutes,
     );
 
     // Calculate position within the slot (if needed for more precision)
@@ -313,7 +309,7 @@ const CalendarView = ({
 
     // Get the scrollable container
     const scrollContainer = calendarContainerRef.current?.querySelector(
-      ".fc-timegrid-body"
+      ".fc-timegrid-body",
     ) as HTMLElement;
     if (scrollContainer) {
       // Scroll to the calculated position with small offset
@@ -349,7 +345,7 @@ const CalendarView = ({
 
       if (earliestEvent) {
         const resourceEl = calendarContainerRef.current?.querySelector(
-          `.fc-timegrid-col[data-resource-id="${earliestEvent.resourceId}"]`
+          `.fc-timegrid-col[data-resource-id="${earliestEvent.resourceId}"]`,
         ) as HTMLElement;
 
         if (resourceEl) {
@@ -363,7 +359,7 @@ const CalendarView = ({
     } catch (error) {
       console.warn(
         "FullCalendar scrollToTime failed, using manual method:",
-        error
+        error,
       );
       scrollToEarliestEvent(); // fallback vertical
     }
@@ -397,7 +393,7 @@ const CalendarView = ({
   useEffect(() => {
     const timeout = setTimeout(() => {
       const slotLanes = calendarContainerRef.current?.querySelectorAll(
-        ".fc-timegrid-slots table tr"
+        ".fc-timegrid-slots table tr",
       );
     }, 500);
 
@@ -410,7 +406,7 @@ const CalendarView = ({
       const timeAxis =
         calendarContainerRef.current?.querySelector(".fc-timegrid-axis");
       const slotLabels = calendarContainerRef.current?.querySelectorAll(
-        ".fc-timegrid-slot-label"
+        ".fc-timegrid-slot-label",
       );
 
       if (timeAxis) {
@@ -440,7 +436,7 @@ const CalendarView = ({
   }, []);
 
   const handleEditAppointment = async (
-    appointmentData: UserEventCreateRequest
+    appointmentData: UserEventCreateRequest,
   ) => {
     // Create a new object with all the added values
     const updatedAppointmentData = {
@@ -466,11 +462,6 @@ const CalendarView = ({
       },
       noPush: appointmentData.noPush || false,
     };
-
-    console.log(
-      "Creating new appointment with updated data:",
-      updatedAppointmentData
-    );
 
     const response = await updateAppointmentCall(updatedAppointmentData);
     if (response.ok) {
@@ -575,8 +566,8 @@ const CalendarView = ({
               .map(
                 (p) =>
                   imageUrls.find(
-                    (m) => String(m.id) === String(p.ParticipantId)
-                  )?.imageUrl
+                    (m) => String(m.id) === String(p.ParticipantId),
+                  )?.imageUrl,
               )
               .filter((img): img is string => Boolean(img));
 

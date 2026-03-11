@@ -1,6 +1,4 @@
 import { SelectableOption } from "../admin/family-view/components/FormComponents/MultipleSelector";
-import { RepeatEnum } from "../types/appoinment";
-import { PMTaskCreateCommand } from "../types/pocketMoney";
 import { ToDoCreateCommand, ToDoTaskType } from "../types/todo";
 
 export const groupOptions = [

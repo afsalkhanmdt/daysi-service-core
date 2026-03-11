@@ -11,12 +11,7 @@ import MultipleSelector, {
 } from "./FormComponents/MultipleSelector";
 import participantsIcon from "@/app/admin/assets/participantsIcon.png";
 import descriptionIcon from "@/app/admin/assets/descriptionIcon.png";
-import additionalNoteIcon from "@/app/admin/assets/name.png";
 import groupIcon from "@/app/admin/assets/groupIcon.png";
-import dateIcon from "@/app/admin/assets/selectDateIcon.png";
-import alarmIcon from "@/app/admin/assets/alarmIcon.png";
-import repeatIcon from "@/app/admin/assets/repeatIcon.png";
-import nameIcon from "@/app/admin/assets/name.png";
 import CustomDropdown from "./FormComponents/DropDown";
 import { useResources } from "@/app/context/ResourceContext";
 import { mapResourcesToSelectableOptions } from "@/app/utils/resourceAdapters";
@@ -25,7 +20,6 @@ import {
   initialToDoCreateBody,
   statusOptions,
 } from "@/app/constants/toDoForm";
-import { REPEAT_OPTIONS, ALERT_OPTIONS } from "@/app/constants/appointmentForm";
 
 const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
   isOpen,
@@ -43,10 +37,6 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
   const [responsiblePersons, setResponsiblePersons] = useState<
     SelectableOption[]
   >([]);
-  const [repeatSequence, setRepeatSequence] =
-    useState<SelectableOption[]>(REPEAT_OPTIONS);
-  const [alarmOptions, setAlarmOptions] =
-    useState<SelectableOption[]>(ALERT_OPTIONS);
   const [status, setStatus] = useState<SelectableOption[]>(statusOptions);
 
   // Generic handler for text inputs
@@ -58,11 +48,18 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
   };
 
   // Handler for group selection
-  const handleGroupSelect = (value: string) => {
+  const handleGroupSelect = (id: string, label: string) => {
     setFormData((prev) => ({
       ...prev,
-      toDoGroupId: value === "Select group" ? 0 : parseInt(value) || 0,
+      toDoGroupId: parseInt(id),
     }));
+  };
+  const getSelectedGroupLabel = () => {
+    if (!formData.toDoGroupId) return "";
+    const selectedGroup = groupOptions.find(
+      (group) => parseInt(group.id) === formData.toDoGroupId,
+    );
+    return selectedGroup?.label || "";
   };
 
   // Generic handler for toggle switches
@@ -95,44 +92,6 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
     }
   };
 
-  const handleRepeatChange = (selectedOptions: SelectableOption[]) => {
-    setRepeatSequence((prev) =>
-      prev.map((option) => ({
-        ...option,
-        isSelected: selectedOptions.some(
-          (selected) => selected.id === option.id,
-        ),
-      })),
-    );
-
-    const selectedOption = selectedOptions.find((opt) => opt.isSelected);
-    if (selectedOption) {
-      setFormData((prev) => ({
-        ...prev,
-        repeat: selectedOption.id,
-      }));
-    }
-  };
-
-  const handleAlarmChange = (selectedOptions: SelectableOption[]) => {
-    setAlarmOptions((prev) =>
-      prev.map((option) => ({
-        ...option,
-        isSelected: selectedOptions.some(
-          (selected) => selected.id === option.id,
-        ),
-      })),
-    );
-
-    const selectedOption = selectedOptions.find((opt) => opt.isSelected);
-    if (selectedOption) {
-      setFormData((prev) => ({
-        ...prev,
-        alert: selectedOption.id,
-      }));
-    }
-  };
-
   const handleResponsiblePersonsChange = (
     selectedPersons: SelectableOption[],
   ) => {
@@ -145,10 +104,7 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
 
     setFormData((prev) => ({
       ...prev,
-      participants: selectedPersons.map((person) => ({
-        localId: person.id,
-        memberId: person.memberId,
-      })),
+      assignedTo: selectedPersons.map((person) => person.memberId!),
     }));
   };
 
@@ -189,8 +145,6 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
   const resetForm = () => {
     setFormData(initialToDoCreateBody);
     setStatus(statusOptions);
-    setRepeatSequence(REPEAT_OPTIONS);
-    setAlarmOptions(ALERT_OPTIONS);
     setResponsiblePersons(
       responsiblePersons.map((p) => ({ ...p, isSelected: false })),
     );
@@ -322,7 +276,7 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
                 </div>
                 <CustomDropdown
                   options={groupOptions}
-                  selectedValue={formData.toDoGroupId?.toString() || ""}
+                  selectedValue={getSelectedGroupLabel()} // Pass the label, not the ID
                   onSelect={handleGroupSelect}
                   placeholder="Select a group"
                   iconUrl={groupIcon.src}
