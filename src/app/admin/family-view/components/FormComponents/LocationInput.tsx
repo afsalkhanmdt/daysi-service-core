@@ -229,7 +229,7 @@ const LocationInput: React.FC<LocationInputProps> = ({
           onBlur={handleBlur}
           onFocus={handleFocus}
           placeholder={placeholder}
-          className={`w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${className}`}
+          className={`w-full px-2 py-1 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm ${className}`}
           required={required}
           autoComplete="off"
           disabled={locationLoading}
@@ -240,17 +240,17 @@ const LocationInput: React.FC<LocationInputProps> = ({
             type="button"
             onClick={handleGetCurrentLocation}
             disabled={locationLoading}
-            className="absolute right-3 top-1/2 -translate-y-1/2 opacity-70 hover:opacity-100 transition"
+            className="absolute right-2 top-1/2 -translate-y-1/2 opacity-70 hover:opacity-100 transition"
             title="Get current location"
           >
             {locationLoading ? (
-              <span className="text-xs animate-pulse">📍</span>
+              <span className="text-[10px] animate-pulse">📍</span>
             ) : (
               <Image
                 src={locationIcon}
                 alt="Get Current Location"
-                width={15}
-                height={15}
+                width={12}
+                height={12}
                 className="cursor-pointer"
               />
             )}
@@ -260,28 +260,28 @@ const LocationInput: React.FC<LocationInputProps> = ({
 
       {/* Loading indicator for search */}
       {isSearching && (
-        <div className="absolute right-12 top-1/2 -translate-y-1/2">
-          <span className="text-xs text-gray-400 animate-pulse">
-            Searching...
+        <div className="absolute right-8 top-1/2 -translate-y-1/2">
+          <span className="text-[10px] text-gray-400 animate-pulse">
+            ...
           </span>
         </div>
       )}
 
       {/* Suggestions dropdown */}
       {showSuggestions && showSuggestionsDropdown && suggestions.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
           {suggestions.map((suggestion) => (
             <button
               key={suggestion.place_id}
               type="button"
-              className="w-full text-left px-4 py-2 hover:bg-blue-50 focus:bg-blue-50 focus:outline-none border-b border-gray-100 last:border-b-0 transition-colors"
+              className="w-full text-left px-3 py-1.5 hover:bg-blue-50 focus:bg-blue-50 focus:outline-none border-b border-gray-100 last:border-b-0 transition-colors"
               onClick={() => handleSuggestionSelect(suggestion)}
               onMouseDown={(e) => e.preventDefault()}
             >
-              <div className="text-sm text-gray-900">
+              <div className="text-[11px] text-gray-900 leading-tight">
                 {formatSuggestionDisplay(suggestion.display_name)}
               </div>
-              <div className="text-xs text-gray-500 mt-1 truncate">
+              <div className="text-[9px] text-gray-500 mt-0.5 truncate">
                 {suggestion.display_name}
               </div>
             </button>
@@ -295,8 +295,8 @@ const LocationInput: React.FC<LocationInputProps> = ({
         !isSearching &&
         displayValue.length >= 3 &&
         suggestions.length === 0 && (
-          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg p-4 text-center text-gray-500">
-            No locations found. Try a different search term.
+          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg p-2 text-center text-[10px] text-gray-500">
+            No locations found.
           </div>
         )}
     </div>
