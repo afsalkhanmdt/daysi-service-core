@@ -215,7 +215,7 @@ const CreateAppointmentPopup: React.FC<
                     placeholder="Enter appointment title"
                     value={formData.title}
                     onChange={handleInputChange}
-                    className="w-full px-2 py-1 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all text-xs"
+                    className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm"
                     required
                   />
                 </div>
@@ -233,7 +233,7 @@ const CreateAppointmentPopup: React.FC<
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <div className="flex items-center justify-between bg-white px-2 py-1 rounded-lg border border-gray-100 shadow-sm">
+                <div className="flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-gray-100 shadow-sm">
                   <div className="flex items-center gap-2">
                     <Image
                       src={SpecialEventIcon}
@@ -252,7 +252,7 @@ const CreateAppointmentPopup: React.FC<
                     }
                   />
                 </div>
-                <div className="flex items-center justify-between bg-white px-2 py-1 rounded-lg border border-gray-100 shadow-sm">
+                <div className="flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-gray-100 shadow-sm">
                   <div className="flex items-center gap-2">
                     <Image
                       src={SpecialEventIcon}
@@ -375,7 +375,7 @@ const CreateAppointmentPopup: React.FC<
               </div>
             </div>
 
-            {/* Notes */}
+            {/* Notes - Moved to its own row */}
             <div className="space-y-1">
               <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
                 <Image
@@ -391,7 +391,7 @@ const CreateAppointmentPopup: React.FC<
                 onChange={handleInputChange}
                 placeholder="Add any additional details here..."
                 rows={1}
-                className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-xs min-h-[30px]"
+                className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm min-h-[40px]"
                 value={formData.description}
               />
             </div>

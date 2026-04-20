@@ -158,68 +158,51 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-2"
       onClick={handleOverlayClick}
     >
       <div
         ref={modalRef}
-        className="bg-white rounded-lg w-full max-w-5xl mx-4 max-h-[90vh] overflow-y-auto relative"
+        className="bg-white rounded-xl w-full max-w-7xl max-h-[98vh] flex flex-col shadow-2xl relative"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="sticky top-0 z-10 p-3 bg-white">
-          <div className="border-b border-gray-200 bg-blue-200 px-6 py-4 rounded-lg flex justify-between items-center">
-            <div className="flex gap-2">
-              <div className="rounded-full bg-white p-2">
-                <Image
-                  src={createTodoImage}
-                  alt="createTodoImage"
-                  width={15}
-                  height={15}
-                  loading="lazy"
-                />
-              </div>
-              <h2 className="text-xl font-semibold">Create ToDo Task</h2>
+        {/* Compact Header */}
+        <div className="flex justify-between items-center px-4 py-2 border-b">
+          <div className="flex items-center gap-2">
+            <div className="bg-blue-100 p-1.5 rounded-lg">
+              <Image src={createTodoImage} alt="icon" width={16} height={16} />
             </div>
-            {/* Close Icon */}
-            <button
-              onClick={handleClose}
-              className="rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200 grid place-items-center"
-              aria-label="Close"
-              type="button"
-            >
-              <Image
-                src={closeIcon}
-                alt="Close"
-                width={30}
-                height={30}
-                className="text-gray-600"
-              />
-            </button>
+            <h2 className="text-lg font-bold text-gray-800">
+              Create ToDo Task
+            </h2>
           </div>
+          <button
+            onClick={handleClose}
+            className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <Image src={closeIcon} alt="Close" width={20} height={20} />
+          </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-3 space-y-6">
-          {/* Task Details Section */}
-          <div>
-            <div className="flex justify-between gap-2">
-              <div className="flex items-center gap-2 pb-1">
-                <Image
-                  src={participantsIcon}
-                  alt="task icon"
-                  width={15}
-                  height={15}
-                />
-                <label className="block text-2xl font-semibold">
+        {/* Scrollable Form Content */}
+        <div className="overflow-y-auto flex-1 p-3 lg:p-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
+            {/* Task Basic Details */}
+            <div className="space-y-1">
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
+                  <Image
+                    src={participantsIcon}
+                    alt="icon"
+                    width={14}
+                    height={14}
+                  />{" "}
                   Task Details
                 </label>
-              </div>
-              <div className="flex items-center justify-end">
-                <div className="flex items-center gap-3">
-                  <label className="block text-sm font-medium text-gray-700">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold text-gray-500 uppercase">
                     Private Task
-                  </label>
+                  </span>
                   <ToggleSwitch
                     checked={formData.private === 1}
                     onChange={(checked) =>
@@ -228,119 +211,79 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
                   />
                 </div>
               </div>
+
+              <div className="bg-blue-50/50 p-3 rounded-xl border border-blue-100 grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold flex items-center gap-1.5 text-gray-700 uppercase tracking-wider">
+                    <Image
+                      src={descriptionIcon}
+                      alt="icon"
+                      width={12}
+                      height={12}
+                    />{" "}
+                    Description
+                  </label>
+                  <input
+                    name="description"
+                    type="text"
+                    placeholder="Enter task description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-all"
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold flex items-center gap-1.5 text-gray-700 uppercase tracking-wider">
+                    <Image src={groupIcon} alt="icon" width={12} height={12} />{" "}
+                    Group
+                  </label>
+                  <CustomDropdown
+                    options={groupOptions}
+                    selectedValue={getSelectedGroupLabel()}
+                    onSelect={handleGroupSelect}
+                    placeholder="Select a group"
+                    iconUrl={groupIcon.src}
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* Description */}
-            <div className="bg-blue-100 p-2 rounded-md">
-              <div className="flex items-center gap-2 mb-2">
+            {/* Responsible Persons */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
                 <Image
-                  src={descriptionIcon}
-                  alt="Description"
-                  width={15}
-                  height={15}
-                />
-                <label className="block text-lg font-medium">Description</label>
-              </div>
-              <input
-                name="description"
-                type="text"
-                placeholder="Enter task description"
-                value={formData.description}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                required
-              />
-            </div>
-          </div>
-
-          {/* Group and Due Date Section */}
-          <div>
-            <div className="flex items-center gap-2 pb-1">
-              <Image
-                src={participantsIcon}
-                alt="group icon"
-                width={15}
-                height={15}
-              />
-              <label className="block text-2xl font-semibold">
-                Group & Schedule
-              </label>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 bg-blue-100 p-2 rounded-md">
-              {/* Groups */}
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Image src={groupIcon} alt="Group" width={15} height={15} />
-                  <label className="block text-lg font-medium">Group</label>
-                </div>
-                <CustomDropdown
-                  options={groupOptions}
-                  selectedValue={getSelectedGroupLabel()} // Pass the label, not the ID
-                  onSelect={handleGroupSelect}
-                  placeholder="Select a group"
-                  iconUrl={groupIcon.src}
-                />
-              </div>
-
-              {/* Due Date */}
-              {/* <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Image src={dateIcon} alt="Date" width={15} height={15} />
-                  <label className="block text-lg font-medium">Due Date</label>
-                </div>
-                <input
-                  name="ClosedDate"
-                  type="date"
-                  value={formData.closedDate || ""}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                />
-              </div> */}
-            </div>
-          </div>
-
-          {/* Responsible Persons */}
-          <div>
-            <div className="flex items-center gap-2 pb-1">
-              <Image
-                src={participantsIcon}
-                alt="participants"
-                width={15}
-                height={15}
-              />
-              <label className="block text-2xl font-semibold">
+                  src={participantsIcon}
+                  alt="icon"
+                  width={14}
+                  height={14}
+                />{" "}
                 Responsible Persons
               </label>
-            </div>
-            <div className="bg-blue-100 p-2 rounded-md">
               <MultipleSelector
-                subHeadingIcon={participantsIcon.src}
                 options={responsiblePersons}
                 onSelectionChange={handleResponsiblePersonsChange}
                 subHeading="Select who should complete this task"
                 showSelectAll={true}
                 showCount={true}
                 showImages={true}
-                selectedBorderColor="green"
-                selectedBadgeColor="green"
+                selectedBorderColor="blue"
+                selectedBadgeColor="blue"
                 singleSelect={false}
               />
             </div>
-          </div>
 
-          {/* Status */}
-          <div>
-            <div className="flex items-center gap-2 pb-1">
-              <Image
-                src={participantsIcon}
-                alt="status"
-                width={15}
-                height={15}
-              />
-              <label className="block text-2xl font-semibold">Status</label>
-            </div>
-            <div className="bg-blue-100 p-2 rounded-md">
+            {/* Status - Moved to its own row */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
+                <Image
+                  src={participantsIcon}
+                  alt="icon"
+                  width={14}
+                  height={14}
+                />{" "}
+                Status
+              </label>
               <MultipleSelector
                 options={status}
                 onSelectionChange={handleStatusChange}
@@ -353,52 +296,48 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
                 singleSelect={true}
               />
             </div>
-          </div>
 
-          {/* Additional Notes */}
-          <div>
-            <div className="flex items-center gap-2 pb-1">
-              <Image
-                src={participantsIcon}
-                alt="notes"
-                width={15}
-                height={15}
-              />
-              <label className="block text-2xl font-semibold">
+            {/* Notes - Moved to its own row */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
+                <Image
+                  src={participantsIcon}
+                  alt="icon"
+                  width={14}
+                  height={14}
+                />{" "}
                 Additional Notes
               </label>
+              <div className="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100">
+                <textarea
+                  name="note"
+                  placeholder="Any special instructions..."
+                  rows={2}
+                  value={formData.note}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm min-h-[60px]"
+                />
+              </div>
             </div>
-            <div className="bg-blue-100 p-2 rounded-md">
-              <textarea
-                name="note"
-                placeholder="Any additional information or special instructions..."
-                rows={3}
-                value={formData.note}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              />
-            </div>
-          </div>
+          </form>
+        </div>
 
-          {/* Buttons */}
-          <div className="sticky bottom-0 bg-white p-3 border-t border-gray-200">
-            <div className="flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={handleClose}
-                className="px-6 py-2 text-gray-600 hover:text-gray-800 font-medium border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium transition-colors"
-              >
-                Create ToDo Task
-              </button>
-            </div>
-          </div>
-        </form>
+        {/* Footer Actions */}
+        <div className="px-4 py-2.5 border-t bg-gray-50 rounded-b-xl flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={handleClose}
+            className="px-4 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200 bg-white"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={(e) => handleSubmit(e as any)}
+            className="px-5 py-1.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-all active:scale-95"
+          >
+            Create Task
+          </button>
+        </div>
       </div>
     </div>
   );
