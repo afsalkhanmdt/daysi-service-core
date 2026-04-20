@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import participantsIcon from "@/app/admin/assets/participantsIcon.png";
 
 interface DateTimeRangeProps {
@@ -17,6 +17,7 @@ interface DateTimeRangeProps {
   className?: string;
   showLabels?: boolean;
   setDefaultDates?: boolean; // New prop to control default behavior
+  hideHeading?: boolean;
 }
 
 // Helper function to get current date in YYYY-MM-DD format
@@ -58,6 +59,7 @@ const DateTimeRange: React.FC<DateTimeRangeProps> = ({
   className = "",
   showLabels = true,
   setDefaultDates = true, // Default to true for backward compatibility
+  hideHeading = false,
 }) => {
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -99,72 +101,74 @@ const DateTimeRange: React.FC<DateTimeRangeProps> = ({
 
   return (
     <div>
-      <div className="flex items-center gap-2 pb-1 ">
-        <Image
-          src={participantsIcon}
-          alt="createAppointmentImage"
-          width={15}
-          height={15}
-        />
+      {!hideHeading && (
+        <div className="flex items-center gap-1.5 pb-0.5">
+          <Image
+            src={participantsIcon}
+            alt="createAppointmentImage"
+            width={12}
+            height={12}
+          />
 
-        <label className="block text-2xl font-semibold ">
-          Choose Dates & Time
-        </label>
-      </div>
-      <div className={`bg-blue-100 p-2 ${className}`}>
+          <label className="block text-xs font-bold uppercase tracking-wider text-gray-800">
+            Choose Dates & Time
+          </label>
+        </div>
+      )}
+      <div className={`bg-blue-100/50 p-2 rounded-lg ${className}`}>
         {/* Date inputs */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-2 gap-3 mb-2">
           <div>
             {showLabels && (
-              <label className="block text-lg font-medium">from</label>
+              <label className="block text-[10px] font-bold text-gray-600 uppercase mb-0.5">from</label>
             )}
             <input
               placeholder="Select Start date"
               type="date"
               value={startDate}
               onChange={(e) => onStartDateChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-2 py-1 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
               required={required}
             />
           </div>
           <div>
             {showLabels && (
-              <label className="block text-lg font-medium">to</label>
+              <label className="block text-[10px] font-bold text-gray-600 uppercase mb-0.5">to</label>
             )}
             <input
               placeholder="Select End date"
               type="date"
               value={endDate}
               onChange={(e) => onEndDateChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-2 py-1 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
               required={required}
             />
           </div>
         </div>
 
         {/* Time inputs */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           <div>
             {showLabels && (
-              <label className="block text-lg font-medium">Start Time</label>
+              <label className="block text-[10px] font-bold text-gray-600 uppercase mb-0.5">Start Time</label>
             )}
             <input
               type="time"
               value={startTime}
               onChange={(e) => onStartTimeChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-2 py-1 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
               required={required}
             />
           </div>
           <div>
             {showLabels && (
-              <label className="block text-lg font-medium">End Time</label>
+              <label className="block text-[10px] font-bold text-gray-600 uppercase mb-0.5">End Time</label>
             )}
             <input
               type="time"
               value={endTime}
               onChange={(e) => onEndTimeChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-2 py-1 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
               required={required}
             />
           </div>

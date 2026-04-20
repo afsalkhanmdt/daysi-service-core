@@ -186,18 +186,17 @@ export default function MultipleSelector({
 
   return (
     <div>
-      <div className="flex items-center gap-2 pb-1 ">
-        {mainHeading && (
+      {mainHeading && (
+        <div className="flex items-center gap-2 pb-1 ">
           <Image
             src={participantsIcon}
             alt="createAppointmentImage"
             width={15}
             height={15}
           />
-        )}
-
-        <label className="block text-2xl font-semibold ">{mainHeading}</label>
-      </div>
+          <label className="block text-lg font-semibold ">{mainHeading}</label>
+        </div>
+      )}
       <div className={`w-full p-2 bg-blue-100 rounded-md`}>
         {subHeading && (
           <div className="flex items-center gap-2 ">
@@ -209,7 +208,7 @@ export default function MultipleSelector({
                 height={15}
               />
             )}
-            <label className="block text-lg font-medium ">{subHeading}</label>
+            <label className="block ">{subHeading}</label>
           </div>
         )}
 
@@ -218,7 +217,7 @@ export default function MultipleSelector({
           <div>
             <div className="flex items-center justify-between">
               {showCount && (
-                <span className="text-sm text-gray-500">
+                <span className="text-xs text-gray-500">
                   {selectedCount} of {options.length} selected
                 </span>
               )}
@@ -265,7 +264,7 @@ export default function MultipleSelector({
             >
               <button
                 type="button"
-                className={`relative px-3 py-2 bg-white rounded-full border transition-all duration-200 flex items-center space-x-2 max-w-full group ${
+                className={`relative px-3 py-1 bg-white rounded-full border transition-all duration-200 flex items-center space-x-2 max-w-full group ${
                   option.isSelected
                     ? `${borderColorClass} shadow-sm`
                     : "border-gray-300 hover:border-gray-400"
@@ -273,7 +272,7 @@ export default function MultipleSelector({
               >
                 {/* Image/Icon - conditionally shown */}
                 {showImages && (
-                  <div className="flex-shrink-0 w-6 h-6 relative">
+                  <div className="flex-shrink-0 w-4 h-4 relative">
                     <Image
                       className="rounded-full object-cover"
                       src={option.imageUrl ? option.imageUrl : defaultDp}
@@ -287,7 +286,7 @@ export default function MultipleSelector({
 
                 {/* Label */}
                 <span
-                  className={`truncate text-sm ${
+                  className={`truncate text-xs ${
                     option.isSelected
                       ? "text-gray-800 font-medium"
                       : "text-gray-700"
@@ -305,7 +304,7 @@ export default function MultipleSelector({
               {/* Checkmark for SINGLE selection mode - radio button style */}
               {singleSelect && (
                 <div
-                  className={`absolute right-2 top-1/2 transform -translate-y-1/2 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                  className={`absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${
                     option.isSelected
                       ? `${badgeColorClass} border-transparent`
                       : "border-gray-300 bg-white"
