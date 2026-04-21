@@ -27,6 +27,7 @@ import { FamilyData } from "./FamilyViewWrapper";
 import SideBarMobileView from "./SideBarMobileView";
 import MobileEventAndScrollBar from "./MobileEventAndScrollBar";
 import DateScrollAndDisplay from "./DateScrollAndDisplay";
+import AllDayEventsRow from "./AllDayEventsRow";
 import { EventInput } from "@fullcalendar/core";
 import { useTranslation } from "react-i18next";
 import ToDoAndPMComponent from "./ToDoAndPMComponent";
@@ -76,6 +77,7 @@ const CalendarView = ({
   const [showEditAppointment, setShowEditAppointment] = useState(false);
   const [selectedAppointment, setSelectedAppointment] =
     useState<EventApi | null>(null);
+  const [selectedRawEvent, setSelectedRawEvent] = useState<any>(null);
 
   const { data: PMTaskDetails } = useFetch<PMData>(
     `PocketMoney/GetPMTasks?familyId=${familyId}`,
@@ -83,6 +85,11 @@ const CalendarView = ({
   const { data: todoData } = useFetch<ToDoTaskType[]>(
     `ToDo/GetToDos?familyId=${familyId}`,
   );
+
+  const handleRawEventClick = useCallback((event: any) => {
+    setSelectedRawEvent(event);
+    setShowEditAppointment(true);
+  }, []);
 
   const imageUrls = useMemo(
     () =>
@@ -487,6 +494,12 @@ const CalendarView = ({
         setCurrentDate={setCurrentDate}
       />
 
+      <AllDayEventsRow 
+        data={data} 
+        currentDate={currentDate} 
+        onEventClick={handleRawEventClick}
+      />
+
       <MobileEventAndScrollBar
         selectedMember={selectedMember}
         setSelectedMember={setSelectedMember}
@@ -592,16 +605,39 @@ const CalendarView = ({
           }}
         />
 
-        {showEditAppointment && selectedAppointment && (
+        {showEditAppointment && (selectedAppointment || selectedRawEvent) && (
           <EditAppointmentPopup
             isOpen={showEditAppointment}
             onClose={() => {
               setShowEditAppointment(false);
               setSelectedAppointment(null);
+              setSelectedRawEvent(null);
             }}
             onSubmit={handleEditAppointment}
             initialData={
-              selectedAppointment
+              selectedRawEvent 
+                ? {
+                    id: String(selectedRawEvent.Id),
+                    title: selectedRawEvent.Title,
+                    startDate: new Date(Number(selectedRawEvent.Start)),
+                    endDate: new Date(Number(selectedRawEvent.End)),
+                    description: selectedRawEvent.Description,
+                    location: selectedRawEvent.Location,
+                    isAllDayEvent: selectedRawEvent.IsAllDayEvent,
+                    isSpecialEvent: selectedRawEvent.IsSpecialEvent,
+                    isPrivateEvent: selectedRawEvent.IsPrivateEvent,
+                    recurrenceRule: selectedRawEvent.RecurrenceRule || {
+                      frequency: 0,
+                      interval: 1,
+                    },
+                    repeat: selectedRawEvent.Repeat,
+                    repeatEndDate: selectedRawEvent.RepeatEndDate,
+                    alert: selectedRawEvent.Alert,
+                    alarms: selectedRawEvent.Alarms,
+                    participants: selectedRawEvent.EventParticipant,
+                    externalCalendarName: selectedRawEvent.ExternalCalendarName,
+                  }
+                : selectedAppointment
                 ? {
                     id: selectedAppointment.id,
                     title: selectedAppointment.title,
