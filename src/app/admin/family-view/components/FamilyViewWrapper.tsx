@@ -148,8 +148,12 @@ const FamilyViewWrapper = ({
 
     const response = await createAppointmentCall(updatedAppointmentData);
 
-    // Now call your API with the updated data
-    // Example: createAppointmentAPI(updatedAppointmentData).then(() => reload());
+    if (response) {
+      reload();
+      if (updatedAppointmentData.startDate) {
+        setCurrentDate(new Date(updatedAppointmentData.startDate));
+      }
+    }
   };
 
   const handleCreatePocketMoney = async (
@@ -172,6 +176,13 @@ const FamilyViewWrapper = ({
     };
 
     const response = await createPocketMoneyTaskCall([updatedPocketMoneyData]);
+
+    if (response) {
+      reload();
+      if (updatedPocketMoneyData.ActivityDate) {
+        setCurrentDate(new Date(updatedPocketMoneyData.ActivityDate));
+      }
+    }
   };
 
   if (!familyDetails || !isLangReady) {
