@@ -176,8 +176,20 @@ const DateScrollAndDisplay = ({
   };
 
   useEffect(() => {
-    scrollToDay(currentDate);
-  }, [currentDate]);
+    const currentMonth = dayjs(currentDate).format("YYYY-MM");
+    const visibleMonth = visibleDays.length > 0 ? dayjs(visibleDays[0]).format("YYYY-MM") : "";
+
+    if (currentMonth !== visibleMonth) {
+      setVisibleDays(getDaysInMonth(currentDate));
+    }
+
+    // Use a small timeout to ensure the DOM has updated if the month changed
+    const timeout = setTimeout(() => {
+      scrollToDay(currentDate);
+    }, 100);
+
+    return () => clearTimeout(timeout);
+  }, [currentDate, visibleDays]);
 
   return (
     <div className="bg-white p-2 m-2 rounded-xl gap-2 sm:gap-4 grid sm:mb-4">
