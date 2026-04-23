@@ -342,6 +342,7 @@ const FamilyViewWrapper = ({
         isOpen={showCreateTodo}
         onClose={() => setShowCreateTodo(false)}
         onSubmit={handleCreateTodo}
+        ToDoFamilyGroup={apiData?.Family.ToDoFamilyGroups}
       />
 
       <CreatePocketMoneyPopup
