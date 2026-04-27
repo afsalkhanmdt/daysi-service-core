@@ -70,10 +70,11 @@ export const FREQUENCY_OPTIONS: SelectableOption[] = [
 ];
 
 // Add these functions to your existing appointmentForm.ts constants file
-export const parseDateToForm = (dateString: string | null): string => {
+export const parseDateToForm = (dateString: string | null | undefined): string => {
   if (!dateString) return "";
   try {
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "";
     return date.toISOString().split("T")[0];
   } catch {
     return "";
@@ -84,6 +85,7 @@ export const parseTimeToForm = (dateString: string | null): string => {
   if (!dateString) return "";
   try {
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "";
     return date.toTimeString().slice(0, 5);
   } catch {
     return "";
@@ -92,14 +94,22 @@ export const parseTimeToForm = (dateString: string | null): string => {
 
 
 export const parseTimestampToDateOnly = (timestamp: string): string => {
-  return new Date(timestamp).toISOString().split('T')[0];
+  if (!timestamp) return "";
+  const date = new Date(timestamp);
+  if (isNaN(date.getTime())) return "";
+  return date.toISOString().split('T')[0];
 };
 
 export const parseTimestampToTimeOnly = (timestamp: string): string => {
+  if (!timestamp) return "";
   const date = new Date(timestamp);
+  if (isNaN(date.getTime())) return "";
   return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 };
 
 export const buildTimestamp = (date: string, time: string) => {
-  return new Date(`${date}T${time}`).toISOString();
+  if (!date || !time) return "";
+  const d = new Date(`${date}T${time}`);
+  if (isNaN(d.getTime())) return "";
+  return d.toISOString();
 };
