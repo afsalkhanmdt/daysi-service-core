@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import defaultDp from "@/app/admin/assets/default-avatar-icon-of-social-media-user-vector.jpg";
+import participantsIcon from "@/app/admin/assets/participantsIcon.png";
 
 function Check({
   color,
@@ -42,8 +43,9 @@ export type SelectableOption = {
 type MultipleSelectorProps = {
   options: SelectableOption[];
   onSelectionChange?: (selectedOptions: SelectableOption[]) => void;
-  title?: string;
-  titleIconUrl?: string;
+  mainHeading?: string;
+  subHeading?: string;
+  subHeadingIcon?: string;
   showSelectAll?: boolean;
   showCount?: boolean;
   showImages?: boolean;
@@ -56,8 +58,9 @@ type MultipleSelectorProps = {
 export default function MultipleSelector({
   options: initialOptions,
   onSelectionChange,
-  title,
-  titleIconUrl,
+  mainHeading,
+  subHeading,
+  subHeadingIcon,
   showSelectAll = true,
   showCount = true,
   showImages = false,
@@ -182,135 +185,148 @@ export default function MultipleSelector({
   const badgeColorClass = getBadgeColorClass();
 
   return (
-    <div className={`w-full p-2 bg-blue-100 rounded-md`}>
-      {title && (
-        <div className="flex items-center gap-2 ">
-          {titleIconUrl && (
-            <Image
-              src={titleIconUrl}
-              alt="createAppointmentImage"
-              width={15}
-              height={15}
-            />
-          )}
-          <label className="block text-lg font-medium ">{title}</label>
+    <div>
+      {mainHeading && (
+        <div className="flex items-center gap-2 pb-1 ">
+          <Image
+            src={participantsIcon}
+            alt="createAppointmentImage"
+            width={15}
+            height={15}
+          />
+          <label className="block text-lg font-semibold ">{mainHeading}</label>
         </div>
       )}
+      <div className={`w-full p-2 bg-blue-100 rounded-md`}>
+        {subHeading && (
+          <div className="flex items-center gap-2 ">
+            {subHeading && subHeadingIcon && (
+              <Image
+                src={subHeadingIcon}
+                alt="createAppointmentImage"
+                width={15}
+                height={15}
+              />
+            )}
+            <label className="block ">{subHeading}</label>
+          </div>
+        )}
 
-      {/* Hide select all/clear all in single select mode */}
-      {(showSelectAll || showCount) && !singleSelect && (
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-3">
-            {showCount && (
+        {/* Hide select all/clear all in single select mode */}
+        {(showSelectAll || showCount) && !singleSelect && (
+          <div>
+            <div className="flex items-center justify-between">
+              {showCount && (
+                <span className="text-xs text-gray-500">
+                  {selectedCount} of {options.length} selected
+                </span>
+              )}
+              {showSelectAll && (
+                <div className="flex space-x-2">
+                  <button
+                    type="button"
+                    onClick={handleSelectAll}
+                    className="px-3 py-1 text-xs bg-blue-100 text-blue-600 rounded hover:bg-blue-200 transition-colors"
+                  >
+                    Select All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleClearAll}
+                    className="px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded hover:bg-gray-200 transition-colors"
+                  >
+                    Clear All
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Show different message for single select mode */}
+        {singleSelect && showCount && (
+          <div>
+            <div className="flex items-center justify-between">
               <span className="text-sm text-gray-500">
-                {selectedCount} of {options.length} selected
+                {selectedCount > 0 ? "1 selected" : "Select one option"}
               </span>
-            )}
-            {showSelectAll && (
-              <div className="flex space-x-2">
-                <button
-                  type="button"
-                  onClick={handleSelectAll}
-                  className="px-3 py-1 text-xs bg-blue-100 text-blue-600 rounded hover:bg-blue-200 transition-colors"
-                >
-                  Select All
-                </button>
-                <button
-                  type="button"
-                  onClick={handleClearAll}
-                  className="px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded hover:bg-gray-200 transition-colors"
-                >
-                  Clear All
-                </button>
-              </div>
-            )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Show different message for single select mode */}
-      {singleSelect && showCount && (
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-gray-500">
-              {selectedCount > 0 ? "1 selected" : "Select one option"}
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Responsive flex-wrap container */}
-      <div className="flex flex-wrap gap-3">
-        {options.map((option) => (
-          <div
-            onClick={() => handleToggleOption(option.id)}
-            key={option.memberId || option.id}
-            className="relative"
-          >
-            <button
-              type="button"
-              className={`relative px-3 py-2 bg-white rounded-full border transition-all duration-200 flex items-center space-x-2 max-w-full group ${
-                option.isSelected
-                  ? `${borderColorClass} shadow-sm`
-                  : "border-gray-300 hover:border-gray-400"
-              } ${singleSelect ? "cursor-pointer pr-10" : "cursor-pointer"}`}
+        {/* Responsive flex-wrap container */}
+        <div className="flex flex-wrap gap-2">
+          {options.map((option) => (
+            <div
+              onClick={() => handleToggleOption(option.id)}
+              key={option.memberId || option.id}
+              className="relative"
             >
-              {/* Image/Icon - conditionally shown */}
-              {showImages && (
-                <div className="flex-shrink-0 w-6 h-6 relative">
-                  <Image
-                    className="rounded-full object-cover"
-                    src={option.imageUrl ? option.imageUrl : defaultDp}
-                    alt={`${option.label}`}
-                    fill
-                    sizes="24px"
-                    unoptimized
-                  />
+              <button
+                type="button"
+                className={`relative px-3 py-1 bg-white rounded-full border transition-all duration-200 flex items-center space-x-2 max-w-full group ${
+                  option.isSelected
+                    ? `${borderColorClass} shadow-sm`
+                    : "border-gray-300 hover:border-gray-400"
+                } ${singleSelect ? "cursor-pointer pr-10" : "cursor-pointer"}`}
+              >
+                {/* Image/Icon - conditionally shown */}
+                {showImages && (
+                  <div className="flex-shrink-0 w-4 h-4 relative">
+                    <Image
+                      className="rounded-full object-cover"
+                      src={option.imageUrl ? option.imageUrl : defaultDp}
+                      alt={`${option.label}`}
+                      fill
+                      sizes="24px"
+                      unoptimized
+                    />
+                  </div>
+                )}
+
+                {/* Label */}
+                <span
+                  className={`truncate text-xs ${
+                    option.isSelected
+                      ? "text-gray-800 font-medium"
+                      : "text-gray-700"
+                  }`}
+                >
+                  {option.label}
+                </span>
+
+                {/* Optional: Subtle background color on hover for non-selected items */}
+                {!option.isSelected && (
+                  <div className="absolute inset-0 rounded-full bg-gray-50 opacity-0 group-hover:opacity-100 transition-opacity -z-10" />
+                )}
+              </button>
+
+              {/* Checkmark for SINGLE selection mode - radio button style */}
+              {singleSelect && (
+                <div
+                  className={`absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${
+                    option.isSelected
+                      ? `${badgeColorClass} border-transparent`
+                      : "border-gray-300 bg-white"
+                  }`}
+                >
+                  {option.isSelected && (
+                    <Check color="white" strokeWidth={3} className="w-3 h-3" />
+                  )}
                 </div>
               )}
 
-              {/* Label */}
-              <span
-                className={`truncate text-sm ${
-                  option.isSelected
-                    ? "text-gray-800 font-medium"
-                    : "text-gray-700"
-                }`}
-              >
-                {option.label}
-              </span>
-
-              {/* Optional: Subtle background color on hover for non-selected items */}
-              {!option.isSelected && (
-                <div className="absolute inset-0 rounded-full bg-gray-50 opacity-0 group-hover:opacity-100 transition-opacity -z-10" />
-              )}
-            </button>
-
-            {/* Checkmark for SINGLE selection mode - radio button style */}
-            {singleSelect && (
-              <div
-                className={`absolute right-2 top-1/2 transform -translate-y-1/2 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                  option.isSelected
-                    ? `${badgeColorClass} border-transparent`
-                    : "border-gray-300 bg-white"
-                }`}
-              >
-                {option.isSelected && (
+              {/* Checkmark badge for MULTIPLE selection mode - checkbox style */}
+              {!singleSelect && option.isSelected && (
+                <div
+                  className={`absolute -top-1 -right-1 w-5 h-5 ${badgeColorClass} rounded-full flex items-center justify-center z-10 shadow-sm border border-white`}
+                >
                   <Check color="white" strokeWidth={3} className="w-3 h-3" />
-                )}
-              </div>
-            )}
-
-            {/* Checkmark badge for MULTIPLE selection mode - checkbox style */}
-            {!singleSelect && option.isSelected && (
-              <div
-                className={`absolute -top-1 -right-1 w-5 h-5 ${badgeColorClass} rounded-full flex items-center justify-center z-10 shadow-sm border border-white`}
-              >
-                <Check color="white" strokeWidth={3} className="w-3 h-3" />
-              </div>
-            )}
-          </div>
-        ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

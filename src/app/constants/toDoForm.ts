@@ -1,6 +1,4 @@
 import { SelectableOption } from "../admin/family-view/components/FormComponents/MultipleSelector";
-import { RepeatEnum } from "../types/appoinment";
-import { PMTaskCreateCommand } from "../types/pocketMoney";
 import { ToDoCreateCommand, ToDoTaskType } from "../types/todo";
 
 export const groupOptions = [
@@ -13,7 +11,7 @@ export const groupOptions = [
 ];
 
  export const statusOptions: SelectableOption[] = [
-  { id: 1, label: "Open", isSelected: true },
+  { id: 1, label: "Open", isSelected: false },
   { id: 2, label: "Close", isSelected: false },
 ];
 

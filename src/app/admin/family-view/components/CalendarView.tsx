@@ -27,13 +27,17 @@ import { FamilyData } from "./FamilyViewWrapper";
 import SideBarMobileView from "./SideBarMobileView";
 import MobileEventAndScrollBar from "./MobileEventAndScrollBar";
 import DateScrollAndDisplay from "./DateScrollAndDisplay";
+import AllDayEventsRow from "./AllDayEventsRow";
 import { EventInput } from "@fullcalendar/core";
 import { useTranslation } from "react-i18next";
 import ToDoAndPMComponent from "./ToDoAndPMComponent";
 import EditAppointmentPopup from "./EditAppointmentPopup";
 import { EventApi } from "@fullcalendar/core";
 import { useResources } from "@/app/context/ResourceContext";
-import { UserEventCreateRequest } from "@/app/types/appoinment";
+import {
+  UserEventCreateRequest,
+  UserEventUpdateRequest,
+} from "@/app/types/appoinment";
 import { PMData } from "@/app/types/pocketMoney";
 import { ToDoTaskType } from "@/app/types/todo";
 import { updateAppointmentCall } from "@/services/api";
@@ -76,13 +80,19 @@ const CalendarView = ({
   const [showEditAppointment, setShowEditAppointment] = useState(false);
   const [selectedAppointment, setSelectedAppointment] =
     useState<EventApi | null>(null);
+  const [selectedRawEvent, setSelectedRawEvent] = useState<any>(null);
 
   const { data: PMTaskDetails } = useFetch<PMData>(
-    `PocketMoney/GetPMTasks?familyId=${familyId}`
+    `PocketMoney/GetPMTasks?familyId=${familyId}`,
   );
   const { data: todoData } = useFetch<ToDoTaskType[]>(
-    `ToDo/GetToDos?familyId=${familyId}`
+    `ToDo/GetToDos?familyId=${familyId}`,
   );
+
+  const handleRawEventClick = useCallback((event: any) => {
+    setSelectedRawEvent(event);
+    setShowEditAppointment(true);
+  }, []);
 
   const imageUrls = useMemo(
     () =>
@@ -91,7 +101,7 @@ const CalendarView = ({
         name: member.FirstName,
         imageUrl: member.ResourceUrl || dp.src,
       })),
-    [data.Members]
+    [data.Members],
   );
 
   const events: EventInput[] = useMemo(() => {
@@ -110,7 +120,7 @@ const CalendarView = ({
         if (seenEventMemberPairs.has(eventKey)) {
           if (!duplicateWarnings.has(eventKey)) {
             console.warn(
-              `Skipping duplicate event ${event.Id} for member ${member.Id} (${member.FirstName})`
+              `Skipping duplicate event ${event.Id} for member ${member.Id} (${member.FirstName})`,
             );
             duplicateWarnings.add(eventKey);
           }
@@ -185,7 +195,7 @@ const CalendarView = ({
                 break;
               case 2:
                 currentStart.setDate(
-                  currentStart.getDate() + 7 * rule.Interval
+                  currentStart.getDate() + 7 * rule.Interval,
                 );
                 currentEnd.setDate(currentEnd.getDate() + 7 * rule.Interval);
                 break;
@@ -195,10 +205,10 @@ const CalendarView = ({
                 break;
               case 4:
                 currentStart.setFullYear(
-                  currentStart.getFullYear() + rule.Interval
+                  currentStart.getFullYear() + rule.Interval,
                 );
                 currentEnd.setFullYear(
-                  currentEnd.getFullYear() + rule.Interval
+                  currentEnd.getFullYear() + rule.Interval,
                 );
                 break;
             }
@@ -230,19 +240,15 @@ const CalendarView = ({
       });
     });
 
-    // Debug: Log summary of events
-    console.log(`Total events processed: ${allEvents.length}`);
-    console.log(`Unique event-member pairs: ${seenEventMemberPairs.size}`);
-
     // Check for any remaining duplicate IDs (should be 0)
     const eventIds = allEvents.map((e) => e.id);
     const duplicateIds = eventIds.filter(
-      (id, index) => eventIds.indexOf(id) !== index
+      (id, index) => eventIds.indexOf(id) !== index,
     );
     if (duplicateIds.length > 0) {
       console.error(
         `Found ${duplicateIds.length} duplicate event IDs in final array:`,
-        [...new Set(duplicateIds)]
+        [...new Set(duplicateIds)],
       );
     }
 
@@ -282,7 +288,7 @@ const CalendarView = ({
 
     // Get the actual slot elements to measure real height
     const slotLanes = calendarContainerRef.current?.querySelectorAll(
-      ".fc-timegrid-slots table tr"
+      ".fc-timegrid-slots table tr",
     );
 
     if (!slotLanes || slotLanes.length === 0) {
@@ -301,7 +307,7 @@ const CalendarView = ({
 
     // Calculate which slot the event falls into
     const slotIndex = Math.floor(
-      totalMinutesFromMidnight / slotDurationMinutes
+      totalMinutesFromMidnight / slotDurationMinutes,
     );
 
     // Calculate position within the slot (if needed for more precision)
@@ -313,7 +319,7 @@ const CalendarView = ({
 
     // Get the scrollable container
     const scrollContainer = calendarContainerRef.current?.querySelector(
-      ".fc-timegrid-body"
+      ".fc-timegrid-body",
     ) as HTMLElement;
     if (scrollContainer) {
       // Scroll to the calculated position with small offset
@@ -349,7 +355,7 @@ const CalendarView = ({
 
       if (earliestEvent) {
         const resourceEl = calendarContainerRef.current?.querySelector(
-          `.fc-timegrid-col[data-resource-id="${earliestEvent.resourceId}"]`
+          `.fc-timegrid-col[data-resource-id="${earliestEvent.resourceId}"]`,
         ) as HTMLElement;
 
         if (resourceEl) {
@@ -363,7 +369,7 @@ const CalendarView = ({
     } catch (error) {
       console.warn(
         "FullCalendar scrollToTime failed, using manual method:",
-        error
+        error,
       );
       scrollToEarliestEvent(); // fallback vertical
     }
@@ -397,7 +403,7 @@ const CalendarView = ({
   useEffect(() => {
     const timeout = setTimeout(() => {
       const slotLanes = calendarContainerRef.current?.querySelectorAll(
-        ".fc-timegrid-slots table tr"
+        ".fc-timegrid-slots table tr",
       );
     }, 500);
 
@@ -410,7 +416,7 @@ const CalendarView = ({
       const timeAxis =
         calendarContainerRef.current?.querySelector(".fc-timegrid-axis");
       const slotLabels = calendarContainerRef.current?.querySelectorAll(
-        ".fc-timegrid-slot-label"
+        ".fc-timegrid-slot-label",
       );
 
       if (timeAxis) {
@@ -440,7 +446,7 @@ const CalendarView = ({
   }, []);
 
   const handleEditAppointment = async (
-    appointmentData: UserEventCreateRequest
+    appointmentData: UserEventUpdateRequest,
   ) => {
     // Create a new object with all the added values
     const updatedAppointmentData = {
@@ -467,11 +473,6 @@ const CalendarView = ({
       noPush: appointmentData.noPush || false,
     };
 
-    console.log(
-      "Creating new appointment with updated data:",
-      updatedAppointmentData
-    );
-
     const response = await updateAppointmentCall(updatedAppointmentData);
     if (response.ok) {
       dataReload();
@@ -494,6 +495,12 @@ const CalendarView = ({
         calendarRef={calendarRef}
         currentDate={currentDate}
         setCurrentDate={setCurrentDate}
+      />
+
+      <AllDayEventsRow
+        data={data}
+        currentDate={currentDate}
+        onEventClick={handleRawEventClick}
       />
 
       <MobileEventAndScrollBar
@@ -575,8 +582,8 @@ const CalendarView = ({
               .map(
                 (p) =>
                   imageUrls.find(
-                    (m) => String(m.id) === String(p.ParticipantId)
-                  )?.imageUrl
+                    (m) => String(m.id) === String(p.ParticipantId),
+                  )?.imageUrl,
               )
               .filter((img): img is string => Boolean(img));
 
@@ -601,47 +608,72 @@ const CalendarView = ({
           }}
         />
 
-        {showEditAppointment && selectedAppointment && (
+        {showEditAppointment && (selectedAppointment || selectedRawEvent) && (
           <EditAppointmentPopup
             isOpen={showEditAppointment}
             onClose={() => {
               setShowEditAppointment(false);
               setSelectedAppointment(null);
+              setSelectedRawEvent(null);
             }}
             onSubmit={handleEditAppointment}
             initialData={
-              selectedAppointment
+              selectedRawEvent
                 ? {
-                    id: selectedAppointment.id,
-                    title: selectedAppointment.title,
-                    startDate: selectedAppointment.start || undefined,
-                    endDate: selectedAppointment.end || undefined,
-                    description: selectedAppointment.extendedProps.description,
-                    location: selectedAppointment.extendedProps.location,
-                    isAllDayEvent:
-                      selectedAppointment.extendedProps.IsAllDayEvent,
-                    isSpecialEvent:
-                      selectedAppointment.extendedProps.IsSpecialEvent,
-                    isPrivateEvent:
-                      selectedAppointment.extendedProps.IsPrivateEvent,
-                    recurrenceRule: selectedAppointment.extendedProps
-                      .RecurrenceRule || {
+                    id: String(selectedRawEvent.Id),
+                    title: selectedRawEvent.Title,
+                    startDate: new Date(Number(selectedRawEvent.Start)),
+                    endDate: new Date(Number(selectedRawEvent.End)),
+                    description: selectedRawEvent.Description,
+                    location: selectedRawEvent.Location,
+                    isAllDayEvent: selectedRawEvent.IsAllDayEvent,
+                    isSpecialEvent: selectedRawEvent.IsSpecialEvent,
+                    isPrivateEvent: selectedRawEvent.IsPrivateEvent,
+                    recurrenceRule: selectedRawEvent.RecurrenceRule || {
                       frequency: 0,
                       interval: 1,
                     },
-                    repeat:
-                      selectedAppointment.extendedProps.Repeat || undefined,
-                    repeatEndDate:
-                      selectedAppointment.extendedProps.RepeatEndDate,
-                    alert: selectedAppointment.extendedProps.Alert || undefined,
-                    alarms:
-                      selectedAppointment.extendedProps.Alarms || undefined,
-                    participants:
-                      selectedAppointment.extendedProps.participants,
-                    externalCalendarName:
-                      selectedAppointment.extendedProps.ExternalCalendarName,
+                    repeat: selectedRawEvent.Repeat,
+                    repeatEndDate: selectedRawEvent.RepeatEndDate,
+                    alert: selectedRawEvent.Alert,
+                    alarms: selectedRawEvent.Alarms,
+                    participants: selectedRawEvent.EventParticipant,
+                    externalCalendarName: selectedRawEvent.ExternalCalendarName,
                   }
-                : undefined
+                : selectedAppointment
+                  ? {
+                      id: selectedAppointment.id,
+                      title: selectedAppointment.title,
+                      startDate: selectedAppointment.start || undefined,
+                      endDate: selectedAppointment.end || undefined,
+                      description:
+                        selectedAppointment.extendedProps.description,
+                      location: selectedAppointment.extendedProps.location,
+                      isAllDayEvent:
+                        selectedAppointment.extendedProps.IsAllDayEvent,
+                      isSpecialEvent:
+                        selectedAppointment.extendedProps.IsSpecialEvent,
+                      isPrivateEvent:
+                        selectedAppointment.extendedProps.IsPrivateEvent,
+                      recurrenceRule: selectedAppointment.extendedProps
+                        .RecurrenceRule || {
+                        frequency: 0,
+                        interval: 1,
+                      },
+                      repeat:
+                        selectedAppointment.extendedProps.Repeat || undefined,
+                      repeatEndDate:
+                        selectedAppointment.extendedProps.RepeatEndDate,
+                      alert:
+                        selectedAppointment.extendedProps.Alert || undefined,
+                      alarms:
+                        selectedAppointment.extendedProps.Alarms || undefined,
+                      participants:
+                        selectedAppointment.extendedProps.participants,
+                      externalCalendarName:
+                        selectedAppointment.extendedProps.ExternalCalendarName,
+                    }
+                  : undefined
             }
           />
         )}
@@ -653,6 +685,7 @@ const CalendarView = ({
               PMTaskDetails={PMTaskDetails}
               familyDetails={data}
               selectedMember={selectedMember}
+              dataReload={dataReload}
             />
           </div>
         )}
@@ -665,6 +698,7 @@ const CalendarView = ({
             PMTaskDetails={PMTaskDetails}
             familyDetails={data}
             selectedMember={selectedMember}
+            dataReload={dataReload}
           />
         </div>
       )}

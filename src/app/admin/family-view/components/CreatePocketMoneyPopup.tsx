@@ -1,27 +1,28 @@
 "use client";
+
 import {
   PMTaskCreateCommand,
   PocketMoneyPopupProps,
 } from "@/app/types/pocketMoney";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import createPocketMoneyImage from "@/app/admin/assets/doctor-suitcase-with-a-cross-svgrepo-com 1.png";
+import closeIcon from "@/app/admin/assets/close-428.png";
 import { ToggleSwitch } from "./FormComponents/ToggleSwitch";
 import additionalNoteIcon from "@/app/admin/assets/name.png";
 import participantsIcon from "@/app/admin/assets/participantsIcon.png";
-import DescriptionIcon from "@/app/admin/assets/descriptionIcon.png";
 import repeatIcon from "@/app/admin/assets/repeatIcon.png";
-import name from "@/app/admin/assets/name.png";
+import nameIcon from "@/app/admin/assets/name.png";
+import alarmIcon from "@/app/admin/assets/alarmIcon.png";
 import MultipleSelector, {
   SelectableOption,
 } from "./FormComponents/MultipleSelector";
-import { REPEAT_OPTIONS } from "@/app/constants/appointmentForm";
+import { REPEAT_OPTIONS, ALERT_OPTIONS } from "@/app/constants/appointmentForm";
 import { mapResourcesToSelectableOptions } from "@/app/utils/resourceAdapters";
 import { useResources } from "@/app/context/ResourceContext";
 import { initialFormDataForPMTaskApi } from "@/app/constants/pocketMoneyForm";
 
-// You can now define different sets of options
-
+// Standard task options
 const standardTaskOptions: SelectableOption[] = [
   { id: 1, label: "Clean up the room", isSelected: false },
   { id: 2, label: "Walk the Dog", isSelected: false },
@@ -39,6 +40,8 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
   onSubmit,
 }) => {
   const { resources } = useResources();
+  const modalRef = useRef<HTMLDivElement>(null);
+
   // Main form state
   const [formData, setFormData] = useState<PMTaskCreateCommand>(
     initialFormDataForPMTaskApi,
@@ -55,16 +58,25 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
 
   // ===== HANDLER FUNCTIONS =====
 
-  const handleRepeatChange = (repeatSequence: SelectableOption[]) => {
+  const handleRepeatChange = (selectedOptions: SelectableOption[]) => {
     setRepeatSequence((prev) =>
       prev.map((option) => ({
         ...option,
-        isSelected: repeatSequence.some((rs) => rs.id === option.id),
+        isSelected: selectedOptions.some(
+          (selected) => selected.id === option.id,
+        ),
       })),
     );
+
+    const selectedOption = selectedOptions.find((opt) => opt.isSelected);
+    if (selectedOption) {
+      setFormData((prev) => ({
+        ...prev,
+        Repeat: selectedOption.id,
+      }));
+    }
   };
 
-  // Handler for standard task selection (SINGLE SELECT)
   const handleStandardTaskChange = (selectedTasks: SelectableOption[]) => {
     setStandardTasks((prev) =>
       prev.map((task) => ({
@@ -73,21 +85,19 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
       })),
     );
 
-    // Update formData with the selected task label
     if (selectedTasks.length > 0) {
       setFormData((prev) => ({
         ...prev,
-        standardTask: selectedTasks[0].label, // Single select, so take first item
+        PMDescription: selectedTasks[0].label,
       }));
     } else {
       setFormData((prev) => ({
         ...prev,
-        standardTask: "",
+        PMDescription: "",
       }));
     }
   };
 
-  // Handler for responsible persons selection (MULTIPLE SELECT)
   const handleResponsiblePersonsChange = (
     selectedPersons: SelectableOption[],
   ) => {
@@ -98,18 +108,16 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
       })),
     );
 
-    // Update formData with selected person labels
     setFormData((prev) => ({
       ...prev,
       FamilyMembersPlanned: selectedPersons.map((person) => person.memberId!),
     }));
   };
 
-  // Handler for toggle switch
   const handleFirstComeFirstServeToggle = (checked: boolean) => {
     setFormData((prev) => ({
       ...prev,
-      firstComeFirstServe: checked,
+      FirstComeFirstServe: checked,
     }));
   };
 
@@ -120,7 +128,29 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // ===== FORM SUBMISSION AND RESET =====
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      handleClose();
+    }
+  };
+
+  useEffect(() => {
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && isOpen) {
+        handleClose();
+      }
+    };
+
+    document.addEventListener("keydown", handleEscapeKey);
+    return () => {
+      document.removeEventListener("keydown", handleEscapeKey);
+    };
+  }, [isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,191 +164,232 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
     onClose();
   };
 
-  // Reset all form states
   const resetForm = () => {
     setFormData(initialFormDataForPMTaskApi);
-
-    // Reset selector states
     setResponsiblePersons(
       responsiblePersons.map((p) => ({ ...p, isSelected: false })),
     );
     setStandardTasks(
       standardTaskOptions.map((t) => ({ ...t, isSelected: false })),
     );
+    setRepeatSequence(REPEAT_OPTIONS);
   };
 
   useEffect(() => {
     setResponsiblePersons(mapResourcesToSelectableOptions(resources));
-    console.log(responsiblePersons, "responsiblePersons");
   }, [resources]);
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg w-full max-w-xl mx-4 max-h-[90vh] overflow-y-auto">
-        {/* Header - Matching Appointment Popup Style */}
-        <div className="border-b border-gray-200 bg-blue-200 m-2 px-6 py-4 rounded-lg flex gap-2">
-          <div className="rounded-full bg-white p-2">
-            <Image
-              src={createPocketMoneyImage}
-              alt="createPocketMoneyImage"
-              width={15}
-              height={15}
-            />
+    <div
+      className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-2"
+      onClick={handleOverlayClick}
+    >
+      <div
+        ref={modalRef}
+        className="bg-white rounded-xl w-full max-w-7xl max-h-[98vh] flex flex-col shadow-2xl relative"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Compact Header */}
+        <div className="flex justify-between items-center px-4 py-2 border-b">
+          <div className="flex items-center gap-2">
+            <div className="bg-blue-100 p-1.5 rounded-lg">
+              <Image
+                src={createPocketMoneyImage}
+                alt="icon"
+                width={16}
+                height={16}
+              />
+            </div>
+            <h2 className="text-lg font-bold text-gray-800">
+              Create Pocket Money Task
+            </h2>
           </div>
-          <h2 className="text-xl font-semibold">Create Pocket Money</h2>
+          <button
+            onClick={handleClose}
+            className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <Image src={closeIcon} alt="Close" width={20} height={20} />
+          </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Choose Standard Task - SINGLE SELECT */}
-          <MultipleSelector
-            titleIconUrl={name.src}
-            options={standardTasks}
-            onSelectionChange={handleStandardTaskChange}
-            title="Choose Standard Task"
-            showSelectAll={false} // Disabled for single select
-            showCount={true}
-            selectedBorderColor="green"
-            selectedBadgeColor="green"
-            singleSelect={true}
-          />
-
-          {/* Description */}
-          <div className="bg-blue-100 rounded-md p-2">
-            <div className="flex items-center gap-2">
-              <Image
-                src={DescriptionIcon}
-                alt="participants icon"
-                width={15}
-                height={15}
-              />
-              <label className="block text-lg font-medium text-gray-800">
-                Description
+        {/* Scrollable Form Content */}
+        <div className="overflow-y-auto flex-1 p-3 lg:p-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
+            {/* Standard Task Selection */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
+                <Image src={nameIcon} alt="icon" width={12} height={12} />{" "}
+                Choose Standard Task
               </label>
-            </div>
-
-            <textarea
-              name="PMDescription"
-              placeholder="While details of track here"
-              value={formData.PMDescription}
-              onChange={handleInputChange}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          {/* Pocket Money Amount */}
-          <div className="bg-blue-100 rounded-md p-2">
-            <label className="block text-lg font-medium text-gray-800">
-              Pocket Money Amount
-            </label>
-            <div className="flex gap-4">
-              <input
-                name="PMAmount"
-                type="number"
-                placeholder="Enter pocket money amount"
-                value={formData.PMAmount || ""}
-                onChange={handleInputChange}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              <MultipleSelector
+                options={standardTasks}
+                onSelectionChange={handleStandardTaskChange}
+                subHeading="Select a task from the list"
+                showSelectAll={false}
+                showCount={true}
+                showImages={false}
+                selectedBorderColor="blue"
+                selectedBadgeColor="blue"
+                singleSelect={true}
               />
-              {/* <select
-                value={formData.currency}
-                onChange={handleCurrencyChange}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-32"
-              >
-                <option value="RAY">RAY</option>
-                <option value="USD">USD</option>
-                <option value="EUR">EUR</option>
-              </select> */}
             </div>
-          </div>
 
-          {/* Choose Responsible Section - MULTIPLE SELECT */}
-          <div className="bg-blue-100 rounded-md p-2">
-            <div className="flex justify-end items-center mb-4">
-              <div className="flex items-center gap-2">
-                <label className="block text-sm font-medium">
-                  First Come First Serve
-                </label>
-                <ToggleSwitch
-                  checked={formData.FirstComeFirstServe}
-                  onChange={handleFirstComeFirstServeToggle}
+            {/* Task Description */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
+                <Image
+                  src={participantsIcon}
+                  alt="icon"
+                  width={14}
+                  height={14}
+                />{" "}
+                Task Description
+              </label>
+              <div className="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100">
+                <textarea
+                  name="PMDescription"
+                  placeholder="Detailed description of the task..."
+                  value={formData.PMDescription}
+                  onChange={handleInputChange}
+                  rows={2}
+                  className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm min-h-[50px]"
                 />
               </div>
             </div>
 
-            <MultipleSelector
-              titleIconUrl={participantsIcon.src}
-              options={responsiblePersons}
-              onSelectionChange={handleResponsiblePersonsChange}
-              title="Select Responsible Persons"
-              showSelectAll={true}
-              showCount={true}
-              showImages={true}
-              selectedBorderColor="green"
-              selectedBadgeColor="green"
-              singleSelect={false} // Multiple select
-            />
-          </div>
+            {/* Payment Details */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
+                <Image
+                  src={participantsIcon}
+                  alt="icon"
+                  width={14}
+                  height={14}
+                />{" "}
+                Payment Details
+              </label>
+              <div className="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100 flex gap-3">
+                <div className="flex-1">
+                  <input
+                    name="PMAmount"
+                    type="number"
+                    placeholder="Enter amount"
+                    value={formData.PMAmount || ""}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                  />
+                </div>
+                <div className="w-24">
+                  <select
+                    name="CurrencyCode"
+                    value={formData.CurrencyCode || "RAY"}
+                    onChange={handleSelectChange}
+                    className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white"
+                  >
+                    <option value="RAY">RAY</option>
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                  </select>
+                </div>
+              </div>
+            </div>
 
-          {/* Repeat Options */}
-          <MultipleSelector
-            titleIconUrl={repeatIcon.src}
-            options={repeatSequence}
-            onSelectionChange={handleRepeatChange}
-            title="Repeat Sequence"
-            showSelectAll={true}
-            showCount={true}
-            showImages={false}
-            selectedBorderColor="green"
-            selectedBadgeColor="green"
-            singleSelect={true} // Multiple select
-          />
-
-          {/* Additional Notes */}
-          <div className="bg-blue-100 rounded-md p-2">
-            <div className="flex items-center gap-2">
-              <Image
-                src={additionalNoteIcon}
-                alt="additional notes icon"
-                width={15}
-                height={15}
+            {/* Responsible Persons & Toggle */}
+            <div className="space-y-1">
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
+                  <Image
+                    src={participantsIcon}
+                    alt="icon"
+                    width={14}
+                    height={14}
+                  />{" "}
+                  Responsible Members
+                </label>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold text-gray-500 uppercase">
+                    First Come First Serve
+                  </span>
+                  <ToggleSwitch
+                    checked={formData.FirstComeFirstServe || false}
+                    onChange={handleFirstComeFirstServeToggle}
+                  />
+                </div>
+              </div>
+              <MultipleSelector
+                options={responsiblePersons}
+                onSelectionChange={handleResponsiblePersonsChange}
+                subHeading="Select who can do this task"
+                showSelectAll={true}
+                showCount={true}
+                showImages={true}
+                selectedBorderColor="blue"
+                selectedBadgeColor="blue"
+                singleSelect={false}
               />
-              <label className="block text-lg font-medium">
+            </div>
+
+            {/* Recurring - Moved to its own row */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
+                <Image src={repeatIcon} alt="icon" width={14} height={14} />{" "}
+                Repeat Sequence
+              </label>
+              <MultipleSelector
+                options={repeatSequence}
+                onSelectionChange={handleRepeatChange}
+                showSelectAll={true}
+                showCount={true}
+                showImages={false}
+                selectedBorderColor="blue"
+                selectedBadgeColor="blue"
+                singleSelect={true}
+              />
+            </div>
+
+            {/* Notes - Moved to its own row */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
+                <Image
+                  src={additionalNoteIcon}
+                  alt="icon"
+                  width={14}
+                  height={14}
+                />{" "}
                 Additional Notes
               </label>
+              <div className="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100">
+                <textarea
+                  name="Note"
+                  placeholder="Any special instructions..."
+                  rows={2}
+                  value={formData.Note}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm min-h-[60px]"
+                />
+              </div>
             </div>
-            <textarea
-              name="Note"
-              placeholder="Any additional information..."
-              rows={2}
-              value={formData.Note}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+          </form>
+        </div>
 
-          {/* Divider and Buttons */}
-          <div className="border-t border-gray-200 pt-4">
-            <div className="flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={handleClose}
-                className="px-6 py-2 text-gray-600 hover:text-gray-800 font-medium border border-gray-300 rounded-md hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
-              >
-                Create Pocket Money
-              </button>
-            </div>
-          </div>
-        </form>
+        {/* Footer Actions */}
+        <div className="px-4 py-2.5 border-t bg-gray-50 rounded-b-xl flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={handleClose}
+            className="px-4 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200 bg-white"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={(e) => handleSubmit(e as any)}
+            className="px-5 py-1.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-all active:scale-95"
+          >
+            Create Task
+          </button>
+        </div>
       </div>
     </div>
   );

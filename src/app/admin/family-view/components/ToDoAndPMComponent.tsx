@@ -10,17 +10,20 @@ import EditPocketMoneyPopup from "./EditPocketMoneyPopup";
 import { PMData, PMTask } from "@/app/types/pocketMoney";
 import EditTodoPopup from "./EditTodoPopup";
 import { ToDoTaskType } from "@/app/types/todo";
+import { updatePocketMoneyTaskCall, updateToDoTaskCall } from "@/services/api";
 
 const ToDoAndPMComponent = ({
   todoDetails,
   selectedMember,
   familyDetails,
   PMTaskDetails,
+  dataReload,
 }: {
   todoDetails: ToDoTaskType[];
   familyDetails: FamilyData;
   selectedMember?: number;
   PMTaskDetails: PMData;
+  dataReload: () => void;
 }) => {
   const { t } = useTranslation("common");
   const [isTasksOpen, setIsTasksOpen] = useState(false);
@@ -30,7 +33,7 @@ const ToDoAndPMComponent = ({
 
   const [showEditPocketMoney, setShowEditPocketMoney] = useState(false);
   const [selectedPocketMoney, setSelectedPocketMoney] = useState<PMTask | null>(
-    null
+    null,
   );
 
   useEffect(() => {
@@ -48,7 +51,7 @@ const ToDoAndPMComponent = ({
     if (!familyDetails?.Members) return [];
     return selectedMember
       ? familyDetails.Members.filter(
-          (m) => Number(m.Id) === Number(selectedMember)
+          (m) => Number(m.Id) === Number(selectedMember),
         )
       : familyDetails.Members;
   }, [familyDetails?.Members, selectedMember]);
@@ -78,24 +81,53 @@ const ToDoAndPMComponent = ({
 
   const todosByMember = useMemo(() => {
     const map = new Map<string, ToDoTaskType[]>();
+
     for (const t of todosArr) {
-      const mid = normalizeId(t.AssignedTo);
-      if (!map.has(mid)) map.set(mid, []);
-      map.get(mid)!.push(t);
+      let assignedIds: string[] = [];
+
+      // Use type assertion to handle the unknown type
+      const assignedTo = t.AssignedTo as any;
+
+      if (Array.isArray(assignedTo)) {
+        assignedIds = assignedTo.filter((id: any) => id && String(id).trim());
+      } else if (typeof assignedTo === "string") {
+        const trimmed = assignedTo.trim();
+        if (trimmed) {
+          assignedIds = trimmed
+            .split(",")
+            .map((id) => id.trim())
+            .filter((id) => id);
+        }
+      } else {
+        continue; // Skip if not string or array
+      }
+
+      if (assignedIds.length === 0) {
+        continue;
+      }
+
+      for (const id of assignedIds) {
+        const normalizedId = normalizeId(id);
+        if (!map.has(normalizedId)) map.set(normalizedId, []);
+        map.get(normalizedId)!.push(t);
+      }
     }
+
     return map;
   }, [todosArr]);
 
-  const handleEditTodo = (todoData: any) => {
-    console.log("Edit todo:", todoData);
-    // Add your API call to Edit todo here
-    // Example: createTodoAPI(todoData).then(() => reload());
+  const handleEditTodo = async (todoData: any) => {
+    const response = await updateToDoTaskCall(todoData);
+    if (response) {
+      dataReload();
+    }
   };
 
-  const handleEditPocketMoney = (pocketMoneyData: any) => {
-    console.log("Edit pocket money:", pocketMoneyData);
-    // Add your API call to Edit pocket money here
-    // Example: createPocketMoneyAPI(pocketMoneyData).then(() => reload());
+  const handleEditPocketMoney = async (pocketMoneyData: any) => {
+    const response = await updatePocketMoneyTaskCall([pocketMoneyData]);
+    if (response) {
+      dataReload();
+    }
   };
 
   return (
@@ -117,8 +149,8 @@ const ToDoAndPMComponent = ({
             isSmallScreen
               ? "max-h-[80rem] overflow-auto"
               : isTasksOpen
-              ? "max-h-[80rem]"
-              : "max-h-0 overflow-hidden"
+                ? "max-h-[80rem]"
+                : "max-h-0 overflow-hidden"
           }`}
         >
           {/* Pocket Money Section */}
@@ -127,7 +159,7 @@ const ToDoAndPMComponent = ({
               {(!isSmallScreen ||
                 members.some(
                   (m) =>
-                    (pmTasksByMember.get(memberResourceId(m)) ?? []).length > 0
+                    (pmTasksByMember.get(memberResourceId(m)) ?? []).length > 0,
                 )) && (
                 <div className="flex sm:items-center  justify-between sm:pr-1">
                   <div className="font-semibold break-words w-min sm:w-[55px] rounded-lg p-1 sm:flex sm:items-center sm:justify-center text-xs bg-gradient-to-r from-emerald-400 to-sky-500 text-white text-center [writing-mode:vertical-rl] [transform:rotate(180deg)] sm:[writing-mode:horizontal-tb] sm:[transform:none]">
@@ -191,7 +223,7 @@ const ToDoAndPMComponent = ({
               {(!isSmallScreen ||
                 members.some(
                   (m) =>
-                    (todosByMember.get(memberResourceId(m)) ?? []).length > 0
+                    (todosByMember.get(memberResourceId(m)) ?? []).length > 0,
                 )) && (
                 <div className="flex sm:items-center justify-between sm:pr-1">
                   <div className="font-semibold break-words w-min sm:w-[55px] rounded-lg p-1 sm:flex sm:items-center sm:justify-center text-xs bg-gradient-to-r from-emerald-400 to-sky-500 text-white text-center [writing-mode:vertical-rl] [transform:rotate(180deg)] sm:[writing-mode:horizontal-tb] sm:[transform:none]">
@@ -253,6 +285,7 @@ const ToDoAndPMComponent = ({
       )}
       {selectedTodo && (
         <EditTodoPopup
+          ToDoFamilyGroup={familyDetails.Family.ToDoFamilyGroups}
           isOpen={showEditTodo}
           todo={selectedTodo}
           onClose={() => {

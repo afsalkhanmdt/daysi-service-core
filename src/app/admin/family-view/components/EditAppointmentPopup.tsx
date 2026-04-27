@@ -1,5 +1,5 @@
 import Image from "next/image";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import editAppointmentImage from "@/app/admin/assets/doctor-suitcase-with-a-cross-svgrepo-com 1.png";
 import SpecialEventIcon from "@/app/admin/assets/event-badged-1-svgrepo-com (1) 1.png";
 import { ToggleSwitch } from "./FormComponents/ToggleSwitch";
@@ -9,15 +9,17 @@ import participantsIcon from "@/app/admin/assets/participantsIcon.png";
 import repeatIcon from "@/app/admin/assets/repeatIcon.png";
 import alarmIcon from "@/app/admin/assets/alarmIcon.png";
 import additionalNoteIcon from "@/app/admin/assets/name.png";
+import closeIcon from "@/app/admin/assets/close-428.png";
 import MultipleSelector, {
   SelectableOption,
 } from "./FormComponents/MultipleSelector";
 import { useResources } from "@/app/context/ResourceContext";
 import { mapResourcesToSelectableOptions } from "@/app/utils/resourceAdapters";
 import {
-  AppointmentFormUI,
+  AppointmentUpdateFormUI,
   appointmentPopupPropsType,
   UserEventCreateRequest,
+  UserEventUpdateRequest,
 } from "@/app/types/appoinment";
 import {
   ALERT_OPTIONS,
@@ -37,7 +39,7 @@ const isCoordinateString = (str: string): boolean => {
 };
 
 type EditAppointmentPopupProps = appointmentPopupPropsType & {
-  onSubmit: (data: UserEventCreateRequest) => void;
+  onSubmit: (data: UserEventUpdateRequest) => void;
   initialData?: EventInput;
 };
 
@@ -52,15 +54,9 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
     SelectableOption[]
   >([]);
 
-  // Add loading state for location
-  const [locationLoading, setLocationLoading] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
 
-  console.log("Initial data received:", initialData);
-
-  const [formData, setFormData] = useState<AppointmentFormUI>(() => {
-    // Log what we're initializing with
-    console.log("Initializing form with location:", initialData?.location);
-
+  const [formData, setFormData] = useState<AppointmentUpdateFormUI>(() => {
     return {
       ...initialData,
       startDateOnly: initialData?.startDate
@@ -75,7 +71,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
       endTimeOnly: initialData?.endDate
         ? parseTimestampToTimeOnly(initialData.endDate)
         : "",
-    } as AppointmentFormUI;
+    } as AppointmentUpdateFormUI;
   });
 
   const handleLocationChange = (
@@ -83,18 +79,11 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
     lat?: number,
     lng?: number,
   ) => {
-    console.log(
-      "Location changed to:",
-      location,
-      "with coordinates:",
-      lat,
-      lng,
-    );
     setFormData((prev) => ({
       ...prev,
       location,
-      ...(lat !== undefined && { lat }),
-      ...(lng !== undefined && { lng }),
+      latitude: lat !== undefined ? String(lat) : prev.latitude,
+      longitude: lng !== undefined ? String(lng) : prev.longitude,
     }));
   };
 
@@ -108,7 +97,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
 
   // Generic handler for toggle switches
   const handleToggleChange = (
-    field: keyof AppointmentFormUI,
+    field: keyof AppointmentUpdateFormUI,
     checked: boolean,
   ) => {
     setFormData((prev) => ({
@@ -119,7 +108,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
 
   // Generic handler for single-select MultipleSelector components
   const handleSingleSelectChange = (
-    field: keyof AppointmentFormUI,
+    field: keyof AppointmentUpdateFormUI,
     selectedOptions: SelectableOption[],
   ) => {
     const selectedOption = selectedOptions.find((option) => option.isSelected);
@@ -177,7 +166,6 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
     delete (payload as any).endDateOnly;
     delete (payload as any).endTimeOnly;
 
-    console.log("Submitting payload:", payload);
     onSubmit(payload);
     onClose();
   };
@@ -186,18 +174,28 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
     onClose();
   };
 
+  const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      handleClose();
+    }
+  };
+
+  useEffect(() => {
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && isOpen) {
+        handleClose();
+      }
+    };
+
+    document.addEventListener("keydown", handleEscapeKey);
+    return () => {
+      document.removeEventListener("keydown", handleEscapeKey);
+    };
+  }, [isOpen, handleClose]);
+
   // Initialize form when initialData changes
   useEffect(() => {
     if (initialData && isOpen) {
-      console.log("Setting form data with location:", initialData.location);
-
-      // Check if the location is coordinates
-      if (initialData.location && isCoordinateString(initialData.location)) {
-        console.log(
-          "Location appears to be coordinates, will be reverse geocoded",
-        );
-      }
-
       setFormData({
         ...initialData,
         startDateOnly: initialData.startDate
@@ -212,7 +210,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
         endTimeOnly: initialData.endDate
           ? parseTimestampToTimeOnly(initialData.endDate)
           : "",
-      } as AppointmentFormUI);
+      } as AppointmentUpdateFormUI);
     }
   }, [initialData, isOpen]);
 
@@ -242,232 +240,260 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg w-full max-w-xl mx-4 max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="border-b border-gray-200 bg-blue-200 m-2 px-6 py-4 rounded-lg flex gap-2">
-          <div className="rounded-full bg-white p-2 ">
-            <Image
-              src={editAppointmentImage}
-              alt="editAppointmentImage"
-              width={15}
-              height={15}
-            />
+    <div
+      className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-2"
+      onClick={handleOverlayClick}
+    >
+      <div
+        ref={modalRef}
+        className="bg-white rounded-xl w-full max-w-7xl max-h-[98vh] flex flex-col shadow-2xl relative"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Compact Header */}
+        <div className="flex justify-between items-center px-4 py-2 border-b">
+          <div className="flex items-center gap-2">
+            <div className="bg-blue-100 p-1.5 rounded-lg">
+              <Image
+                src={editAppointmentImage}
+                alt="icon"
+                width={16}
+                height={16}
+              />
+            </div>
+            <h2 className="text-lg font-bold text-gray-800">
+              Edit Appointment
+            </h2>
           </div>
-          <h2 className="text-xl font-semibold">Edit Appointment</h2>
+          <button
+            onClick={handleClose}
+            className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <Image src={closeIcon} alt="Close" width={20} height={20} />
+          </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Special Event Section with Switch */}
-          <div className=" border-gray-200 grid grid-cols-2 gap-4 bg-blue-100 p-2 rounded-md">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="rounded-full bg-gray-100 p-2">
-                  <Image
-                    src={SpecialEventIcon}
-                    alt="SpecialEventIcon"
-                    width={15}
-                    height={15}
+        {/* Scrollable Form Content */}
+        <div className="overflow-y-auto flex-1 p-3 lg:p-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
+            {/* Basic Information & Toggles Combined */}
+            <div className="bg-blue-50/50 p-3 rounded-xl border border-blue-100">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold flex items-center gap-1.5 text-gray-700 uppercase tracking-wider">
+                    <Image src={nameIcon} alt="icon" width={12} height={12} />{" "}
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    name="title"
+                    placeholder="Enter appointment title"
+                    value={formData.title || ""}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm"
+                    required
                   />
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    Special event
-                  </h3>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold flex items-center gap-1.5 text-gray-700 uppercase tracking-wider">
+                    Location
+                  </label>
+                  <LocationInput
+                    key={formData.location}
+                    value={formData?.location || ""}
+                    onChange={handleLocationChange}
+                    placeholder="Search location..."
+                    required
+                  />
+                  {isCoordinateString(formData?.location || "") && (
+                    <p className="text-[10px] text-gray-500 mt-0.5 italic">
+                      Fetching place name...
+                    </p>
+                  )}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <ToggleSwitch
-                  checked={formData.isSpecialEvent === 1}
-                  onChange={(checked) =>
-                    handleToggleChange("isSpecialEvent", checked)
-                  }
-                />
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="rounded-full bg-gray-100 p-2">
-                  <Image
-                    src={SpecialEventIcon}
-                    alt="SpecialEventIcon"
-                    width={15}
-                    height={15}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-gray-100 shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <Image
+                      src={SpecialEventIcon}
+                      alt="icon"
+                      width={12}
+                      height={12}
+                    />
+                    <span className="text-xs font-semibold text-gray-700">
+                      Special Event
+                    </span>
+                  </div>
+                  <ToggleSwitch
+                    checked={formData.isSpecialEvent === 1}
+                    onChange={(checked) =>
+                      handleToggleChange("isSpecialEvent", checked)
+                    }
                   />
                 </div>
-                <label className="block text-sm font-medium">Private</label>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <ToggleSwitch
-                  checked={formData.isPrivateEvent === 1 ? true : false}
-                  onChange={(checked) =>
-                    handleToggleChange("isPrivateEvent", checked)
-                  }
-                />
+                <div className="flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-gray-100 shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <Image
+                      src={SpecialEventIcon}
+                      alt="icon"
+                      width={12}
+                      height={12}
+                    />
+                    <span className="text-xs font-semibold text-gray-700">
+                      Private
+                    </span>
+                  </div>
+                  <ToggleSwitch
+                    checked={formData.isPrivateEvent === 1}
+                    onChange={(checked) =>
+                      handleToggleChange("isPrivateEvent", checked)
+                    }
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Title and Location */}
-          <div className="grid grid-cols-2 gap-4 p-2 bg-blue-100 rounded-md">
-            <div>
-              <div className="flex items-center gap-2 ">
-                <Image src={nameIcon} alt="Name" width={15} height={15} />
-                <label className="block text-lg font-medium ">Name</label>
-              </div>
-              <input
-                type="text"
-                name="title"
-                placeholder="Appointment title"
-                value={formData.title || ""}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 ">
+            {/* Participants */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
                 <Image
-                  src={locationIcon}
-                  alt="Location"
-                  width={15}
-                  height={15}
-                />
-                <label className="block text-lg font-medium">Location</label>
-              </div>
-              <LocationInput
-                key={formData.location} // Add key to force re-render when location changes
-                value={formData?.location || ""}
-                onChange={handleLocationChange}
-                placeholder="Location"
+                  src={participantsIcon}
+                  alt="icon"
+                  width={14}
+                  height={14}
+                />{" "}
+                Choose Participants
+              </label>
+              <MultipleSelector
+                options={responsiblePersons}
+                onSelectionChange={handleResponsiblePersonsChange}
+                subHeading="Select Responsible Persons"
+                showSelectAll={true}
+                showCount={true}
+                showImages={true}
+                selectedBorderColor="blue"
+                selectedBadgeColor="blue"
+                singleSelect={false}
+              />
+            </div>
+
+            {/* Date & Time */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
+                <Image
+                  src={participantsIcon}
+                  alt="icon"
+                  width={14}
+                  height={14}
+                />{" "}
+                Choose Dates & Time
+              </label>
+              <DateTimeRange
+                startDate={formData.startDateOnly}
+                endDate={formData.endDateOnly}
+                startTime={formData.startTimeOnly}
+                endTime={formData.endTimeOnly}
+                onStartDateChange={(v) =>
+                  setFormData((p) => ({ ...p, startDateOnly: v }))
+                }
+                onEndDateChange={(v) =>
+                  setFormData((p) => ({ ...p, endDateOnly: v }))
+                }
+                onStartTimeChange={(v) =>
+                  setFormData((p) => ({ ...p, startTimeOnly: v }))
+                }
+                onEndTimeChange={(v) =>
+                  setFormData((p) => ({ ...p, endTimeOnly: v }))
+                }
+                hideHeading={true}
                 required
               />
-              {/* Add small helper text to show what's happening */}
-              {isCoordinateString(formData?.location || "") && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Fetching place name from coordinates...
-                </p>
-              )}
             </div>
-          </div>
 
-          {/* Participants */}
-          <MultipleSelector
-            titleIconUrl={participantsIcon.src}
-            options={responsiblePersons}
-            onSelectionChange={handleResponsiblePersonsChange}
-            title="Select Responsible Persons"
-            showSelectAll={true}
-            showCount={true}
-            showImages={true}
-            selectedBorderColor="green"
-            selectedBadgeColor="green"
-            singleSelect={false}
-          />
+            {/* Repeat & Alarm Side-by-Side */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
+                  <Image src={repeatIcon} alt="icon" width={14} height={14} />{" "}
+                  Repeat
+                </label>
+                <MultipleSelector
+                  options={REPEAT_OPTIONS.map((o) => ({
+                    ...o,
+                    isSelected: o.id === formData.repeat,
+                  }))}
+                  onSelectionChange={(s) =>
+                    handleSingleSelectChange("repeat", s)
+                  }
+                  showSelectAll={false}
+                  showCount={false}
+                  singleSelect={true}
+                  selectedBorderColor="blue"
+                  selectedBadgeColor="blue"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
+                  <Image src={alarmIcon} alt="icon" width={14} height={14} />{" "}
+                  Alarm
+                </label>
+                <MultipleSelector
+                  options={ALERT_OPTIONS.map((o) => ({
+                    ...o,
+                    isSelected: o.id === formData.alert,
+                  }))}
+                  onSelectionChange={(s) =>
+                    handleSingleSelectChange("alert", s)
+                  }
+                  showSelectAll={false}
+                  showCount={false}
+                  singleSelect={true}
+                  selectedBorderColor="blue"
+                  selectedBadgeColor="blue"
+                />
+              </div>
+            </div>
 
-          {/* Dates and Times using DateTimeRange component */}
-          <DateTimeRange
-            startDate={formData.startDateOnly}
-            endDate={formData.endDateOnly}
-            startTime={formData.startTimeOnly}
-            endTime={formData.endTimeOnly}
-            onStartDateChange={(value) =>
-              setFormData((prev) => ({ ...prev, startDateOnly: value }))
-            }
-            onEndDateChange={(value) =>
-              setFormData((prev) => ({ ...prev, endDateOnly: value }))
-            }
-            onStartTimeChange={(value) =>
-              setFormData((prev) => ({ ...prev, startTimeOnly: value }))
-            }
-            onEndTimeChange={(value) =>
-              setFormData((prev) => ({ ...prev, endTimeOnly: value }))
-            }
-            required
-          />
-
-          {/* Repeat Sequence */}
-          <MultipleSelector
-            titleIconUrl={repeatIcon.src}
-            options={REPEAT_OPTIONS.map((option) => ({
-              ...option,
-              isSelected: option.id === formData.repeat,
-            }))}
-            onSelectionChange={(selected) =>
-              handleSingleSelectChange("repeat", selected)
-            }
-            title="Repeat Sequence"
-            showSelectAll={true}
-            showCount={true}
-            showImages={false}
-            selectedBorderColor="green"
-            selectedBadgeColor="green"
-            singleSelect={true}
-          />
-
-          {/* Alarm */}
-          <MultipleSelector
-            titleIconUrl={alarmIcon.src}
-            options={ALERT_OPTIONS.map((option) => ({
-              ...option,
-              isSelected: option.id === formData.alert,
-            }))}
-            onSelectionChange={(selected) => {
-              handleSingleSelectChange("alert", selected);
-            }}
-            title="Alarm"
-            showSelectAll={true}
-            showCount={true}
-            showImages={false}
-            selectedBorderColor="green"
-            selectedBadgeColor="green"
-            singleSelect={true}
-          />
-
-          {/* Additional Notes */}
-          <div className=" bg-blue-100 p-2 rounded-md">
-            <div className="flex items-center gap-2 ">
-              <Image
-                src={additionalNoteIcon}
-                alt="Notes"
-                width={15}
-                height={15}
-              />
-              <label className="block text-lg font-medium">
+            {/* Notes - Moved to its own row */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
+                <Image
+                  src={additionalNoteIcon}
+                  alt="icon"
+                  width={14}
+                  height={14}
+                />{" "}
                 Additional Notes
               </label>
+              <textarea
+                name="description"
+                onChange={handleInputChange}
+                placeholder="Add any additional details here..."
+                rows={1}
+                className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm min-h-[40px]"
+                value={formData.description || ""}
+              />
             </div>
-            <textarea
-              name="description"
-              onChange={handleInputChange}
-              placeholder="Any additional information..."
-              rows={2}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={formData.description || ""}
-            />
-          </div>
+          </form>
+        </div>
 
-          {/* Buttons */}
-          <div className="border-t border-gray-200 pt-4">
-            <div className="flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={handleClose}
-                className="px-6 py-2 text-gray-600 hover:text-gray-800 font-medium border border-gray-300 rounded-md hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
-              >
-                Update Appointment
-              </button>
-            </div>
-          </div>
-        </form>
+        {/* Footer Actions */}
+        <div className="px-4 py-2.5 border-t bg-gray-50 rounded-b-xl flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={handleClose}
+            className="px-4 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200 bg-white"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={(e) => handleSubmit(e as any)}
+            className="px-5 py-1.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-all active:scale-95"
+          >
+            Update Appointment
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 interface DropdownProps {
   options: { id: string; label: string }[];
   selectedValue: string;
-  onSelect: (value: string) => void;
+  onSelect: (id: string, label: string) => void; // Change to return both
   placeholder?: string;
   iconUrl?: string;
   title?: string;
@@ -98,9 +98,8 @@ const CustomDropdown: React.FC<DropdownProps> = ({
             {options.map((option) => (
               <button
                 key={option.id}
-                type="button"
                 onClick={() => {
-                  onSelect(option.label);
+                  onSelect(option.id, option.label); // Pass both id and label
                   setIsOpen(false);
                 }}
                 className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 ${
