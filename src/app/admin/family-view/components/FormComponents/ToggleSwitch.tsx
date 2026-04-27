@@ -1,7 +1,5 @@
-import { useState } from "react";
-
 export const ToggleSwitch = ({
-  checked,
+  checked = false,
   onChange,
   disabled = false,
 }: {
@@ -9,33 +7,29 @@ export const ToggleSwitch = ({
   onChange?: (checked: boolean) => void;
   disabled?: boolean;
 }) => {
-  const [isChecked, setIsChecked] = useState(checked);
-
   const handleToggle = () => {
     if (disabled) return;
-    const newValue = !isChecked;
-    setIsChecked(newValue);
-    onChange?.(newValue);
+    onChange?.(!checked);
   };
 
   return (
     <button
       type="button"
       role="switch"
-      aria-checked={isChecked}
+      aria-checked={checked}
       disabled={disabled}
       onClick={handleToggle}
       className={`
         relative inline-flex items-center h-4 w-8 rounded-full border-2 border-gray-300
         transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
         ${disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"}
-        ${isChecked ? "bg-blue-600" : "bg-gray-300"}
+        ${checked ? "bg-blue-600" : "bg-gray-300"}
       `}
     >
       <span
         className={`
           inline-block h-3 w-3 transform rounded-full bg-white shadow-lg transition-transform duration-200
-          ${isChecked ? "translate-x-4" : "translate-x-0.5"}
+          ${checked ? "translate-x-4" : "translate-x-0.5"}
         `}
       />
     </button>
