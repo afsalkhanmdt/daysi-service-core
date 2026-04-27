@@ -34,7 +34,10 @@ import ToDoAndPMComponent from "./ToDoAndPMComponent";
 import EditAppointmentPopup from "./EditAppointmentPopup";
 import { EventApi } from "@fullcalendar/core";
 import { useResources } from "@/app/context/ResourceContext";
-import { UserEventCreateRequest } from "@/app/types/appoinment";
+import {
+  UserEventCreateRequest,
+  UserEventUpdateRequest,
+} from "@/app/types/appoinment";
 import { PMData } from "@/app/types/pocketMoney";
 import { ToDoTaskType } from "@/app/types/todo";
 import { updateAppointmentCall } from "@/services/api";
@@ -443,7 +446,7 @@ const CalendarView = ({
   }, []);
 
   const handleEditAppointment = async (
-    appointmentData: UserEventCreateRequest,
+    appointmentData: UserEventUpdateRequest,
   ) => {
     // Create a new object with all the added values
     const updatedAppointmentData = {
@@ -494,9 +497,9 @@ const CalendarView = ({
         setCurrentDate={setCurrentDate}
       />
 
-      <AllDayEventsRow 
-        data={data} 
-        currentDate={currentDate} 
+      <AllDayEventsRow
+        data={data}
+        currentDate={currentDate}
         onEventClick={handleRawEventClick}
       />
 
@@ -615,7 +618,7 @@ const CalendarView = ({
             }}
             onSubmit={handleEditAppointment}
             initialData={
-              selectedRawEvent 
+              selectedRawEvent
                 ? {
                     id: String(selectedRawEvent.Id),
                     title: selectedRawEvent.Title,
@@ -638,37 +641,39 @@ const CalendarView = ({
                     externalCalendarName: selectedRawEvent.ExternalCalendarName,
                   }
                 : selectedAppointment
-                ? {
-                    id: selectedAppointment.id,
-                    title: selectedAppointment.title,
-                    startDate: selectedAppointment.start || undefined,
-                    endDate: selectedAppointment.end || undefined,
-                    description: selectedAppointment.extendedProps.description,
-                    location: selectedAppointment.extendedProps.location,
-                    isAllDayEvent:
-                      selectedAppointment.extendedProps.IsAllDayEvent,
-                    isSpecialEvent:
-                      selectedAppointment.extendedProps.IsSpecialEvent,
-                    isPrivateEvent:
-                      selectedAppointment.extendedProps.IsPrivateEvent,
-                    recurrenceRule: selectedAppointment.extendedProps
-                      .RecurrenceRule || {
-                      frequency: 0,
-                      interval: 1,
-                    },
-                    repeat:
-                      selectedAppointment.extendedProps.Repeat || undefined,
-                    repeatEndDate:
-                      selectedAppointment.extendedProps.RepeatEndDate,
-                    alert: selectedAppointment.extendedProps.Alert || undefined,
-                    alarms:
-                      selectedAppointment.extendedProps.Alarms || undefined,
-                    participants:
-                      selectedAppointment.extendedProps.participants,
-                    externalCalendarName:
-                      selectedAppointment.extendedProps.ExternalCalendarName,
-                  }
-                : undefined
+                  ? {
+                      id: selectedAppointment.id,
+                      title: selectedAppointment.title,
+                      startDate: selectedAppointment.start || undefined,
+                      endDate: selectedAppointment.end || undefined,
+                      description:
+                        selectedAppointment.extendedProps.description,
+                      location: selectedAppointment.extendedProps.location,
+                      isAllDayEvent:
+                        selectedAppointment.extendedProps.IsAllDayEvent,
+                      isSpecialEvent:
+                        selectedAppointment.extendedProps.IsSpecialEvent,
+                      isPrivateEvent:
+                        selectedAppointment.extendedProps.IsPrivateEvent,
+                      recurrenceRule: selectedAppointment.extendedProps
+                        .RecurrenceRule || {
+                        frequency: 0,
+                        interval: 1,
+                      },
+                      repeat:
+                        selectedAppointment.extendedProps.Repeat || undefined,
+                      repeatEndDate:
+                        selectedAppointment.extendedProps.RepeatEndDate,
+                      alert:
+                        selectedAppointment.extendedProps.Alert || undefined,
+                      alarms:
+                        selectedAppointment.extendedProps.Alarms || undefined,
+                      participants:
+                        selectedAppointment.extendedProps.participants,
+                      externalCalendarName:
+                        selectedAppointment.extendedProps.ExternalCalendarName,
+                    }
+                  : undefined
             }
           />
         )}
@@ -680,6 +685,7 @@ const CalendarView = ({
               PMTaskDetails={PMTaskDetails}
               familyDetails={data}
               selectedMember={selectedMember}
+              dataReload={dataReload}
             />
           </div>
         )}
@@ -692,6 +698,7 @@ const CalendarView = ({
             PMTaskDetails={PMTaskDetails}
             familyDetails={data}
             selectedMember={selectedMember}
+            dataReload={dataReload}
           />
         </div>
       )}

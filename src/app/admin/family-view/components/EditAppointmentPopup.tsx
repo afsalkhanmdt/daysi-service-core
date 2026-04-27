@@ -16,9 +16,10 @@ import MultipleSelector, {
 import { useResources } from "@/app/context/ResourceContext";
 import { mapResourcesToSelectableOptions } from "@/app/utils/resourceAdapters";
 import {
-  AppointmentFormUI,
+  AppointmentUpdateFormUI,
   appointmentPopupPropsType,
   UserEventCreateRequest,
+  UserEventUpdateRequest,
 } from "@/app/types/appoinment";
 import {
   ALERT_OPTIONS,
@@ -38,7 +39,7 @@ const isCoordinateString = (str: string): boolean => {
 };
 
 type EditAppointmentPopupProps = appointmentPopupPropsType & {
-  onSubmit: (data: UserEventCreateRequest) => void;
+  onSubmit: (data: UserEventUpdateRequest) => void;
   initialData?: EventInput;
 };
 
@@ -55,7 +56,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
 
   const modalRef = useRef<HTMLDivElement>(null);
 
-  const [formData, setFormData] = useState<AppointmentFormUI>(() => {
+  const [formData, setFormData] = useState<AppointmentUpdateFormUI>(() => {
     return {
       ...initialData,
       startDateOnly: initialData?.startDate
@@ -70,7 +71,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
       endTimeOnly: initialData?.endDate
         ? parseTimestampToTimeOnly(initialData.endDate)
         : "",
-    } as AppointmentFormUI;
+    } as AppointmentUpdateFormUI;
   });
 
   const handleLocationChange = (
@@ -81,8 +82,8 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
     setFormData((prev) => ({
       ...prev,
       location,
-      ...(lat !== undefined && { lat }),
-      ...(lng !== undefined && { lng }),
+      latitude: lat !== undefined ? String(lat) : prev.latitude,
+      longitude: lng !== undefined ? String(lng) : prev.longitude,
     }));
   };
 
@@ -96,7 +97,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
 
   // Generic handler for toggle switches
   const handleToggleChange = (
-    field: keyof AppointmentFormUI,
+    field: keyof AppointmentUpdateFormUI,
     checked: boolean,
   ) => {
     setFormData((prev) => ({
@@ -107,7 +108,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
 
   // Generic handler for single-select MultipleSelector components
   const handleSingleSelectChange = (
-    field: keyof AppointmentFormUI,
+    field: keyof AppointmentUpdateFormUI,
     selectedOptions: SelectableOption[],
   ) => {
     const selectedOption = selectedOptions.find((option) => option.isSelected);
@@ -209,7 +210,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
         endTimeOnly: initialData.endDate
           ? parseTimestampToTimeOnly(initialData.endDate)
           : "",
-      } as AppointmentFormUI);
+      } as AppointmentUpdateFormUI);
     }
   }, [initialData, isOpen]);
 

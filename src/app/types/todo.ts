@@ -1,3 +1,4 @@
+import { ToDoFamilyGroupResponse } from "./familytypes";
 
 
 
@@ -6,6 +7,7 @@ export type todoPopupPropsType = {
   onClose: () => void;
   onSubmit: (data: any) => void;
   todo?: ToDoTaskType
+  ToDoFamilyGroup?:ToDoFamilyGroupResponse[];
 };
 
 export type ToDoTaskType = {
@@ -33,4 +35,24 @@ export type ToDoCreateCommand = {
   note?: string
   private: number
   isForAll?: boolean
+}
+
+export type ToDoEditCommand = {
+  ToDoTaskId:string
+  familyId: number
+  createdBy?: string
+  assignedTo?: string[]
+  toDoGroupId: number
+  description?: string
+  note?: string
+  private: number
+  isForAll?: boolean
+}
+
+export type ToDoFamilyGroup ={
+  ToDoFamilyGroupId: number
+  FamilyId: number
+  GroupName: string
+  Sorting: number
+  Description: string
 }

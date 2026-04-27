@@ -1,7 +1,11 @@
 "use client";
 
-import { ToDoCreateCommand, todoPopupPropsType } from "@/app/types/todo";
-import React, { useEffect, useState, useRef } from "react";
+import {
+  ToDoCreateCommand,
+  ToDoFamilyGroup as ToDoFamilyGroupType,
+  todoPopupPropsType,
+} from "@/app/types/todo";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import Image from "next/image";
 import createTodoImage from "@/app/admin/assets/doctor-suitcase-with-a-cross-svgrepo-com 1.png";
 import closeIcon from "@/app/admin/assets/close-428.png";
@@ -15,13 +19,10 @@ import groupIcon from "@/app/admin/assets/groupIcon.png";
 import CustomDropdown from "./FormComponents/DropDown";
 import { useResources } from "@/app/context/ResourceContext";
 import { mapResourcesToSelectableOptions } from "@/app/utils/resourceAdapters";
-import {
-  groupOptions,
-  initialToDoCreateBody,
-  statusOptions,
-} from "@/app/constants/toDoForm";
+import { initialToDoCreateBody, statusOptions } from "@/app/constants/toDoForm";
 
 const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
+  ToDoFamilyGroup,
   isOpen,
   onClose,
   onSubmit,
@@ -39,7 +40,25 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
   >([]);
   const [status, setStatus] = useState<SelectableOption[]>(statusOptions);
 
-  // Generic handler for text inputs
+  const groupOptions = useMemo(
+    () =>
+      (ToDoFamilyGroup || []).map((item: ToDoFamilyGroupType) => ({
+        id: item.ToDoFamilyGroupId.toString(),
+        label: item.GroupName,
+      })),
+    [ToDoFamilyGroup],
+  );
+
+  const getSelectedGroupLabel = () => {
+    if (!formData.toDoGroupId) return "";
+
+    const selectedGroup = groupOptions.find(
+      (group) => Number(group.id) === formData.toDoGroupId,
+    );
+
+    return selectedGroup?.label || "";
+  };
+
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
@@ -47,22 +66,13 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handler for group selection
-  const handleGroupSelect = (id: string, label: string) => {
+  const handleGroupSelect = (id: string) => {
     setFormData((prev) => ({
       ...prev,
-      toDoGroupId: parseInt(id),
+      toDoGroupId: Number(id),
     }));
   };
-  const getSelectedGroupLabel = () => {
-    if (!formData.toDoGroupId) return "";
-    const selectedGroup = groupOptions.find(
-      (group) => parseInt(group.id) === formData.toDoGroupId,
-    );
-    return selectedGroup?.label || "";
-  };
 
-  // Generic handler for toggle switches
   const handleToggleChange = (
     field: keyof ToDoCreateCommand,
     checked: boolean,
@@ -145,8 +155,8 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
   const resetForm = () => {
     setFormData(initialToDoCreateBody);
     setStatus(statusOptions);
-    setResponsiblePersons(
-      responsiblePersons.map((p) => ({ ...p, isSelected: false })),
+    setResponsiblePersons((prev) =>
+      prev.map((p) => ({ ...p, isSelected: false })),
     );
   };
 

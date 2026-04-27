@@ -8,12 +8,20 @@ export type appointmentPopupPropsType = {
    
 };
 
-export type AppointmentFormUI = UserEventCreateRequest & {
+export type AppointmentCreateFormUI = UserEventCreateRequest & {
   startDateOnly: string;
   startTimeOnly: string;
   endDateOnly: string;
   endTimeOnly: string;
 };
+
+export type AppointmentUpdateFormUI = UserEventUpdateRequest & {
+  startDateOnly: string;
+  startTimeOnly: string;
+  endDateOnly: string;
+  endTimeOnly: string;
+};
+
 
 export enum SpecialEventEnum {
   Birthday = 0,
@@ -69,9 +77,42 @@ export interface RecurrenceRule {
 }
 
 export interface UserEventCreateRequest {
-  // Optional based on your commented code
-  // memberId?: string;
-  id?: string;
+  participants: Participant[];
+  familyUserId?: string;
+  familyId: number;
+  title: string;
+  description?: string;
+  startDate: string;
+  endDate: string;
+  location?: string;
+  specialEvent?: SpecialEventEnum;
+  repeat?: RepeatEnum;
+  repeatEndDate?: string | null;
+  alert?: AlertEnum;
+  alarms?: Alarm[];
+  isForAll: number;
+  isAllDayEvent: number;
+  isSpecialEvent: number;
+  isPrivateEvent: number;
+  eventPerson?: string;
+  addedBy: string;
+  eventsUpdatedOn?: string;
+  localStartDate?: string;
+  localEndDate?: string;
+  timeZone?: string;
+  offSet?: string;
+  locale?: string;
+  parentEventId?: string;
+  eventGuID?: string;
+  externalCalendarId?: number;
+  latitude?: string;
+  longitude?: string;
+  recurrenceRule?: RecurrenceRule;
+  noPush?: boolean;
+}
+
+export interface UserEventUpdateRequest {
+  id: string;
   participants: Participant[];
   familyUserId?: string;
   familyId: number;

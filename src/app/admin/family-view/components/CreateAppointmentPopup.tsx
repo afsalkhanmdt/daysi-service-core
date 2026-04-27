@@ -20,7 +20,7 @@ import DateTimeRange from "./FormComponents/DateTimeRange";
 import { useResources } from "@/app/context/ResourceContext";
 import { mapResourcesToSelectableOptions } from "@/app/utils/resourceAdapters";
 import {
-  AppointmentFormUI,
+  AppointmentCreateFormUI,
   appointmentPopupPropsType,
   UserEventCreateRequest,
 } from "@/app/types/appoinment";
@@ -31,7 +31,7 @@ import {
   REPEAT_OPTIONS,
 } from "@/app/constants/appointmentForm";
 
-const initialFormData: AppointmentFormUI = {
+const initialFormData: AppointmentCreateFormUI = {
   ...initialFormDataForAppointmentApi,
   startDateOnly: "",
   startTimeOnly: "",
@@ -51,7 +51,8 @@ const CreateAppointmentPopup: React.FC<
   >([]);
 
   const modalRef = useRef<HTMLDivElement>(null);
-  const [formData, setFormData] = useState<AppointmentFormUI>(initialFormData);
+  const [formData, setFormData] =
+    useState<AppointmentCreateFormUI>(initialFormData);
 
   /* ==============================
      Generic Handlers
@@ -72,13 +73,13 @@ const CreateAppointmentPopup: React.FC<
     setFormData((prev) => ({
       ...prev,
       location,
-      ...(lat !== undefined && { lat }),
-      ...(lng !== undefined && { lng }),
+      latitude: lat !== undefined ? String(lat) : prev.latitude,
+      longitude: lng !== undefined ? String(lng) : prev.longitude,
     }));
   };
 
   const handleToggleChange = (
-    field: keyof AppointmentFormUI,
+    field: keyof AppointmentCreateFormUI,
     checked: boolean,
   ) => {
     setFormData((prev) => ({
@@ -88,7 +89,7 @@ const CreateAppointmentPopup: React.FC<
   };
 
   const handleSingleSelectChange = (
-    field: keyof AppointmentFormUI,
+    field: keyof AppointmentCreateFormUI,
     selectedOptions: SelectableOption[],
   ) => {
     const selectedOption = selectedOptions.find((option) => option.isSelected);

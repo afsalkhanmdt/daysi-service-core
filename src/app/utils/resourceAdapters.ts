@@ -39,13 +39,24 @@ export const mapPMTaskToCreateCommand = (
 
 export const mapToDoTaskToCreateCommand = (
   task: ToDoTaskType
-): ToDoCreateCommand => ({
-  familyId: task.FamilyId,
-  createdBy: task.CreatedBy,
-  assignedTo: task.AssignedTo ?? [],
-  toDoGroupId: task.ToDoGroupId,
-  description: task.Description ?? "",
-  note: task.Note ?? "",
-  private: task.Private,
-  isForAll: task.IsForAll,
-});
+): ToDoCreateCommand => {
+  let assignedTo: string[] = [];
+  const rawAssignedTo = task.AssignedTo as any;
+
+  if (Array.isArray(rawAssignedTo)) {
+    assignedTo = rawAssignedTo.map(id => String(id));
+  } else if (typeof rawAssignedTo === "string" && rawAssignedTo.trim()) {
+    assignedTo = rawAssignedTo.split(",").map(id => id.trim());
+  }
+
+  return {
+    familyId: task.FamilyId,
+    createdBy: task.CreatedBy,
+    assignedTo: assignedTo,
+    toDoGroupId: task.ToDoGroupId,
+    description: task.Description ?? "",
+    note: task.Note ?? "",
+    private: task.Private,
+    isForAll: task.IsForAll,
+  };
+};
