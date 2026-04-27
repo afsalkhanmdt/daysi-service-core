@@ -10,17 +10,20 @@ import EditPocketMoneyPopup from "./EditPocketMoneyPopup";
 import { PMData, PMTask } from "@/app/types/pocketMoney";
 import EditTodoPopup from "./EditTodoPopup";
 import { ToDoTaskType } from "@/app/types/todo";
+import { updatePocketMoneyTaskCall, updateToDoTaskCall } from "@/services/api";
 
 const ToDoAndPMComponent = ({
   todoDetails,
   selectedMember,
   familyDetails,
   PMTaskDetails,
+  dataReload,
 }: {
   todoDetails: ToDoTaskType[];
   familyDetails: FamilyData;
   selectedMember?: number;
   PMTaskDetails: PMData;
+  dataReload: () => void;
 }) => {
   const { t } = useTranslation("common");
   const [isTasksOpen, setIsTasksOpen] = useState(false);
@@ -113,16 +116,18 @@ const ToDoAndPMComponent = ({
     return map;
   }, [todosArr]);
 
-  const handleEditTodo = (todoData: any) => {
-    console.log("Edit todo:", todoData);
-    // Add your API call to Edit todo here
-    // Example: createTodoAPI(todoData).then(() => reload());
+  const handleEditTodo = async (todoData: any) => {
+    const response = await updateToDoTaskCall(todoData);
+    if (response) {
+      dataReload();
+    }
   };
 
-  const handleEditPocketMoney = (pocketMoneyData: any) => {
-    console.log("Edit pocket money:", pocketMoneyData);
-    // Add your API call to Edit pocket money here
-    // Example: createPocketMoneyAPI(pocketMoneyData).then(() => reload());
+  const handleEditPocketMoney = async (pocketMoneyData: any) => {
+    const response = await updatePocketMoneyTaskCall([pocketMoneyData]);
+    if (response) {
+      dataReload();
+    }
   };
 
   return (
@@ -280,6 +285,7 @@ const ToDoAndPMComponent = ({
       )}
       {selectedTodo && (
         <EditTodoPopup
+          ToDoFamilyGroup={familyDetails.Family.ToDoFamilyGroups}
           isOpen={showEditTodo}
           todo={selectedTodo}
           onClose={() => {

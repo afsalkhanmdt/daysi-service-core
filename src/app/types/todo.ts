@@ -37,6 +37,18 @@ export type ToDoCreateCommand = {
   isForAll?: boolean
 }
 
+export type ToDoEditCommand = {
+  ToDoTaskId:string
+  familyId: number
+  createdBy?: string
+  assignedTo?: string[]
+  toDoGroupId: number
+  description?: string
+  note?: string
+  private: number
+  isForAll?: boolean
+}
+
 export type ToDoFamilyGroup ={
   ToDoFamilyGroupId: number
   FamilyId: number

@@ -1,14 +1,17 @@
 "use client";
 
-import { ToDoCreateCommand, todoPopupPropsType } from "@/app/types/todo";
-import React, { useState, useEffect, useRef } from "react";
+import {
+  ToDoCreateCommand,
+  ToDoFamilyGroup as ToDoFamilyGroupType,
+  todoPopupPropsType,
+} from "@/app/types/todo";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import Image from "next/image";
 import createTodoImage from "@/app/admin/assets/doctor-suitcase-with-a-cross-svgrepo-com 1.png";
 import closeIcon from "@/app/admin/assets/close-428.png";
 import descriptionIcon from "@/app/admin/assets/descriptionIcon.png";
 import participantsIcon from "@/app/admin/assets/participantsIcon.png";
 import groupIcon from "@/app/admin/assets/groupIcon.png";
-import additionalNoteIcon from "@/app/admin/assets/name.png";
 import { ToggleSwitch } from "./FormComponents/ToggleSwitch";
 import MultipleSelector, {
   SelectableOption,
@@ -19,13 +22,10 @@ import {
   mapToDoTaskToCreateCommand,
 } from "@/app/utils/resourceAdapters";
 import { useResources } from "@/app/context/ResourceContext";
-import {
-  groupOptions,
-  initialToDoCreateBody,
-  statusOptions,
-} from "@/app/constants/toDoForm";
+import { initialToDoCreateBody, statusOptions } from "@/app/constants/toDoForm";
 
 const EditTodoPopup: React.FC<todoPopupPropsType> = ({
+  ToDoFamilyGroup,
   isOpen,
   onClose,
   todo,
@@ -37,10 +37,29 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
 
   const { resources } = useResources();
   const modalRef = useRef<HTMLDivElement>(null);
-  const [statuses, setStatuses] = useState<SelectableOption[]>(statusOptions);
+  const [status, setStatus] = useState<SelectableOption[]>(statusOptions);
   const [responsiblePersons, setResponsiblePersons] = useState<
     SelectableOption[]
   >([]);
+
+  const groupOptions = useMemo(
+    () =>
+      (ToDoFamilyGroup || []).map((item: ToDoFamilyGroupType) => ({
+        id: item.ToDoFamilyGroupId.toString(),
+        label: item.GroupName,
+      })),
+    [ToDoFamilyGroup],
+  );
+
+  const getSelectedGroupLabel = () => {
+    if (!formData.toDoGroupId) return "";
+
+    const selectedGroup = groupOptions.find(
+      (group) => Number(group.id) === formData.toDoGroupId,
+    );
+
+    return selectedGroup?.label || "";
+  };
 
   /* ---------- Load family members ---------- */
   useEffect(() => {
@@ -52,7 +71,13 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
     if (!todo || responsiblePersons.length === 0) return;
 
     const mapped = mapToDoTaskToCreateCommand(todo);
-    setFormData(mapped);
+    // Add statusId if it exists in the original task structure or map from status
+    const currentMapped = {
+      ...mapped,
+      status: todo.Status,
+      ToDoTaskId: String(todo.ToDoTaskId),
+    };
+    setFormData(currentMapped as any);
 
     setResponsiblePersons((prev) =>
       prev.map((person) => ({
@@ -61,14 +86,10 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
       })),
     );
 
-    const isClosed = todo.Status === 1 || todo.Status === 2;
-
-    setStatuses((prev) =>
+    setStatus((prev) =>
       prev.map((option) => ({
         ...option,
-        isSelected: isClosed
-          ? option.label === "Close"
-          : option.label === "Open",
+        isSelected: option.id === todo.Status,
       })),
     );
   }, [todo, responsiblePersons.length]);
@@ -82,10 +103,10 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleGroupSelect = (value: string) => {
+  const handleGroupSelect = (id: string) => {
     setFormData((prev) => ({
       ...prev,
-      toDoGroupId: Number(value),
+      toDoGroupId: Number(id),
     }));
   };
 
@@ -97,6 +118,25 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
       ...prev,
       [field]: checked ? 1 : 0,
     }));
+  };
+
+  const handleStatusChange = (selectedOptions: SelectableOption[]) => {
+    setStatus((prev) =>
+      prev.map((option) => ({
+        ...option,
+        isSelected: selectedOptions.some(
+          (selected) => selected.id === option.id,
+        ),
+      })),
+    );
+
+    const selectedOption = selectedOptions.find((opt) => opt.isSelected);
+    if (selectedOption) {
+      setFormData((prev) => ({
+        ...prev,
+        status: selectedOption.id,
+      }));
+    }
   };
 
   const handleResponsiblePersonsChange = (
@@ -111,7 +151,7 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
 
     setFormData((prev) => ({
       ...prev,
-      assignedTo: selectedPersons.map((p) => String(p.id)),
+      assignedTo: selectedPersons.map((person) => person.memberId!),
     }));
   };
 
@@ -158,7 +198,7 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
             <div className="bg-blue-100 p-1.5 rounded-lg">
               <Image src={createTodoImage} alt="icon" width={16} height={16} />
             </div>
-            <h2 className="text-lg font-bold text-gray-800">Edit ToDo</h2>
+            <h2 className="text-lg font-bold text-gray-800">Edit ToDo Task</h2>
           </div>
           <button
             onClick={onClose}
@@ -224,7 +264,7 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
                   </label>
                   <CustomDropdown
                     options={groupOptions}
-                    selectedValue={String(formData.toDoGroupId)}
+                    selectedValue={getSelectedGroupLabel()}
                     onSelect={handleGroupSelect}
                     placeholder="Select a group"
                     iconUrl={groupIcon.src}
@@ -247,7 +287,7 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
               <MultipleSelector
                 options={responsiblePersons}
                 onSelectionChange={handleResponsiblePersonsChange}
-                subHeading="Select Responsible Persons"
+                subHeading="Select who should complete this task"
                 showSelectAll={true}
                 showCount={true}
                 showImages={true}
@@ -269,15 +309,8 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
                 Status
               </label>
               <MultipleSelector
-                options={statuses}
-                onSelectionChange={(selected) =>
-                  setStatuses((prev) =>
-                    prev.map((s) => ({
-                      ...s,
-                      isSelected: selected.some((sel) => sel.id === s.id),
-                    })),
-                  )
-                }
+                options={status}
+                onSelectionChange={handleStatusChange}
                 subHeading="Select task status"
                 showSelectAll={false}
                 showCount={true}
