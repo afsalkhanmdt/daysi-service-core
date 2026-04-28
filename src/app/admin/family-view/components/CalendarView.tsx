@@ -635,7 +635,7 @@ const CalendarView = ({
             initialData={
               selectedRawEvent
                 ? {
-                    id: String(selectedRawEvent.Id),
+                    id: String(selectedRawEvent.extendedProps.Id),
                     title: selectedRawEvent.Title,
                     startDate: new Date(Number(selectedRawEvent.Start)),
                     endDate: new Date(Number(selectedRawEvent.End)),
@@ -657,7 +657,7 @@ const CalendarView = ({
                   }
                 : selectedAppointment
                   ? {
-                      id: selectedAppointment.id,
+                      id: selectedAppointment.extendedProps.Id,
                       title: selectedAppointment.title,
                       startDate: selectedAppointment.start || undefined,
                       endDate: selectedAppointment.end || undefined,
