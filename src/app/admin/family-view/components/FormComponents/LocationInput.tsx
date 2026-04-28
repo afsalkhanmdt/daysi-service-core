@@ -53,6 +53,7 @@ const LocationInput: React.FC<LocationInputProps> = ({
   const [showSuggestionsDropdown, setShowSuggestionsDropdown] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [displayValue, setDisplayValue] = useState(value);
+  const [shouldSearch, setShouldSearch] = useState(false);
 
   // Use ref to track if we've already attempted reverse geocoding for initial value
   const initialGeocodeAttempted = useRef(false);
@@ -85,6 +86,7 @@ const LocationInput: React.FC<LocationInputProps> = ({
         }
 
         setDisplayValue(placeName);
+        setShouldSearch(false);
         onChange(placeName, lat, lng);
       } catch (error) {
         console.error("Reverse geocoding failed:", error);
@@ -117,13 +119,17 @@ const LocationInput: React.FC<LocationInputProps> = ({
     } else if (!coordinates) {
       // If it's not coordinates, just use the value as is
       setDisplayValue(value);
+      setShouldSearch(false);
     }
   }, [value, reverseGeocodeCoordinates]);
 
   // Debounced location search
   useEffect(() => {
-    if (!showSuggestions || !displayValue || displayValue.length < 3) {
-      setSuggestions([]);
+    if (!showSuggestions || !displayValue || displayValue.length < 3 || !shouldSearch) {
+      if (!shouldSearch) {
+        setSuggestions([]);
+        setShowSuggestionsDropdown(false);
+      }
       return;
     }
 
@@ -146,7 +152,7 @@ const LocationInput: React.FC<LocationInputProps> = ({
     }, debounceMs);
 
     return () => clearTimeout(searchTimeout);
-  }, [displayValue, debounceMs, showSuggestions]);
+  }, [displayValue, debounceMs, showSuggestions, shouldSearch]);
 
   const handleGetCurrentLocation = useCallback(async () => {
     if (!navigator.geolocation) {
@@ -180,12 +186,14 @@ const LocationInput: React.FC<LocationInputProps> = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setDisplayValue(newValue);
+    setShouldSearch(true);
     // Reset the initial geocode flag when user starts typing
     initialGeocodeAttempted.current = false;
   };
 
   const handleSuggestionSelect = (suggestion: LocationSuggestion) => {
     setDisplayValue(suggestion.display_name);
+    setShouldSearch(false);
     onChange(
       suggestion.display_name,
       parseFloat(suggestion.lat),
