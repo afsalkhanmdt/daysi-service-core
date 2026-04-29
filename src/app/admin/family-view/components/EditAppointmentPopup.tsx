@@ -466,22 +466,20 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
             </div>
 
             {/* Repeat End Date - Only show if repeat is not Never */}
-            {formData.repeat !== 0 && (
-              <div className="space-y-1">
-                <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
-                  Repeat End Date
-                </label>
-                <div className="bg-blue-100/50 p-2 rounded-lg">
-                  <input
-                    type="date"
-                    name="repeatEndDate"
-                    value={parseDateToForm(formData.repeatEndDate)}
-                    onChange={handleInputChange}
-                    className="w-full px-2 py-1 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                  />
-                </div>
+            {/* <div className="space-y-1">
+              <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
+                Repeat End Date
+              </label>
+              <div className="bg-blue-100/50 p-2 rounded-lg">
+                <input
+                  type="date"
+                  name="repeatEndDate"
+                  value={parseDateToForm(formData.repeatEndDate)}
+                  onChange={handleInputChange}
+                  className="w-full px-2 py-1 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                />
               </div>
-            )}
+            </div> */}
 
             {/* Notes - Moved to its own row */}
             <div className="space-y-1">
