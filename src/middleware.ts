@@ -19,7 +19,12 @@ const allowlist = [
     '/token',
     '/admin/login',
     '/admin/family-view',
-    '/api/calendar-proxy'
+    '/api/calendar-proxy',
+    '/subscription',
+    '/subscription/success',
+    '/subscription/cancel',
+    '/api/subscription/checkout',
+    '/api/subscription/webhook'
 ];
 
 export async function middleware(request: NextRequest) {

@@ -31,6 +31,7 @@ import { PMTaskCreateCommand } from "@/app/types/pocketMoney";
 import { createAppointmentCall, createToDoTaskCall } from "@/services/api";
 import { createPocketMoneyTaskCall } from "@/services/api";
 import { ToDoCreateCommand } from "@/app/types/todo";
+import FreemiumModal from "@/components/Modals/FreemiumModal";
 
 export type FamilyData = {
   Family: FamilyResponse;
@@ -47,9 +48,11 @@ const FamilyViewWrapper = ({
   familyId: string;
   userId?: string;
 }) => {
-  const { data: apiData, reload } = useFetch<FamilyData>(
-    `Families/GetAllFamilies?familyId=${familyId}`,
-  );
+  const {
+    data: apiData,
+    reload,
+    loading,
+  } = useFetch<FamilyData>(`Families/GetAllFamilies?familyId=${familyId}`);
 
   const [familyDetails, setFamilyDetails] = useState<FamilyData | null>(null);
   const [isLangReady, setIsLangReady] = useState(false);
@@ -58,8 +61,22 @@ const FamilyViewWrapper = ({
   const [showCreateTodo, setShowCreateTodo] = useState(false);
   const [showCreateAppointment, setShowCreateAppointment] = useState(false);
   const [showCreatePocketMoney, setShowCreatePocketMoney] = useState(false);
+  const [showFreemiumModal, setShowFreemiumModal] = useState(false);
+  const [isActionLoading, setIsActionLoading] = useState(false);
 
   const { t } = useTranslation("common");
+
+  const checkSubscription = (callback: () => void) => {
+    // Development bypass: Always allow actions
+    callback();
+    /* 
+    if (familyDetails?.Family.SubscriptionType !== "Premium") {
+      setShowFreemiumModal(true);
+    } else {
+      callback();
+    }
+    */
+  };
 
   useEffect(() => {
     const cached = localStorage.getItem(STORAGE_KEY);
@@ -100,6 +117,7 @@ const FamilyViewWrapper = ({
 
   // Handler functions for creating new items
   const handleCreateTodo = async (todoData: ToDoCreateCommand) => {
+    setIsActionLoading(true);
     const updatedTodoData: ToDoCreateCommand = {
       ...todoData,
       familyId: Number(familyId),
@@ -114,13 +132,19 @@ const FamilyViewWrapper = ({
     // call your API
     const response = await createToDoTaskCall(updatedTodoData);
 
-    // optionally refresh data
-    reload();
+    if (response) {
+      // optionally refresh data
+      await reload();
+      // If we want to shift to "today" or a specific date, we can do it here
+      // For now, let's just ensure reload is awaited
+    }
+    setIsActionLoading(false);
   };
 
   const handleCreateAppointment = async (
     appointmentData: UserEventCreateRequest,
   ) => {
+    setIsActionLoading(true);
     // Create a new object with all the added values
     const updatedAppointmentData = {
       ...appointmentData,
@@ -149,16 +173,18 @@ const FamilyViewWrapper = ({
     const response = await createAppointmentCall(updatedAppointmentData);
 
     if (response) {
-      reload();
+      await reload();
       if (updatedAppointmentData.startDate) {
         setCurrentDate(new Date(updatedAppointmentData.startDate));
       }
     }
+    setIsActionLoading(false);
   };
 
   const handleCreatePocketMoney = async (
     pocketMoneyData: PMTaskCreateCommand,
   ) => {
+    setIsActionLoading(true);
     const updatedPocketMoneyData = {
       ...pocketMoneyData,
       FamilyId: Number(familyId),
@@ -178,11 +204,12 @@ const FamilyViewWrapper = ({
     const response = await createPocketMoneyTaskCall([updatedPocketMoneyData]);
 
     if (response) {
-      reload();
+      await reload();
       if (updatedPocketMoneyData.ActivityDate) {
         setCurrentDate(new Date(updatedPocketMoneyData.ActivityDate));
       }
     }
+    setIsActionLoading(false);
   };
 
   if (!familyDetails || !isLangReady) {
@@ -296,9 +323,13 @@ const FamilyViewWrapper = ({
         {/* Updated ToggleThemeAndLogout with create functionality */}
         <ToggleThemeAndLogout
           reload={reload}
-          onNewAppointment={() => setShowCreateAppointment(true)}
-          onNewToDo={() => setShowCreateTodo(true)}
-          onNewPocketMoney={() => setShowCreatePocketMoney(true)}
+          onNewAppointment={() =>
+            checkSubscription(() => setShowCreateAppointment(true))
+          }
+          onNewToDo={() => checkSubscription(() => setShowCreateTodo(true))}
+          onNewPocketMoney={() =>
+            checkSubscription(() => setShowCreatePocketMoney(true))
+          }
         />
       </div>
 
@@ -315,9 +346,13 @@ const FamilyViewWrapper = ({
         {/* Mobile version with create functionality */}
         <ToggleThemeAndLogout
           reload={reload}
-          onNewAppointment={() => setShowCreateAppointment(true)}
-          onNewToDo={() => setShowCreateTodo(true)}
-          onNewPocketMoney={() => setShowCreatePocketMoney(true)}
+          onNewAppointment={() =>
+            checkSubscription(() => setShowCreateAppointment(true))
+          }
+          onNewToDo={() => checkSubscription(() => setShowCreateTodo(true))}
+          onNewPocketMoney={() =>
+            checkSubscription(() => setShowCreatePocketMoney(true))
+          }
         />
       </div>
 
@@ -327,6 +362,8 @@ const FamilyViewWrapper = ({
           currentDate={currentDate}
           setCurrentDate={setCurrentDate}
           dataReload={reload}
+          onFreemium={() => setShowFreemiumModal(true)}
+          isLoading={isActionLoading}
         />
       </div>
 
@@ -349,6 +386,11 @@ const FamilyViewWrapper = ({
         isOpen={showCreatePocketMoney}
         onClose={() => setShowCreatePocketMoney(false)}
         onSubmit={handleCreatePocketMoney}
+      />
+
+      <FreemiumModal
+        isOpen={showFreemiumModal}
+        onClose={() => setShowFreemiumModal(false)}
       />
     </div>
   );

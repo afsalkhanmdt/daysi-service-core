@@ -18,12 +18,18 @@ const ToDoAndPMComponent = ({
   familyDetails,
   PMTaskDetails,
   dataReload,
+  onFreemium,
+  setCurrentDate,
+  setIsLoading,
 }: {
   todoDetails: ToDoTaskType[];
   familyDetails: FamilyData;
   selectedMember?: number;
   PMTaskDetails: PMData;
   dataReload: () => void;
+  onFreemium: () => void;
+  setCurrentDate: (date: Date) => void;
+  setIsLoading?: (loading: boolean) => void;
 }) => {
   const { t } = useTranslation("common");
   const [isTasksOpen, setIsTasksOpen] = useState(false);
@@ -35,6 +41,18 @@ const ToDoAndPMComponent = ({
   const [selectedPocketMoney, setSelectedPocketMoney] = useState<PMTask | null>(
     null,
   );
+
+  const checkSubscription = (callback: () => void) => {
+    // Development bypass: Always allow actions
+    callback();
+    /*
+    if (familyDetails?.Family.SubscriptionType !== "Premium") {
+      onFreemium();
+    } else {
+      callback();
+    }
+    */
+  };
 
   useEffect(() => {
     const checkScreenSize = () => setIsSmallScreen(window.innerWidth < 640);
@@ -117,16 +135,32 @@ const ToDoAndPMComponent = ({
   }, [todosArr]);
 
   const handleEditTodo = async (todoData: any) => {
-    const response = await updateToDoTaskCall(todoData);
-    if (response) {
-      dataReload();
+    setIsLoading?.(true);
+    try {
+      const response = await updateToDoTaskCall(todoData);
+      if (response) {
+        await dataReload();
+        if (todoData.StartDate) {
+          setCurrentDate(new Date(todoData.StartDate));
+        }
+      }
+    } finally {
+      setIsLoading?.(false);
     }
   };
 
   const handleEditPocketMoney = async (pocketMoneyData: any) => {
-    const response = await updatePocketMoneyTaskCall([pocketMoneyData]);
-    if (response) {
-      dataReload();
+    setIsLoading?.(true);
+    try {
+      const response = await updatePocketMoneyTaskCall([pocketMoneyData]);
+      if (response) {
+        await dataReload();
+        if (pocketMoneyData.ActivityDate) {
+          setCurrentDate(new Date(pocketMoneyData.ActivityDate));
+        }
+      }
+    } finally {
+      setIsLoading?.(false);
     }
   };
 
@@ -196,8 +230,10 @@ const ToDoAndPMComponent = ({
                                   key={`${pm.PMTransId}-${rid}`}
                                   className="w-full my-auto sm:my-0"
                                   onClick={() => {
-                                    setSelectedPocketMoney(pm);
-                                    setShowEditPocketMoney(true);
+                                    checkSubscription(() => {
+                                      setSelectedPocketMoney(pm);
+                                      setShowEditPocketMoney(true);
+                                    });
                                   }}
                                 >
                                   <PocketMoneyEventUi
@@ -261,8 +297,10 @@ const ToDoAndPMComponent = ({
                                   key={`${todo.ToDoTaskId}-${rid}`}
                                   className="w-full my-auto sm:my-0"
                                   onClick={() => {
-                                    setSelectedTodo(todo);
-                                    setShowEditTodo(true);
+                                    checkSubscription(() => {
+                                      setSelectedTodo(todo);
+                                      setShowEditTodo(true);
+                                    });
                                   }}
                                 >
                                   <TodoEventUi

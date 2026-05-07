@@ -56,11 +56,15 @@ const CalendarView = ({
   currentDate,
   setCurrentDate,
   dataReload,
+  onFreemium,
+  isLoading,
 }: {
   data: FamilyData;
   currentDate: Date;
   setCurrentDate: Dispatch<SetStateAction<Date>>;
   dataReload: () => void;
+  onFreemium: () => void;
+  isLoading?: boolean;
 }) => {
   const { resources, setMembers } = useResources();
 
@@ -81,6 +85,19 @@ const CalendarView = ({
   const [selectedAppointment, setSelectedAppointment] =
     useState<EventApi | null>(null);
   const [selectedRawEvent, setSelectedRawEvent] = useState<any>(null);
+  const [localActionLoading, setLocalActionLoading] = useState(false);
+
+  const checkSubscription = (callback: () => void) => {
+    // Development bypass: Always allow actions
+    callback();
+    /*
+    if (data?.Family.SubscriptionType !== "Premium") {
+      onFreemium();
+    } else {
+      callback();
+    }
+    */
+  };
 
   useEffect(() => {
     if (selectedRawEvent) {
@@ -104,10 +121,15 @@ const CalendarView = ({
     `ToDo/GetToDos?familyId=${familyId}`,
   );
 
-  const handleRawEventClick = useCallback((event: any) => {
-    setSelectedRawEvent(event);
-    setShowEditAppointment(true);
-  }, []);
+  const handleRawEventClick = useCallback(
+    (event: any) => {
+      checkSubscription(() => {
+        setSelectedRawEvent(event);
+        setShowEditAppointment(true);
+      });
+    },
+    [data?.Family.SubscriptionType, onFreemium],
+  );
 
   const imageUrls = useMemo(
     () =>
@@ -270,149 +292,110 @@ const CalendarView = ({
     return allEvents;
   }, [data.Members]);
 
-  // Function to find the earliest event time for the current day
-  const findEarliestEventTime = useCallback(() => {
-    if (!events.length) return null;
+  // Function to determine exactly which time and resource to scroll to
+  const getScrollTarget = useCallback(() => {
+    // 1. If currentDate has a specific time (not midnight), focus that time
+    const hasSpecificTime =
+      currentDate.getHours() !== 0 || currentDate.getMinutes() !== 0;
 
+    if (hasSpecificTime) {
+      // Find the resource associated with this time if possible
+      // We look for an event that starts at this exact time
+      const targetEvent = events.find((ev) => {
+        const evStart = new Date(ev.start as string);
+        return (
+          evStart.toDateString() === currentDate.toDateString() &&
+          evStart.getHours() === currentDate.getHours() &&
+          evStart.getMinutes() === currentDate.getMinutes()
+        );
+      });
+
+      return {
+        time: currentDate,
+        resourceId: targetEvent?.resourceId || null,
+      };
+    }
+
+    // 2. If it's midnight, find the earliest event on this day
     const currentDateString = currentDate.toDateString();
     const todaysEvents = events.filter((event) => {
       const eventDate = new Date(event.start as string);
       return eventDate.toDateString() === currentDateString;
     });
 
-    if (!todaysEvents.length) return null;
+    if (todaysEvents.length > 0) {
+      let earliestEvent = todaysEvents[0];
+      let earliestTime = new Date(earliestEvent.start as string);
 
-    let earliestTime = new Date(todaysEvents[0].start as string);
+      todaysEvents.forEach((event) => {
+        const eventTime = new Date(event.start as string);
+        if (eventTime < earliestTime) {
+          earliestTime = eventTime;
+          earliestEvent = event;
+        }
+      });
 
-    todaysEvents.forEach((event) => {
-      const eventTime = new Date(event.start as string);
-      if (eventTime < earliestTime) {
-        earliestTime = eventTime;
-      }
-    });
+      return {
+        time: earliestTime,
+        resourceId: earliestEvent.resourceId || null,
+      };
+    }
 
-    return earliestTime;
+    // 3. Default: Scroll to 08:00 if no events
+    const defaultTime = new Date(currentDate);
+    defaultTime.setHours(8, 0, 0, 0);
+    return { time: defaultTime, resourceId: null };
   }, [events, currentDate]);
 
-  // Function to scroll to the earliest event - FIXED VERSION
-  const scrollToEarliestEvent = useCallback(() => {
-    const earliestEventTime = findEarliestEventTime();
-    if (!earliestEventTime || !calendarRef.current?.getApi) return;
-
-    const calendarApi = calendarRef.current.getApi();
-
-    // Get the actual slot elements to measure real height
-    const slotLanes = calendarContainerRef.current?.querySelectorAll(
-      ".fc-timegrid-slots table tr",
-    );
-
-    if (!slotLanes || slotLanes.length === 0) {
-      console.warn("No slot lanes found");
-      return;
-    }
-
-    // Calculate position based on actual slot configuration
-    const slotDurationHours = 4; // Your slotDuration is 4 hours
-    const slotDurationMinutes = slotDurationHours * 60;
-    const slotHeight = 120; // Your CSS slot height
-
-    const eventHours = earliestEventTime.getHours();
-    const eventMinutes = earliestEventTime.getMinutes();
-    const totalMinutesFromMidnight = eventHours * 60 + eventMinutes;
-
-    // Calculate which slot the event falls into
-    const slotIndex = Math.floor(
-      totalMinutesFromMidnight / slotDurationMinutes,
-    );
-
-    // Calculate position within the slot (if needed for more precision)
-    const minutesIntoSlot = totalMinutesFromMidnight % slotDurationMinutes;
-    const positionInSlot = (minutesIntoSlot / slotDurationMinutes) * slotHeight;
-
-    // Total scroll position
-    const scrollPosition = slotIndex * slotHeight + positionInSlot;
-
-    // Get the scrollable container
-    const scrollContainer = calendarContainerRef.current?.querySelector(
-      ".fc-timegrid-body",
-    ) as HTMLElement;
-    if (scrollContainer) {
-      // Scroll to the calculated position with small offset
-      scrollContainer.scrollTo({
-        top: Math.max(0, scrollPosition - 80), // Reduced offset for better visibility
-        behavior: "smooth",
-      });
-    }
-  }, [findEarliestEventTime]);
-
-  // Alternative approach: Use FullCalendar's built-in scrolling
-  const scrollToEarliestEventAlternative = useCallback(() => {
-    const earliestEventTime = findEarliestEventTime();
-    if (!earliestEventTime || !calendarRef.current?.getApi) return;
+  // Robust unified scrolling function
+  const executeScroll = useCallback(() => {
+    const target = getScrollTarget();
+    if (!calendarRef.current?.getApi) return;
 
     const calendarApi = calendarRef.current.getApi();
 
     try {
-      // Vertical scroll using FullCalendar API
+      // 1. Vertical Scroll
       calendarApi.scrollToTime({
-        hours: earliestEventTime.getHours(),
-        minutes: earliestEventTime.getMinutes(),
+        hours: target.time.getHours(),
+        minutes: target.time.getMinutes(),
+        seconds: 0,
       });
 
-      // Also scroll horizontally to the resource column
-      const earliestEvent = events.find((ev) => {
-        return (
-          new Date(ev.start as string).toDateString() ===
-            currentDate.toDateString() &&
-          new Date(ev.start as string).getTime() === earliestEventTime.getTime()
-        );
-      });
-
-      if (earliestEvent) {
+      // 2. Horizontal Scroll (Resource Column)
+      if (target.resourceId) {
         const resourceEl = calendarContainerRef.current?.querySelector(
-          `.fc-timegrid-col[data-resource-id="${earliestEvent.resourceId}"]`,
+          `.fc-timegrid-col[data-resource-id="${target.resourceId}"]`,
         ) as HTMLElement;
 
         if (resourceEl) {
           resourceEl.scrollIntoView({
             behavior: "smooth",
             block: "nearest",
-            inline: "center", // horizontally center that resource column
+            inline: "center",
           });
         }
       }
     } catch (error) {
-      console.warn(
-        "FullCalendar scrollToTime failed, using manual method:",
-        error,
-      );
-      scrollToEarliestEvent(); // fallback vertical
+      console.warn("Unified scroll failed:", error);
     }
-  }, [findEarliestEventTime, scrollToEarliestEvent, events, currentDate]);
+  }, [getScrollTarget]);
 
-  // Effect to handle date changes and scroll to earliest event
+  // Combined effect for navigation and scrolling
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (calendarRef.current?.getApi) {
-        const api = calendarRef.current.getApi();
-        api.gotoDate(currentDate);
+    if (!calendarRef.current?.getApi) return;
+    const api = calendarRef.current.getApi();
 
-        // Scroll to earliest event only when date actually changes
-        if (
-          previousDateRef.current.toDateString() !== currentDate.toDateString()
-        ) {
-          // Increased delay to ensure calendar has fully rendered
-          setTimeout(() => {
-            scrollToEarliestEventAlternative();
-          }, 300);
-        }
+    // 1. Navigate to the correct date
+    api.gotoDate(currentDate);
 
-        previousDateRef.current = currentDate;
-      }
-    }, 0);
+    // 2. Trigger scroll with a slight delay to allow rendering
+    const scrollTimeout = setTimeout(() => {
+      executeScroll();
+    }, 250); // Increased delay slightly for better reliability after reload
 
-    return () => clearTimeout(timeout);
-  }, [currentDate, scrollToEarliestEventAlternative]);
+    return () => clearTimeout(scrollTimeout);
+  }, [currentDate, executeScroll, data]); // Added data dependency to re-scroll after reload
 
   // Debug effect to log slot information
   useEffect(() => {
@@ -463,6 +446,7 @@ const CalendarView = ({
   const handleEditAppointment = async (
     appointmentData: UserEventUpdateRequest,
   ) => {
+    setLocalActionLoading(true);
     // Create a new object with all the added values
     const updatedAppointmentData = {
       ...appointmentData,
@@ -488,13 +472,17 @@ const CalendarView = ({
       noPush: appointmentData.noPush || false,
     };
 
-    const response = await updateAppointmentCall(updatedAppointmentData);
-    if (response.ok) {
-      dataReload();
+    try {
+      const response = await updateAppointmentCall(updatedAppointmentData);
+      if (response.ok) {
+        await dataReload();
+        if (updatedAppointmentData.startDate) {
+          setCurrentDate(new Date(updatedAppointmentData.startDate));
+        }
+      }
+    } finally {
+      setLocalActionLoading(false);
     }
-
-    // Now call your API with the updated data
-    // Example: createAppointmentAPI(updatedAppointmentData).then(() => reload());
   };
 
   useEffect(() => {
@@ -503,13 +491,36 @@ const CalendarView = ({
     }
   }, [data.Members, setMembers]);
 
+  const combinedLoading = isLoading || localActionLoading;
+
   return (
-    <div className="sm:p-2.5 bg-slate-100 flex flex-col sm:h-full sm:rounded-xl">
+    <div className="sm:p-2.5 bg-slate-100 flex flex-col sm:h-full sm:rounded-xl relative">
+      {combinedLoading && (
+        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-white/70 backdrop-blur-[3px] rounded-xl transition-all duration-300 animate-in fade-in">
+          <div className="flex flex-col items-center gap-4 text-center p-6 bg-white rounded-2xl shadow-xl border border-gray-100">
+            <div className="relative">
+              <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <p className="text-base font-bold text-gray-800">
+                {t("Updating Calendar...")}
+              </p>
+              <p className="text-xs text-gray-500 font-medium">
+                {t("Please wait a moment")}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       <DateScrollAndDisplay
         familyName={data.Family.Name}
         calendarRef={calendarRef}
         currentDate={currentDate}
         setCurrentDate={setCurrentDate}
+        isPremium={true}
       />
 
       <AllDayEventsRow
@@ -605,8 +616,10 @@ const CalendarView = ({
             return (
               <div
                 onClick={() => {
-                  setSelectedAppointment(eventInfo.event);
-                  setShowEditAppointment(true);
+                  checkSubscription(() => {
+                    setSelectedAppointment(eventInfo.event);
+                    setShowEditAppointment(true);
+                  });
                 }}
                 className={`h-full border-t-4 rounded-xl border-sky-500 ${
                   eventInfo.event.extendedProps.ExternalCalendarName
@@ -701,6 +714,9 @@ const CalendarView = ({
               familyDetails={data}
               selectedMember={selectedMember}
               dataReload={dataReload}
+              onFreemium={onFreemium}
+              setCurrentDate={setCurrentDate}
+              setIsLoading={setLocalActionLoading}
             />
           </div>
         )}
@@ -714,6 +730,9 @@ const CalendarView = ({
             familyDetails={data}
             selectedMember={selectedMember}
             dataReload={dataReload}
+            onFreemium={onFreemium}
+            setCurrentDate={setCurrentDate}
+            setIsLoading={setLocalActionLoading}
           />
         </div>
       )}
