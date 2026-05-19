@@ -67,15 +67,11 @@ const FamilyViewWrapper = ({
   const { t } = useTranslation("common");
 
   const checkSubscription = (callback: () => void) => {
-    // Development bypass: Always allow actions
-    callback();
-    /* 
     if (familyDetails?.Family.SubscriptionType !== "Premium") {
       setShowFreemiumModal(true);
     } else {
       callback();
     }
-    */
   };
 
   useEffect(() => {

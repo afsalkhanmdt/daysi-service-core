@@ -1,31 +1,61 @@
-import { Schema, model, models, Document, Model } from 'mongoose';
+import { Schema, model, models, Document, Model } from "mongoose";
 
-export interface ISubscriptionDetails extends Document {
-  familyId: number;
-  userId: string;
-  subscriptionMonths: number;
-  stripeSessionId: string;
-  amount: number;
-  currency: string;
-  status: string;
-  createdAt: Date;
-  updatedAt: Date;
+export enum OSType {
+  IOS = 0,
+  Android = 1,
+  Web = 2,
 }
 
-const SubscriptionDetailsSchema = new Schema<ISubscriptionDetails>(
-  {
-    familyId: { type: Number, required: true },
-    userId: { type: String, required: true },
-    subscriptionMonths: { type: Number, required: true },
-    stripeSessionId: { type: String, required: true, unique: true },
-    amount: { type: Number, required: true },
-    currency: { type: String, required: true },
-    status: { type: String, required: true, default: 'pending' },
+export enum SubscriptionStatus {
+  InProgress = 0,
+  Accepted = 1,
+  Declined = 2,
+}
+
+export interface ISubscriptionDetail extends Document {
+  FamilyId: number;
+  ProductId: string;
+  OrderId?: string;
+  OSType: OSType;
+  ReceiptData: string;
+  PurchasedDate: Date;
+  SubscriptionStatus: SubscriptionStatus;
+  ConsumeStatus: boolean;
+  OriginalTransactionId?: string;
+}
+
+const SubscriptionDetailSchema = new Schema<ISubscriptionDetail>({
+  FamilyId: { type: Number, required: true },
+  ProductId: { type: String, required: true },
+  OrderId: String,
+  OSType: {
+    type: Number,
+    enum: Object.values(OSType),
+    required: true,
   },
-  { timestamps: true }
-);
+  ReceiptData: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  PurchasedDate: {
+    type: Date,
+    required: true,
+  },
+  SubscriptionStatus: {
+    type: Number,
+    enum: Object.values(SubscriptionStatus),
+    required: true,
+  },
+  ConsumeStatus: {
+    type: Boolean,
+    required: true,
+  },
+  OriginalTransactionId: String,
+});
 
-const SubscriptionDetails: Model<ISubscriptionDetails> =
-  models.SubscriptionDetails || model<ISubscriptionDetails>('SubscriptionDetails', SubscriptionDetailsSchema);
+const SubscriptionDetail: Model<ISubscriptionDetail> =
+  models.SubscriptionDetail ||
+  model<ISubscriptionDetail>("SubscriptionDetail", SubscriptionDetailSchema);
 
-export default SubscriptionDetails;
+export default SubscriptionDetail;

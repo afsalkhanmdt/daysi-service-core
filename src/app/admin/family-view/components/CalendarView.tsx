@@ -88,15 +88,11 @@ const CalendarView = ({
   const [localActionLoading, setLocalActionLoading] = useState(false);
 
   const checkSubscription = (callback: () => void) => {
-    // Development bypass: Always allow actions
-    callback();
-    /*
     if (data?.Family.SubscriptionType !== "Premium") {
       onFreemium();
     } else {
       callback();
     }
-    */
   };
 
   useEffect(() => {
@@ -520,7 +516,7 @@ const CalendarView = ({
         calendarRef={calendarRef}
         currentDate={currentDate}
         setCurrentDate={setCurrentDate}
-        isPremium={true}
+        isPremium={data?.Family.SubscriptionType === "Premium"}
       />
 
       <AllDayEventsRow

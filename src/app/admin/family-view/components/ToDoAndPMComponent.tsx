@@ -43,15 +43,11 @@ const ToDoAndPMComponent = ({
   );
 
   const checkSubscription = (callback: () => void) => {
-    // Development bypass: Always allow actions
-    callback();
-    /*
     if (familyDetails?.Family.SubscriptionType !== "Premium") {
       onFreemium();
     } else {
       callback();
     }
-    */
   };
 
   useEffect(() => {
