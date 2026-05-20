@@ -6,7 +6,7 @@ import SubscriptionDetails from '@/models/subscription';
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
-const DOTNET_API_URL = process.env.DOTNET_API_URL!;
+const DOTNET_API_URL = process.env.NEXT_PUBLIC_API_HOSTNAME!;
 
 export async function POST(req: NextRequest) {
   const payload = await req.text();
@@ -118,7 +118,7 @@ if (
 }
 
 
-  const response = await fetch(`${DOTNET_API_URL}/api/PurchaseApp`, {
+  const response = await fetch(`https://${DOTNET_API_URL}/api/PurchaseApp`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
