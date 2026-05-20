@@ -2,6 +2,8 @@ import dbConnect from "@/core/db/connect";
 import Event from "@/models/event";
 import { NextRequest } from "next/server";
 
+export const dynamic = 'force-dynamic';
+
 export async function DELETE(request:NextRequest) {
     try {
         const { searchParams } = new URL(request.url)
@@ -14,7 +16,6 @@ export async function DELETE(request:NextRequest) {
         await dbConnect();
 
         const event = await Event.findByIdAndDelete(eventId);
-        console.log(`Deleting event with ID: ${eventId}`, event);
         
 
         if (!event) {
@@ -41,7 +42,6 @@ export async function GET(request: NextRequest) {
         await dbConnect();
 
         const event = await Event.findById(eventId);
-        console.log(`Fetching event with ID: ${eventId}`, event);
 
         if (!event) {
             return Response.json({ message: 'Event not found' }, { status: 404 });

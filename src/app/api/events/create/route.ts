@@ -22,7 +22,6 @@ export async function POST(request: NextRequest) {
     }
 
     const participantsArray: string[] = result.data.participants.map((element: ParticipantType) => element.memberid);
-    console.log(`Participants Array: ${participantsArray}`);
 
     await dbConnect();
 
@@ -41,7 +40,6 @@ export async function POST(request: NextRequest) {
     const userArray = await Promise.all(
         participantsArray.map(async (memberId) => {
             const user = await User.findById(memberId).lean();
-            console.log(`User found: ${user}`);
 
             return user;
         })

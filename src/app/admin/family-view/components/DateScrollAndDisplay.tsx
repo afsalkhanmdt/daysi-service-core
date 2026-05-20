@@ -1,6 +1,7 @@
 "use client";
 import Image from "next/image";
 import calIcon from "@/app/admin/assets/calendar-minimalistic-svgrepo-com (4) 1.svg";
+import { useRouter } from "next/navigation";
 import {
   useEffect,
   useRef,
@@ -41,6 +42,7 @@ const DateScrollAndDisplay = ({
   calendarRef,
   currentDate,
   setCurrentDate,
+  isPremium,
   country = "dk", // Default to Denmark, can be "dk" or "uk"
   holidaysData = Holidays as unknown as CountryHolidays[], // Use the full JSON data
 }: {
@@ -48,10 +50,12 @@ const DateScrollAndDisplay = ({
   calendarRef: RefObject<any>;
   currentDate: Date;
   setCurrentDate: Dispatch<SetStateAction<Date>>;
+  isPremium?: boolean;
   country?: string; // Country code: "dk" or "uk"
   holidaysData?: CountryHolidays[]; // The full JSON data structure
 }) => {
   const { t, i18n } = useTranslation("common");
+  const router = useRouter();
   const dayRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
   // Sync dayjs locale with current i18n language
@@ -207,6 +211,18 @@ const DateScrollAndDisplay = ({
           <div className="grid place-items-center text-lg sm:text-xl font-semibold">
             {familyName}
           </div>
+          {isPremium ? (
+            <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 rounded-full border border-amber-200">
+              Premium
+            </span>
+          ) : (
+            <button
+              onClick={() => router.push("/subscription")}
+              className="px-3 py-1 text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-sm active:scale-95"
+            >
+              Upgrade
+            </button>
+          )}
         </div>
 
         <div className="grid place-items-center sm:flex sm:items-center gap-2 sm:gap-1.5 ">

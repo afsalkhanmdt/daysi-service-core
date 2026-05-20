@@ -19,14 +19,18 @@ const allowlist = [
     '/token',
     '/admin/login',
     '/admin/family-view',
-    '/api/calendar-proxy'
+    '/api/calendar-proxy',
+    '/subscription',
+    '/subscription/success',
+    '/subscription/cancel',
+    '/api/subscription/checkout',
+    '/api/stripe/webhook'
 ];
 
 export async function middleware(request: NextRequest) {
   const url = request.nextUrl;
   const pathname = url.pathname;
 
-  
   if (pathname === '/favicon.ico') {
     return NextResponse.next();
   }
@@ -46,13 +50,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+    // Normalize path for allowlist check: remove locale prefix and trailing slash
+    const normalizedPath = pathname.replace(/^\/(da|sv|nb|en)(\/|$)/, '/').replace(/\/$/, '') || '/';
+
     // Force case-insensitive allowlist check
-    if (allowlist.some((path) => pathname.toLowerCase() === path.toLowerCase())) {
+    if (allowlist.some((path) => normalizedPath.toLowerCase() === path.toLowerCase())) {
         // If it's in the allowlist but has uppercase, rewrite instead of redirect
         if (pathname !== pathname.toLowerCase()) {
             const rewrittenUrl = url.clone();
             rewrittenUrl.pathname = pathname.toLowerCase();
-            return NextResponse.rewrite(rewrittenUrl); // rewrite = no redirect, works in same request
+            return NextResponse.rewrite(rewrittenUrl);
         }
         return NextResponse.next();
     }
