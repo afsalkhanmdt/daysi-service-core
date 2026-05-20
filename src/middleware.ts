@@ -30,7 +30,6 @@ const allowlist = [
 export async function middleware(request: NextRequest) {
   const url = request.nextUrl;
   const pathname = url.pathname;
-  console.log(`[Middleware] Request: ${pathname}`);
 
   if (pathname === '/favicon.ico') {
     return NextResponse.next();

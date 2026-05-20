@@ -20,7 +20,6 @@ export async function POST(request: NextRequest) {
     const { id, ...updateFields } = result.data;
 
     const event = await Event.findById(id);
-    console.log(`Updating event with ID: ${id}`, event);
     
     if (!event) {
         return new Response('Event not found', { status: 404 });

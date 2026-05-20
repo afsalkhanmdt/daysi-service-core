@@ -34,7 +34,6 @@ export async function POST(
         
     });
     await user.save();
-    console.log(user);
 
     return Response.json({
         "Id": 673,

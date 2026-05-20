@@ -8,10 +8,8 @@ export async function POST(request: NextRequest) {
 
     try {
         const normalizedRequest = normalizeKeys(await request.json());
-        console.log(normalizedRequest, 'normalizedRequest');
 
         const result = FamilyMemberUpdateSchema.safeParse(normalizedRequest);
-        console.log(result, 'result');
 
         if (!result.success) {
             return new Response('100', { status: 500 });

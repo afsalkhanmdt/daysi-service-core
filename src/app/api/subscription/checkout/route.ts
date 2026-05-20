@@ -1,35 +1,56 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import dbConnect from '@/core/db/connect';
-import SubscriptionDetails from '@/models/subscription';
+import SubscriptionDetails, { OSType } from '@/models/subscription';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(req: NextRequest) {
   try {
-    const { familyId, userId, subscriptionMonths } = await req.json();
+    const authHeader = req.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+
+    const { familyId, userId, subscriptionMonths, membersUpdatedOn } =
+      await req.json();
+
 
     if (!familyId || !userId || !subscriptionMonths) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+      console.warn('[Checkout] Missing required fields:', { familyId, userId, subscriptionMonths });
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
     }
 
-    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+    if (!token) {
+      console.warn('[Checkout] Missing user token');
+      return NextResponse.json(
+        { error: 'Missing user token' },
+        { status: 401 }
+      );
+    }
+
     const priceId1Month = process.env.STRIPE_PRICE_ID_1_MONTH;
     const priceId12Month = process.env.STRIPE_PRICE_ID_12_MONTH;
     const successUrl = process.env.STRIPE_SUCCESS_URL;
     const cancelUrl = process.env.STRIPE_CANCEL_URL;
 
-    if (!stripeSecretKey || !priceId1Month || !priceId12Month || !successUrl || !cancelUrl) {
-      console.error('Missing Stripe Environment Variables');
+    if (!priceId1Month || !priceId12Month || !successUrl || !cancelUrl) {
+      console.error('[Checkout] Missing Stripe environment variables');
       return NextResponse.json(
         { error: 'Server configuration error: Missing Stripe environment variables' },
         { status: 500 }
       );
     }
 
-    const priceId = subscriptionMonths === 12 ? priceId12Month : priceId1Month;
+    const isYearly = Number(subscriptionMonths) === 12;
 
-    await dbConnect();
+    const priceId = isYearly ? priceId12Month : priceId1Month;
+
+    const productId = isYearly
+      ? 'com.familycal.daysi.one.year.version71'
+      : 'com.familycal.daysi.one.month.version71';
+
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -43,26 +64,44 @@ export async function POST(req: NextRequest) {
       success_url: `${successUrl}?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: cancelUrl,
       metadata: {
-        familyId: familyId.toString(),
-        userId: userId.toString(),
-        subscriptionMonths: subscriptionMonths.toString(),
-      },
+  familyId: familyId.toString(),
+  userId: userId.toString(),
+  subscriptionMonths: subscriptionMonths.toString(),
+  productId,
+  membersUpdatedOn: membersUpdatedOn || '',
+},
     });
 
-    // Create a pending subscription record
-    await SubscriptionDetails.create({
-      familyId,
-      userId,
-      subscriptionMonths,
-      stripeSessionId: session.id,
-      amount: session.amount_total || 0,
-      currency: session.currency || 'dkk',
-      status: 'pending',
-    });
+
+    await dbConnect();
+
+await SubscriptionDetails.create({
+  FamilyId: Number(familyId),
+  ProductId: productId,
+  OSType: OSType.Web,
+  ReceiptData: session.id,
+  OrderId: session.id,
+  PurchasedDate: new Date(),
+  SubscriptionStatus: 0,
+  ConsumeStatus: false,
+
+  userId: userId.toString(),
+  subscriptionMonths: Number(subscriptionMonths),
+  stripeSessionId: session.id,
+  userToken: token,
+  amount: session.amount_total || 0,
+  currency: session.currency || 'dkk',
+  status: 'pending',
+});
+
 
     return NextResponse.json({ url: session.url });
   } catch (error: any) {
-    console.error('Stripe Checkout Error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('[Checkout] Stripe Checkout Error:', error);
+
+    return NextResponse.json(
+      { error: error.message },
+      { status: 500 }
+    );
   }
 }

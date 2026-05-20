@@ -15,12 +15,12 @@ const SuccessPageContent = () => {
     // Retrieve stored IDs for the dashboard link
     const familyId = localStorage.getItem("familyId");
     const memberId = localStorage.getItem("memberId");
-    
-    if (familyId && memberId) {
-      setDashboardUrl(`/admin/family-view?familyId=${familyId}&memberId=${memberId}`);
-    }
 
-    // Clear family details cache to force a fresh fetch with Premium status
+    if (familyId && memberId) {
+      setDashboardUrl(
+        `/admin/family-view?familyId=${familyId}&memberId=${memberId}`,
+      );
+    }
     localStorage.removeItem("familyDetailsCache");
 
     const timer = setTimeout(() => {

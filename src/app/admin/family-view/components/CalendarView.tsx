@@ -95,21 +95,6 @@ const CalendarView = ({
     }
   };
 
-  useEffect(() => {
-    if (selectedRawEvent) {
-      console.log(
-        "CalendarView: selectedRawEvent for EditAppointmentPopup:",
-        selectedRawEvent,
-      );
-    }
-    if (selectedAppointment) {
-      console.log(
-        "CalendarView: selectedAppointment for EditAppointmentPopup:",
-        selectedAppointment,
-      );
-    }
-  }, [selectedRawEvent, selectedAppointment]);
-
   const { data: PMTaskDetails } = useFetch<PMData>(
     `PocketMoney/GetPMTasks?familyId=${familyId}`,
   );
