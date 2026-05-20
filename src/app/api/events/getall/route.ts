@@ -2,6 +2,8 @@ import dbConnect from '@/core/db/connect'
 import Event from '@/models/event'
 import { NextRequest, NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)

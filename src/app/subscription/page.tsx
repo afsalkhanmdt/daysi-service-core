@@ -7,7 +7,6 @@ import logo from "@/app/admin/assets/DaysiEnLogo.png";
 
 const SubscriptionPage = () => {
   const router = useRouter();
-  const token = localStorage.getItem("access_token");
   const [loading, setLoading] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [userData, setUserData] = useState<{
@@ -27,6 +26,7 @@ const SubscriptionPage = () => {
   }, [router]);
 
   const handleSubscribe = async (months: number) => {
+    const token = localStorage.getItem("access_token");
     if (!userData) {
       console.warn("[SubscriptionPage] No user data found");
       return;

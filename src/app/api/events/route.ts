@@ -2,6 +2,8 @@ import dbConnect from "@/core/db/connect";
 import Event from "@/models/event";
 import { NextRequest } from "next/server";
 
+export const dynamic = 'force-dynamic';
+
 export async function DELETE(request:NextRequest) {
     try {
         const { searchParams } = new URL(request.url)

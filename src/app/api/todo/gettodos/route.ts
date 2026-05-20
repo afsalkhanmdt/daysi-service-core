@@ -2,6 +2,8 @@ import dbConnect from '@/core/db/connect';
 import ToDo from '@/models/todo';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 //get todos
 export async function GET(request: Request) {
   try {
