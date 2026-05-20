@@ -102,10 +102,6 @@ export default function MultipleSelector({
     }
 
     setOptions(updatedOptions);
-    console.log(
-      "Updated options:",
-      updatedOptions.map((o) => `${o.label}: ${o.isSelected}`),
-    );
 
     // Notify parent component about selection changes
     if (onSelectionChange) {

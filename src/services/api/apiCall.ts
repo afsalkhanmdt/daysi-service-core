@@ -4,7 +4,8 @@
   formData.append("username", username);
   formData.append("password", password);
 
-  const res = await fetch("https://api.daysi.dk/Token", {
+  const res = await fetch(`${apiUrl}Token`, {
+    //   const res = await fetch("https://api.daysi.dk/Token", {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -62,7 +63,11 @@ const apiCall = async ({
     const headers = new Headers();
 
     if (!isFile) headers.append("Content-Type", "application/json");
-    const authToken = token || localStorage.getItem("access_token");
+    
+    let authToken = token;
+    if (!authToken && typeof window !== "undefined") {
+        authToken = localStorage.getItem("access_token") || undefined;
+    }
 
     if (authToken) headers.append("Authorization", `Bearer ${authToken}`);
     const response = await fetch(`${apiUrl}${url}`, {

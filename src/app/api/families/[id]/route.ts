@@ -12,7 +12,6 @@ export async function GET(
     await dbConnect();
 
     const family = await Family.findOne({ familyId: params.id });
-    console.log('Family ID:', params.id);
     
 
     if (!family) {
