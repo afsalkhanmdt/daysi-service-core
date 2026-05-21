@@ -4,8 +4,7 @@
   formData.append("username", username);
   formData.append("password", password);
 
-  const res = await fetch(`${apiUrl}Token`, {
-    //   const res = await fetch("https://api.daysi.dk/Token", {
+      const res = await fetch("https://api.daysi.dk/Token", {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
