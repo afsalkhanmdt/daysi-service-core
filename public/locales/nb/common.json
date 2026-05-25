@@ -26,5 +26,17 @@
   "Pocket Money": "Lommepenger",
   "No member selected.": "Ingen medlem valgt.",
   "No events on the selected day for the selected member.": "Ingen hendelser på den valgte dagen for det valgte medlemmet.",
-  "AllDayEvent": "Heldagsarrangement"
+  "AllDayEvent": "Heldagsarrangement",
+  "Import Appointments": "Importer avtaler",
+  "CalendarName": "Kalendernavn",
+  "CalendarURL": "Kalender URL",
+  "ChooseFamilyMember": "Velg familiemedlem",
+  "HowToGetIcsLink": "Hvordan få en ICS-lenke?",
+  "CalendarNameIsRequired": "Kalendernavn er påkrevd",
+  "CalendarURLIsRequired": "Kalender-URL er påkrevd",
+  "InvalidURL": "Ugyldig URL",
+  "FamilyMemberIsRequired": "Familiemedlem er påkrevd",
+  "EnterCalendarName": "Skriv inn kalendernavn",
+  "SelectMember": "Velg medlem",
+  "Importing...": "Importerer..."
 }

@@ -199,22 +199,26 @@ const DateScrollAndDisplay = ({
     <div className="bg-white p-2 m-2 rounded-xl gap-2 sm:gap-4 grid sm:mb-4">
       {/* Month Navigation */}
       <div className="w-full flex justify-between gap-1 sm:gap-1.5 ">
-        <div className="flex gap-1 sm:gap-1.5  justify-center items-center">
-          <Image
-            src={calIcon.src}
-            alt="calendar icon"
-            width={20}
-            height={20}
-            priority
-            className="w-4 h-4 sm:w-6 sm:h-6 "
-          />
-          <div className="grid place-items-center text-lg sm:text-xl font-semibold">
-            {familyName}
+        <div className="flex gap-1 sm:gap-1.5  justify-center items-center flex-wrap">
+          <div className="flex items-center gap-1 sm:gap-1.5">
+            <Image
+              src={calIcon.src}
+              alt="calendar icon"
+              width={20}
+              height={20}
+              priority
+              className="w-4 h-4 sm:w-6 sm:h-6 "
+            />
+            <div className="grid place-items-center text-lg sm:text-xl font-semibold">
+              {familyName}
+            </div>
           </div>
           {isPremium ? (
-            <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 rounded-full border border-amber-200">
-              Premium
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 rounded-full border border-amber-200">
+                Premium
+              </span>
+            </div>
           ) : (
             <button
               onClick={() => router.push("/subscription")}

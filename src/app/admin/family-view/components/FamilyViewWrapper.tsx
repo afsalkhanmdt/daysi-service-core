@@ -10,6 +10,7 @@ import PMDisplayCard from "./PMDisplayCard";
 import ToggleThemeAndLogout from "./ToggleThemeAndLogout";
 import CreateTodoPopup from "./CreateTodoPopup"; // Import your popup components
 import CreateAppointmentPopup from "./CreateAppointmentPopup";
+import ImportAppointmentsPopup from "./ImportAppointmentsPopup";
 // import CreatePocketMoneyPopup from "./CreatePocketMoneyPopup"; // Import when ready
 
 import danishAndNorwegianLogo from "@/app/admin/assets/DaysiDanishLogo.png";
@@ -28,7 +29,7 @@ import "../../../../../i18n";
 import CreatePocketMoneyPopup from "./CreatePocketMoneyPopup";
 import { UserEventCreateRequest } from "@/app/types/appoinment";
 import { PMTaskCreateCommand } from "@/app/types/pocketMoney";
-import { createAppointmentCall, createToDoTaskCall } from "@/services/api";
+import { createAppointmentCall, createCalendarFeedCall, createToDoTaskCall } from "@/services/api";
 import { createPocketMoneyTaskCall } from "@/services/api";
 import { ToDoCreateCommand } from "@/app/types/todo";
 import FreemiumModal from "@/components/Modals/FreemiumModal";
@@ -60,6 +61,7 @@ const FamilyViewWrapper = ({
 
   const [showCreateTodo, setShowCreateTodo] = useState(false);
   const [showCreateAppointment, setShowCreateAppointment] = useState(false);
+  const [showImportAppointments, setShowImportAppointments] = useState(false);
   const [showCreatePocketMoney, setShowCreatePocketMoney] = useState(false);
   const [showFreemiumModal, setShowFreemiumModal] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState(false);
@@ -208,6 +210,15 @@ const FamilyViewWrapper = ({
     setIsActionLoading(false);
   };
 
+  const handleImportAppointments = async (importData: any) => {
+    setIsActionLoading(true);
+    const response = await createCalendarFeedCall(importData);
+    if (response) {
+      await reload();
+    }
+    setIsActionLoading(false);
+  };
+
   if (!familyDetails || !isLangReady) {
     return (
       <div className="flex items-center justify-center h-screen text-gray-500">
@@ -320,11 +331,20 @@ const FamilyViewWrapper = ({
         <ToggleThemeAndLogout
           reload={reload}
           onNewAppointment={() =>
-            checkSubscription(() => setShowCreateAppointment(true))
+            // checkSubscription(() => setShowCreateAppointment(true))
+            setShowCreateAppointment(true)
           }
-          onNewToDo={() => checkSubscription(() => setShowCreateTodo(true))}
+          onNewToDo={() => 
+            // checkSubscription(() => setShowCreateTodo(true))
+            setShowCreateTodo(true)
+          }
           onNewPocketMoney={() =>
-            checkSubscription(() => setShowCreatePocketMoney(true))
+            // checkSubscription(() => setShowCreatePocketMoney(true))
+            setShowCreatePocketMoney(true)
+          }
+          onImportAppointments={() =>
+            // checkSubscription(() => setShowImportAppointments(true))
+            setShowImportAppointments(true)
           }
         />
       </div>
@@ -343,11 +363,20 @@ const FamilyViewWrapper = ({
         <ToggleThemeAndLogout
           reload={reload}
           onNewAppointment={() =>
-            checkSubscription(() => setShowCreateAppointment(true))
+            // checkSubscription(() => setShowCreateAppointment(true))
+            setShowCreateAppointment(true)
           }
-          onNewToDo={() => checkSubscription(() => setShowCreateTodo(true))}
+          onNewToDo={() => 
+            // checkSubscription(() => setShowCreateTodo(true))
+            setShowCreateTodo(true)
+          }
           onNewPocketMoney={() =>
-            checkSubscription(() => setShowCreatePocketMoney(true))
+            // checkSubscription(() => setShowCreatePocketMoney(true))
+            setShowCreatePocketMoney(true)
+          }
+          onImportAppointments={() =>
+            // checkSubscription(() => setShowImportAppointments(true))
+            setShowImportAppointments(true)
           }
         />
       </div>
@@ -360,6 +389,10 @@ const FamilyViewWrapper = ({
           dataReload={reload}
           onFreemium={() => setShowFreemiumModal(true)}
           isLoading={isActionLoading}
+          onImportAppointments={() =>
+            // checkSubscription(() => setShowImportAppointments(true))
+            setShowImportAppointments(true)
+          }
         />
       </div>
 
@@ -369,6 +402,17 @@ const FamilyViewWrapper = ({
         isOpen={showCreateAppointment}
         onClose={() => setShowCreateAppointment(false)}
         onSubmit={handleCreateAppointment}
+      />
+
+      <ImportAppointmentsPopup
+        isOpen={showImportAppointments}
+        onClose={() => setShowImportAppointments(false)}
+        onSubmit={handleImportAppointments}
+        familyId={Number(familyId)}
+        locale={
+          familyDetails?.Members?.find((m) => m.MemberId === userId)?.Locale ||
+          "en"
+        }
       />
 
       <CreateTodoPopup

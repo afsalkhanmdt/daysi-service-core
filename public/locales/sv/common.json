@@ -26,5 +26,17 @@
   "Pocket Money": "Fickpengar",
   "No member selected.": "Ingen medlem vald.",
   "No events on the selected day for the selected member.": "Inga händelser på den valda dagen för den valda medlemmen.",
-  "AllDayEvent": "Heldagsevenemang"
+  "AllDayEvent": "Heldagsevenemang",
+  "Import Appointments": "Importera möten",
+  "CalendarName": "Kalendernamn",
+  "CalendarURL": "Kalender URL",
+  "ChooseFamilyMember": "Välj familjemedlem",
+  "HowToGetIcsLink": "Hur får man en ICS-länk?",
+  "CalendarNameIsRequired": "Kalendernamn krävs",
+  "CalendarURLIsRequired": "Kalender-URL krävs",
+  "InvalidURL": "Ogiltig URL",
+  "FamilyMemberIsRequired": "Familjemedlem krävs",
+  "EnterCalendarName": "Ange kalendernamn",
+  "SelectMember": "Välj medlem",
+  "Importing...": "Importerar..."
 }
