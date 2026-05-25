@@ -10,6 +10,7 @@ interface ToggleThemeAndLogoutProps {
   onNewAppointment: () => void;
   onNewToDo: () => void;
   onNewPocketMoney: () => void;
+  onImportAppointments?: () => void;
 }
 
 export default function ToggleThemeAndLogout({
@@ -17,6 +18,7 @@ export default function ToggleThemeAndLogout({
   onNewAppointment,
   onNewToDo,
   onNewPocketMoney,
+  onImportAppointments,
 }: ToggleThemeAndLogoutProps) {
   const { t } = useTranslation("common");
   const router = useRouter();
@@ -61,7 +63,7 @@ export default function ToggleThemeAndLogout({
   };
 
   return (
-    <div className="grid grid-flow-col sm:grid-flow-row border-t border-slate-100 dark:border-gray-700 sm:p-1.5 gap-1.5 place-items-center">
+    <div className="grid grid-cols-4 sm:grid-cols-1 sm:grid-flow-row border-t border-slate-100 dark:border-gray-700 sm:p-1.5 gap-1.5 place-items-center">
       {/* New Appointment Button */}
       <button
         onClick={onNewAppointment}
@@ -143,6 +145,32 @@ export default function ToggleThemeAndLogout({
         >
           <path
             d="M8 14C8 14 9.5 16 12 16C14.5 16 16 14 16 14M12 8.5V8M12 8C12.5523 8 13 8.44772 13 9C13 9.55228 12.5523 10 12 10C11.4477 10 11 9.55228 11 9C11 8.44772 11.4477 8 12 8ZM22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z"
+            stroke={`${isDark ? `white` : `#27272a`}`}
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+      {/* Import Appointments Button */}
+      <button
+        onClick={onImportAppointments}
+        className={`sm:flex sm:justify-between sm:shadow-md ${
+          isDark ? `shadow-gray-900` : `shadow-gray-300`
+        } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors dark:bg-indigo-900 bg-indigo-600`}
+      >
+        <div className="sm:block hidden text-center font-semibold text-sm dark:text-stone-200 text-stone-800">
+          {t("Import Appointments")}
+        </div>
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M12 12V19M12 19L15 16M12 19L9 16M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
             stroke={`${isDark ? `white` : `#27272a`}`}
             strokeWidth="1.5"
             strokeLinecap="round"

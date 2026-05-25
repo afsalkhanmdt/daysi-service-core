@@ -226,10 +226,10 @@ const ToDoAndPMComponent = ({
                                   key={`${pm.PMTransId}-${rid}`}
                                   className="w-full my-auto sm:my-0"
                                   onClick={() => {
-                                    checkSubscription(() => {
+                                    // checkSubscription(() => {
                                       setSelectedPocketMoney(pm);
                                       setShowEditPocketMoney(true);
-                                    });
+                                    // });
                                   }}
                                 >
                                   <PocketMoneyEventUi
@@ -293,10 +293,10 @@ const ToDoAndPMComponent = ({
                                   key={`${todo.ToDoTaskId}-${rid}`}
                                   className="w-full my-auto sm:my-0"
                                   onClick={() => {
-                                    checkSubscription(() => {
+                                    // checkSubscription(() => {
                                       setSelectedTodo(todo);
                                       setShowEditTodo(true);
-                                    });
+                                    // });
                                   }}
                                 >
                                   <TodoEventUi
