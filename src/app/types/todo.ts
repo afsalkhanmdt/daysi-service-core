@@ -55,4 +55,6 @@ export type ToDoFamilyGroup ={
   GroupName: string
   Sorting: number
   Description: string
+  Icon: string
+  IsActive: boolean
 }
