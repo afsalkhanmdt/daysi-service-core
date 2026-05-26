@@ -10,6 +10,10 @@ const nextConfig = {
         protocol: "https",
         hostname: process.env.NEXT_PUBLIC_API_HOSTNAME,
       },
+      {
+        protocol: "https",
+        hostname: "daysi.headfitted.in",
+      },
     ],
   },
 };

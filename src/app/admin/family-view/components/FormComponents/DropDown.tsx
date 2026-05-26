@@ -2,9 +2,9 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
 interface DropdownProps {
-  options: { id: string; label: string }[];
+  options: { id: string; label: string; imageUrl?: string }[];
   selectedValue: string;
-  onSelect: (id: string, label: string) => void; // Change to return both
+  onSelect: (id: string, label: string) => void;
   placeholder?: string;
   iconUrl?: string;
   title?: string;
@@ -37,10 +37,11 @@ const CustomDropdown: React.FC<DropdownProps> = ({
   }, []);
 
   const selectedOption =
-    options.find((opt) => opt.label === selectedValue) || options[0];
+    options.find((opt) => opt.id === selectedValue) ||
+    options.find((opt) => opt.label === selectedValue);
 
   return (
-    <div className="max-w-md w-full">
+    <div className="w-full">
       {title && (
         <div className="flex items-center gap-2 mb-2">
           {iconUrl && (
@@ -67,12 +68,22 @@ const CustomDropdown: React.FC<DropdownProps> = ({
           className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white flex items-center justify-between hover:border-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <div className="flex items-center gap-3">
+            {selectedOption?.imageUrl && (
+              <div className="w-6 h-6 relative rounded-full overflow-hidden border border-gray-200">
+                <Image
+                  src={selectedOption.imageUrl}
+                  alt={selectedOption.label}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            )}
             <span
               className={`font-medium ${
                 selectedValue ? "text-gray-800" : "text-gray-500"
               }`}
             >
-              {selectedValue || placeholder}
+              {selectedOption?.label || placeholder}
             </span>
           </div>
           <svg
@@ -94,24 +105,35 @@ const CustomDropdown: React.FC<DropdownProps> = ({
 
         {/* Dropdown Menu */}
         {isOpen && (
-          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+          <div className="absolute left-0 right-0 z-50 mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto">
             {options.map((option) => (
               <button
                 key={option.id}
                 onClick={() => {
-                  onSelect(option.id, option.label); // Pass both id and label
+                  onSelect(option.id, option.label);
                   setIsOpen(false);
                 }}
-                className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 ${
-                  selectedValue === option.label
+                className={`w-full px-4 py-2.5 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 ${
+                  selectedValue === option.id || selectedValue === option.label
                     ? "bg-blue-50 text-blue-600 font-medium"
                     : "text-gray-700"
                 }`}
               >
-                <span>{option.label}</span>
-                {selectedValue === option.label && (
+                {option.imageUrl && (
+                  <div className="w-8 h-8 relative rounded-full overflow-hidden border border-gray-100 flex-shrink-0">
+                    <Image
+                      src={option.imageUrl}
+                      alt={option.label}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                )}
+                <span className="truncate">{option.label}</span>
+                {(selectedValue === option.id ||
+                  selectedValue === option.label) && (
                   <svg
-                    className="w-5 h-5 ml-auto text-blue-500"
+                    className="w-5 h-5 ml-auto text-blue-500 flex-shrink-0"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -129,8 +151,6 @@ const CustomDropdown: React.FC<DropdownProps> = ({
           </div>
         )}
       </div>
-
-      <div className="text-sm text-gray-500 mt-2 px-1">Select cue click</div>
     </div>
   );
 };

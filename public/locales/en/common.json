@@ -1,0 +1,14 @@
+{
+  "Import Appointments": "Import Appointments",
+  "CalendarName": "Calendar Name",
+  "CalendarURL": "Calendar URL",
+  "ChooseFamilyMember": "Choose Family Member",
+  "HowToGetIcsLink": "How to get an ICS link?",
+  "CalendarNameIsRequired": "Calendar name is required",
+  "CalendarURLIsRequired": "Calendar URL is required",
+  "InvalidURL": "Invalid URL",
+  "FamilyMemberIsRequired": "Family member is required",
+  "EnterCalendarName": "Enter calendar name",
+  "SelectMember": "Select Member",
+  "Importing...": "Importing..."
+}

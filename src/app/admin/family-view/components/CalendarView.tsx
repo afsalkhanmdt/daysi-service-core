@@ -57,6 +57,7 @@ const CalendarView = ({
   setCurrentDate,
   dataReload,
   onFreemium,
+  onImportAppointments,
   isLoading,
 }: {
   data: FamilyData;
@@ -64,6 +65,7 @@ const CalendarView = ({
   setCurrentDate: Dispatch<SetStateAction<Date>>;
   dataReload: () => void;
   onFreemium: () => void;
+  onImportAppointments?: () => void;
   isLoading?: boolean;
 }) => {
   const { resources, setMembers } = useResources();
@@ -104,10 +106,10 @@ const CalendarView = ({
 
   const handleRawEventClick = useCallback(
     (event: any) => {
-      checkSubscription(() => {
-        setSelectedRawEvent(event);
-        setShowEditAppointment(true);
-      });
+      // checkSubscription(() => {
+      setSelectedRawEvent(event);
+      setShowEditAppointment(true);
+      // });
     },
     [data?.Family.SubscriptionType, onFreemium],
   );
@@ -597,10 +599,10 @@ const CalendarView = ({
             return (
               <div
                 onClick={() => {
-                  checkSubscription(() => {
-                    setSelectedAppointment(eventInfo.event);
-                    setShowEditAppointment(true);
-                  });
+                  // checkSubscription(() => {
+                  setSelectedAppointment(eventInfo.event);
+                  setShowEditAppointment(true);
+                  // });
                 }}
                 className={`h-full border-t-4 rounded-xl border-sky-500 ${
                   eventInfo.event.extendedProps.ExternalCalendarName
