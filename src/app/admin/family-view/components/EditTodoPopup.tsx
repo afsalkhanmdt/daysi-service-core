@@ -47,6 +47,7 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
       (ToDoFamilyGroup || []).map((item: ToDoFamilyGroupType) => ({
         id: item.ToDoFamilyGroupId.toString(),
         label: item.GroupName,
+        imageUrl: item.Icon,
       })),
     [ToDoFamilyGroup],
   );

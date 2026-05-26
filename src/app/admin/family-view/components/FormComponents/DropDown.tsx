@@ -36,7 +36,9 @@ const CustomDropdown: React.FC<DropdownProps> = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const selectedOption = options.find((opt) => opt.id === selectedValue) || options.find((opt) => opt.label === selectedValue);
+  const selectedOption =
+    options.find((opt) => opt.id === selectedValue) ||
+    options.find((opt) => opt.label === selectedValue);
 
   return (
     <div className="w-full">
@@ -128,7 +130,8 @@ const CustomDropdown: React.FC<DropdownProps> = ({
                   </div>
                 )}
                 <span className="truncate">{option.label}</span>
-                {(selectedValue === option.id || selectedValue === option.label) && (
+                {(selectedValue === option.id ||
+                  selectedValue === option.label) && (
                   <svg
                     className="w-5 h-5 ml-auto text-blue-500 flex-shrink-0"
                     fill="none"
