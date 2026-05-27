@@ -29,7 +29,11 @@ import "../../../../../i18n";
 import CreatePocketMoneyPopup from "./CreatePocketMoneyPopup";
 import { UserEventCreateRequest } from "@/app/types/appoinment";
 import { PMTaskCreateCommand } from "@/app/types/pocketMoney";
-import { createAppointmentCall, createCalendarFeedCall, createToDoTaskCall } from "@/services/api";
+import {
+  createAppointmentCall,
+  createCalendarFeedCall,
+  createToDoTaskCall,
+} from "@/services/api";
 import { createPocketMoneyTaskCall } from "@/services/api";
 import { ToDoCreateCommand } from "@/app/types/todo";
 import FreemiumModal from "@/components/Modals/FreemiumModal";
@@ -37,6 +41,7 @@ import FreemiumModal from "@/components/Modals/FreemiumModal";
 export type FamilyData = {
   Family: FamilyResponse;
   Members: MemberResponse[];
+  LoggedInUserId: string;
 };
 
 const STORAGE_KEY = "familyDetailsCache";
@@ -146,8 +151,8 @@ const FamilyViewWrapper = ({
     // Create a new object with all the added values
     const updatedAppointmentData = {
       ...appointmentData,
-      addedBy: familyDetails?.Family.MemberId || "",
-      familyUserId: userId,
+      addedBy: apiData?.LoggedInUserId || "",
+      familyUserId: familyDetails?.Family.MemberId || "",
       familyId: Number(familyId),
       locale:
         familyDetails?.Members?.find((m) => m.MemberId === userId)?.Locale ||
@@ -334,7 +339,7 @@ const FamilyViewWrapper = ({
             // checkSubscription(() => setShowCreateAppointment(true))
             setShowCreateAppointment(true)
           }
-          onNewToDo={() => 
+          onNewToDo={() =>
             // checkSubscription(() => setShowCreateTodo(true))
             setShowCreateTodo(true)
           }
@@ -366,7 +371,7 @@ const FamilyViewWrapper = ({
             // checkSubscription(() => setShowCreateAppointment(true))
             setShowCreateAppointment(true)
           }
-          onNewToDo={() => 
+          onNewToDo={() =>
             // checkSubscription(() => setShowCreateTodo(true))
             setShowCreateTodo(true)
           }
