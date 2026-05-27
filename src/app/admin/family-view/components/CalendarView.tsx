@@ -130,58 +130,31 @@ const CalendarView = ({
     const duplicateWarnings = new Set<string>(); // Track already warned duplicates
 
     data.Members.forEach((member: MemberResponse) => {
-      // Track events per member to avoid duplicates within same member
-      const memberEvents = new Map<string, any>();
-
       member.Events.forEach((event) => {
         const eventKey = `${event.Id}-${member.Id}`;
 
         // Skip if we've already processed this event for this member
         if (seenEventMemberPairs.has(eventKey)) {
-          if (!duplicateWarnings.has(eventKey)) {
-            console.warn(
-              `Skipping duplicate event ${event.Id} for member ${member.Id} (${member.FirstName})`,
-            );
-            duplicateWarnings.add(eventKey);
-          }
           return;
         }
 
         seenEventMemberPairs.add(eventKey);
 
-        // Your existing filtering logic
-        if (
-          member.MemberType === 1 &&
-          event.EventParticipant?.length !== data.Members.length - 1
-        ) {
-          return;
-        }
-
-        if (
-          member.MemberType !== 1 &&
-          event.EventParticipant?.length === data.Members.length - 1
-        ) {
-          return;
-        }
-
         let start = new Date(Number(event.Start));
         let end = new Date(Number(event.End));
 
-        if (event.IsAllDayEvent === 1) {
-          const day = new Date(start);
-          start = new Date(day.setHours(0, 0, 0, 0));
-          end = new Date(day.setHours(24, 0, 0, 0));
-        }
+        const isAllDay = event.IsAllDayEvent === 1;
 
         /* ==========================
          Base Event
       ========================== */
         const baseEvent: EventInput = {
-          id: String(event.Id),
+          id: eventKey, // Use unique event-member key as ID to avoid collisions
           resourceId: String(member.Id),
           title: event.Title,
           start,
           end,
+          allDay: isAllDay,
           display: "block",
           extendedProps: {
             ...event,
@@ -433,7 +406,7 @@ const CalendarView = ({
     // Create a new object with all the added values
     const updatedAppointmentData = {
       ...appointmentData,
-      addedBy: data?.Family.MemberId,
+      addedBy: data?.LoggedInUserId,
       familyUserId: data.Family.MemberId,
       familyId: Number(familyId),
       locale:
