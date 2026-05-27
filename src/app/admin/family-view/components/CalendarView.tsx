@@ -406,7 +406,7 @@ const CalendarView = ({
     // Create a new object with all the added values
     const updatedAppointmentData = {
       ...appointmentData,
-      addedBy: data?.Family.MemberId,
+      addedBy: data?.LoggedInUserId,
       familyUserId: data.Family.MemberId,
       familyId: Number(familyId),
       locale:
