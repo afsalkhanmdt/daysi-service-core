@@ -23,6 +23,7 @@ import {
 } from "@/app/types/appoinment";
 import {
   ALERT_OPTIONS,
+  buildLocalTimestamp,
   buildTimestamp,
   parseDateToForm,
   parseTimestampToDateOnly,
@@ -167,6 +168,14 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
       ...formDataWithoutParticipants,
       startDate: buildTimestamp(formData.startDateOnly, formData.startTimeOnly),
       endDate: buildTimestamp(formData.endDateOnly, formData.endTimeOnly),
+      localStartDate: buildLocalTimestamp(
+        formData.startDateOnly,
+        formData.startTimeOnly,
+      ),
+      localEndDate: buildLocalTimestamp(
+        formData.endDateOnly,
+        formData.endTimeOnly,
+      ),
       repeatEndDate,
       participants: formattedParticipants,
     };
