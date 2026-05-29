@@ -60,11 +60,17 @@ export enum FrequencyEnum {
 }
 
 export interface Participant {
-  id?: string;
+  id?: string | number;
   memberId?: string;
   name?: string;
   email?: string;
-  // Add other participant properties as needed
+  localId?: string | number;
+  eventId?: number;
+  parentEventId?: string | number;
+  ParticipantId?: string | number;
+  MemberId?: string | number;
+  EventId?: number;
+  ParentEventId?: string | number;
 }
 
 export interface Alarm {

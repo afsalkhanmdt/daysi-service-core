@@ -72,6 +72,8 @@ export interface EventParticipant {
   Participant: string
   ParticipantClass: string
   ParticipantFirstName: string
+  EventId?: number
+  ParentEventId?: string
 }
 
 export interface Alarm {
