@@ -19,7 +19,7 @@ export const initialFormDataForAppointmentApi: UserEventCreateRequest = {
   isForAll: 0,
   isAllDayEvent: 0,
   isSpecialEvent: 0,
-  isPrivateEvent: 1,
+  isPrivateEvent: 0,
   eventPerson: "",
   eventsUpdatedOn: "",
   localStartDate: "",
@@ -105,6 +105,21 @@ export const parseTimestampToTimeOnly = (timestamp: string): string => {
   const date = new Date(timestamp);
   if (isNaN(date.getTime())) return "";
   return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+};
+
+export const buildLocalTimestamp = (date: string, time: string) => {
+  let targetDate = date;
+  let targetTime = time;
+
+  if (!targetDate || !targetTime) {
+    const now = new Date();
+    targetDate = now.toISOString().split("T")[0];
+    targetTime = now.toTimeString().slice(0, 5);
+  }
+
+  const yyyyMMdd = targetDate.replace(/-/g, "");
+  const HHmm = targetTime.replace(/:/g, "");
+  return `${yyyyMMdd}T${HHmm}00`;
 };
 
 export const buildTimestamp = (date: string, time: string) => {
