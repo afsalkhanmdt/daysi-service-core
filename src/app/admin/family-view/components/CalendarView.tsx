@@ -623,6 +623,8 @@ const CalendarView = ({
                     alarms: selectedRawEvent.Alarms,
                     participants: selectedRawEvent.EventParticipant,
                     externalCalendarName: selectedRawEvent.ExternalCalendarName,
+                    localStartDate: selectedRawEvent.extendedProps.LocalStartDate,
+                    localEndDate: selectedRawEvent.extendedProps.LocalEndDate,
                   }
                 : selectedAppointment
                   ? {
@@ -656,6 +658,8 @@ const CalendarView = ({
                         selectedAppointment.extendedProps.participants,
                       externalCalendarName:
                         selectedAppointment.extendedProps.ExternalCalendarName,
+                      localStartDate: selectedAppointment.extendedProps.LocalStartDate,
+                      localEndDate: selectedAppointment.extendedProps.LocalEndDate,
                     }
                   : undefined
             }

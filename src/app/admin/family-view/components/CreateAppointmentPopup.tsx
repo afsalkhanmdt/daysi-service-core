@@ -26,6 +26,7 @@ import {
 } from "@/app/types/appoinment";
 import {
   ALERT_OPTIONS,
+  buildLocalTimestamp,
   buildTimestamp,
   initialFormDataForAppointmentApi,
   parseDateToForm,
@@ -134,6 +135,14 @@ const CreateAppointmentPopup: React.FC<
       ...formData,
       startDate: buildTimestamp(formData.startDateOnly, formData.startTimeOnly),
       endDate: buildTimestamp(formData.endDateOnly, formData.endTimeOnly),
+      localStartDate: buildLocalTimestamp(
+        formData.startDateOnly,
+        formData.startTimeOnly,
+      ),
+      localEndDate: buildLocalTimestamp(
+        formData.endDateOnly,
+        formData.endTimeOnly,
+      ),
       repeatEndDate,
     };
 
