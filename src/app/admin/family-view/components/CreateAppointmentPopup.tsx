@@ -114,8 +114,12 @@ const CreateAppointmentPopup: React.FC<
     setFormData((prev) => ({
       ...prev,
       participants: selectedPersons.map((person) => ({
+        ParticipantId: person.memberId,
+        MemberId: person.memberId,
         localId: person.id,
         memberId: person.memberId,
+        EventId: 0,
+        ParentEventId: "",
       })),
     }));
   };
