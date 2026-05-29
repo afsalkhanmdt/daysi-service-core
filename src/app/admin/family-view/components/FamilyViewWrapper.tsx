@@ -148,7 +148,11 @@ const FamilyViewWrapper = ({
     appointmentData: UserEventCreateRequest,
   ) => {
     setIsActionLoading(true);
-    // Create a new object with all the added values
+
+    const now = new Date().toISOString();
+
+    // Create a new object with all the added values (UserEventCreateCommand)
+    // following the structure and fields required by CreateV1
     const updatedAppointmentData = {
       ...appointmentData,
       addedBy: apiData?.LoggedInUserId || "",
@@ -159,9 +163,8 @@ const FamilyViewWrapper = ({
         "en",
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       offSet: dayjs().format("Z"),
-      eventsUpdatedOn: new Date().toISOString(),
-      // Add other default values you need
-      participants: appointmentData.participants || [],
+      eventsUpdatedOn: now,
+      // Fields supported by CreateV1
       isForAll: appointmentData.isForAll || 0,
       isAllDayEvent: appointmentData.isAllDayEvent || 0,
       isSpecialEvent: appointmentData.isSpecialEvent || 0,
@@ -170,12 +173,34 @@ const FamilyViewWrapper = ({
         frequency: 0,
         interval: 1,
       },
+      alarms: appointmentData.alarms || [],
+      latitude: appointmentData.latitude || "",
+      longitude: appointmentData.longitude || "",
+      eventGuID: appointmentData.eventGuID || crypto.randomUUID(),
+      externalCalendarId: appointmentData.externalCalendarId || 0,
       noPush: appointmentData.noPush || false,
+      participants: appointmentData.participants?.map((p) => ({
+        ...p,
+        ParticipantId: p.memberId || p.id,
+        MemberId: p.memberId || p.id,
+        EventId: 0,
+        ParentEventId: "",
+      })),
     };
 
-    const response = await createAppointmentCall(updatedAppointmentData);
+    // Sending as an array of UserEventCreateCommand for CreateV1
+    const response: any = await createAppointmentCall([updatedAppointmentData]);
 
     if (response) {
+      // The CreateV1 response returns the generated junction-table IDs 
+      // in response.EventData[0].Participants. We capture this structure 
+      // conceptually to ensure alignment, then trigger a full reload()
+      // to update the global family state with these authoritative values.
+      const createdParticipants = response?.EventData?.[0]?.Participants;
+      if (createdParticipants) {
+        console.log("Syncing participant IDs:", createdParticipants);
+      }
+      
       await reload();
       if (updatedAppointmentData.startDate) {
         setCurrentDate(new Date(updatedAppointmentData.startDate));

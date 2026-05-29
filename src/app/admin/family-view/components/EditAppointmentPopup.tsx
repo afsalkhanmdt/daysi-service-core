@@ -139,17 +139,43 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
     const formattedParticipants = responsiblePersons
       .filter((person) => person.isSelected)
       .map((person) => {
+        const existingParticipant = (initialData?.participants as any[])?.find(
+          (p) =>
+            String(p.ParticipantId || p.memberId || p.id) ===
+            String(person.memberId || person.id),
+        );
+
         const participantData: any = {
+          ParticipantId: person.memberId,
+          MemberId: person.memberId,
           localId: person.id,
           memberId: person.memberId,
         };
 
-        if (
-          initialParticipantIds.has(person.memberId) ||
-          initialParticipantIds.has(person.id)
-        ) {
-          participantData.eventId = initialData?.id;
+        // Always associate with the current event
+        if (initialData?.id) {
+          participantData.EventId = Number(initialData.id);
+          participantData.eventId = Number(initialData.id);
         }
+
+        if (existingParticipant) {
+          participantData.EventId =
+            existingParticipant.EventId ||
+            existingParticipant.eventId ||
+            participantData.EventId;
+          participantData.ParentEventId =
+            existingParticipant.ParentEventId ||
+            existingParticipant.parentEventId ||
+            initialData?.parentEventId;
+        } else {
+          participantData.ParentEventId = initialData?.parentEventId || "";
+        }
+
+        // Standardize both casings
+        participantData.eventId = participantData.EventId;
+        participantData.parentEventId = participantData.ParentEventId;
+        participantData.EventId = participantData.EventId;
+        participantData.ParentEventId = participantData.ParentEventId;
 
         return participantData;
       });
@@ -164,8 +190,9 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
       }
     }
 
-    const payload: UserEventCreateRequest = {
+    const payload: UserEventUpdateRequest = {
       ...formDataWithoutParticipants,
+      id: String(initialData?.id || ""),
       startDate: buildTimestamp(formData.startDateOnly, formData.startTimeOnly),
       endDate: buildTimestamp(formData.endDateOnly, formData.endTimeOnly),
       localStartDate: buildLocalTimestamp(

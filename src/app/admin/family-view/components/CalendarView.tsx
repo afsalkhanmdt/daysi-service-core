@@ -403,6 +403,9 @@ const CalendarView = ({
     appointmentData: UserEventUpdateRequest,
   ) => {
     setLocalActionLoading(true);
+
+    const now = new Date().toISOString();
+
     // Create a new object with all the added values
     const updatedAppointmentData = {
       ...appointmentData,
@@ -414,8 +417,8 @@ const CalendarView = ({
           ?.Locale || "en",
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       offSet: dayjs().format("Z"),
-      eventsUpdatedOn: new Date().toISOString(),
-      // Add other default values you need
+      eventsUpdatedOn: now,
+      // Add sync-related fields
       participants: appointmentData.participants || [],
       isForAll: appointmentData.isForAll || 0,
       isAllDayEvent: appointmentData.isAllDayEvent || 0,
@@ -425,6 +428,11 @@ const CalendarView = ({
         frequency: 0,
         interval: 1,
       },
+      alarms: appointmentData.alarms || [],
+      latitude: appointmentData.latitude || "",
+      longitude: appointmentData.longitude || "",
+      eventGuID: appointmentData.eventGuID || crypto.randomUUID(),
+      externalCalendarId: appointmentData.externalCalendarId || 0,
       noPush: appointmentData.noPush || false,
     };
 
