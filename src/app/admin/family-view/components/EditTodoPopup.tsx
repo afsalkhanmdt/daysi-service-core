@@ -16,6 +16,8 @@ import { ToggleSwitch } from "./FormComponents/ToggleSwitch";
 import MultipleSelector, {
   SelectableOption,
 } from "./FormComponents/MultipleSelector";
+import SingleSelector from "./FormComponents/SingleSelector";
+import ResponsiblePersonSelector from "./FormComponents/ResponsiblePersonSelector";
 import CustomDropdown from "./FormComponents/DropDown";
 import {
   mapResourcesToSelectableOptions,
@@ -64,14 +66,23 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
 
   /* ---------- Load family members ---------- */
   useEffect(() => {
-    setResponsiblePersons(mapResourcesToSelectableOptions(resources));
+    const allOptions = mapResourcesToSelectableOptions(resources);
+    // Filter out the family member (index 0) from UI
+    setResponsiblePersons(allOptions.slice(1));
   }, [resources]);
 
   /* ---------- Map todo → formData ---------- */
   useEffect(() => {
-    if (!todo || responsiblePersons.length === 0) return;
+    if (!todo || resources.length === 0) return;
 
     const mapped = mapToDoTaskToCreateCommand(todo);
+    const familyMemberId = resources[0]?.extendedProps?.memberId;
+
+    // Ensure family member is in assignedTo
+    if (familyMemberId && !mapped.assignedTo?.includes(familyMemberId)) {
+      mapped.assignedTo = [familyMemberId, ...(mapped.assignedTo || [])];
+    }
+
     // Add statusId if it exists in the original task structure or map from status
     const currentMapped = {
       ...mapped,
@@ -93,7 +104,7 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
         isSelected: option.id === todo.Status,
       })),
     );
-  }, [todo, responsiblePersons.length]);
+  }, [todo, resources.length]);
 
   /* ---------- Handlers ---------- */
 
@@ -150,9 +161,17 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
       })),
     );
 
+    const firstResourceId = resources[0]?.extendedProps?.memberId;
+    const assignedTo = selectedPersons.map((person) => person.memberId!);
+
+    if (firstResourceId) {
+      assignedTo.unshift(firstResourceId);
+    }
+
     setFormData((prev) => ({
       ...prev,
-      assignedTo: selectedPersons.map((person) => person.memberId!),
+      assignedTo,
+      isForAll: assignedTo.length === resources.length,
     }));
   };
 
@@ -285,16 +304,10 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
                 />{" "}
                 Responsible Persons
               </label>
-              <MultipleSelector
+              <ResponsiblePersonSelector
                 options={responsiblePersons}
                 onSelectionChange={handleResponsiblePersonsChange}
                 subHeading="Select who should complete this task"
-                showSelectAll={true}
-                showCount={true}
-                showImages={true}
-                selectedBorderColor="blue"
-                selectedBadgeColor="blue"
-                singleSelect={false}
               />
             </div>
 
@@ -309,16 +322,12 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
                 />{" "}
                 Status
               </label>
-              <MultipleSelector
+              <SingleSelector
                 options={status}
-                onSelectionChange={handleStatusChange}
-                subHeading="Select task status"
-                showSelectAll={false}
-                showCount={true}
-                showImages={false}
+                onSelectionChange={(s) => handleStatusChange([s])}
+                mainHeading="Select task status"
                 selectedBorderColor="blue"
                 selectedBadgeColor="blue"
-                singleSelect={true}
               />
             </div>
 

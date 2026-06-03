@@ -15,6 +15,8 @@ import { ToggleSwitch } from "./FormComponents/ToggleSwitch";
 import MultipleSelector, {
   SelectableOption,
 } from "./FormComponents/MultipleSelector";
+import SingleSelector from "./FormComponents/SingleSelector";
+import ResponsiblePersonSelector from "./FormComponents/ResponsiblePersonSelector";
 import LocationInput from "./FormComponents/LocationInput";
 import DateTimeRange from "./FormComponents/DateTimeRange";
 import { useResources } from "@/app/context/ResourceContext";
@@ -29,7 +31,6 @@ import {
   buildLocalTimestamp,
   buildTimestamp,
   initialFormDataForAppointmentApi,
-  parseDateToForm,
   REPEAT_OPTIONS,
 } from "@/app/constants/appointmentForm";
 
@@ -111,16 +112,33 @@ const CreateAppointmentPopup: React.FC<
       })),
     );
 
-    setFormData((prev) => ({
-      ...prev,
-      participants: selectedPersons.map((person) => ({
-        ParticipantId: person.memberId,
-        MemberId: person.memberId,
-        localId: person.id,
-        memberId: person.memberId,
+    const firstResource = resources[0];
+    const participants = selectedPersons.map((person) => ({
+      ParticipantId: person.memberId,
+      MemberId: person.memberId,
+      localId: person.id,
+      memberId: person.memberId,
+      EventId: 0,
+      ParentEventId: "",
+    }));
+
+    // Always include the first member (Family)
+    if (firstResource) {
+      const familyParticipant = {
+        ParticipantId: firstResource.extendedProps?.memberId || "",
+        MemberId: firstResource.extendedProps?.memberId || "",
+        localId: firstResource.id,
+        memberId: firstResource.extendedProps?.memberId || "",
         EventId: 0,
         ParentEventId: "",
-      })),
+      };
+      participants.unshift(familyParticipant);
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      participants,
+      isForAll: participants.length === resources.length ? 1 : 0,
     }));
   };
 
@@ -148,12 +166,12 @@ const CreateAppointmentPopup: React.FC<
         formData.endTimeOnly,
       ),
       repeatEndDate,
-    };
+    } as UserEventCreateRequest;
 
-    delete (payload as any).startDateOnly;
-    delete (payload as any).startTimeOnly;
-    delete (payload as any).endDateOnly;
-    delete (payload as any).endTimeOnly;
+    delete (payload as Record<string, any>).startDateOnly;
+    delete (payload as Record<string, any>).startTimeOnly;
+    delete (payload as Record<string, any>).endDateOnly;
+    delete (payload as Record<string, any>).endTimeOnly;
 
     onSubmit(payload);
     handleClose();
@@ -162,6 +180,11 @@ const CreateAppointmentPopup: React.FC<
   const handleClose = () => {
     onClose();
     setFormData(initialFormData);
+    // Reset selection state when closing
+    if (resources.length > 0) {
+      const otherMembers = mapResourcesToSelectableOptions(resources).slice(1);
+      setResponsiblePersons(otherMembers);
+    }
   };
 
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -184,8 +207,32 @@ const CreateAppointmentPopup: React.FC<
   }, [isOpen, handleClose]);
 
   useEffect(() => {
-    setResponsiblePersons(mapResourcesToSelectableOptions(resources));
-  }, [resources]);
+    if (resources.length > 0) {
+      const allOptions = mapResourcesToSelectableOptions(resources);
+      const familyMember = allOptions[0];
+      const otherMembers = allOptions.slice(1);
+
+      setResponsiblePersons(otherMembers);
+
+      // Initialize formData with the family member already selected
+      if (familyMember) {
+        setFormData((prev) => ({
+          ...prev,
+          participants: [
+            {
+              ParticipantId: familyMember.memberId || "",
+              MemberId: familyMember.memberId || "",
+              localId: familyMember.id,
+              memberId: familyMember.memberId || "",
+              EventId: 0,
+              ParentEventId: "",
+            },
+          ],
+          isForAll: resources.length === 1 ? 1 : 0,
+        }));
+      }
+    }
+  }, [resources, isOpen]);
 
   if (!isOpen) return null;
 
@@ -309,16 +356,10 @@ const CreateAppointmentPopup: React.FC<
                 />{" "}
                 Choose Participants
               </label>
-              <MultipleSelector
+              <ResponsiblePersonSelector
                 options={responsiblePersons}
                 onSelectionChange={handleResponsiblePersonsChange}
                 subHeading="Select Responsible Persons"
-                showSelectAll={true}
-                showCount={true}
-                showImages={true}
-                selectedBorderColor="blue"
-                selectedBadgeColor="blue"
-                singleSelect={false}
               />
             </div>
 
@@ -362,17 +403,14 @@ const CreateAppointmentPopup: React.FC<
                   <Image src={repeatIcon} alt="icon" width={14} height={14} />{" "}
                   Repeat
                 </label>
-                <MultipleSelector
+                <SingleSelector
                   options={REPEAT_OPTIONS.map((o) => ({
                     ...o,
                     isSelected: o.id === formData.repeat,
                   }))}
                   onSelectionChange={(s) =>
-                    handleSingleSelectChange("repeat", s)
+                    handleSingleSelectChange("repeat", [s])
                   }
-                  showSelectAll={false}
-                  showCount={false}
-                  singleSelect={true}
                   selectedBorderColor="blue"
                   selectedBadgeColor="blue"
                 />
@@ -382,17 +420,14 @@ const CreateAppointmentPopup: React.FC<
                   <Image src={alarmIcon} alt="icon" width={14} height={14} />{" "}
                   Alarm
                 </label>
-                <MultipleSelector
+                <SingleSelector
                   options={ALERT_OPTIONS.map((o) => ({
                     ...o,
                     isSelected: o.id === formData.alert,
                   }))}
                   onSelectionChange={(s) =>
-                    handleSingleSelectChange("alert", s)
+                    handleSingleSelectChange("alert", [s])
                   }
-                  showSelectAll={false}
-                  showCount={false}
-                  singleSelect={true}
                   selectedBorderColor="blue"
                   selectedBadgeColor="blue"
                 />
