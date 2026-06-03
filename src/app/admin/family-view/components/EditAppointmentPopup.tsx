@@ -13,6 +13,8 @@ import closeIcon from "@/app/admin/assets/close-428.png";
 import MultipleSelector, {
   SelectableOption,
 } from "./FormComponents/MultipleSelector";
+import SingleSelector from "./FormComponents/SingleSelector";
+import ResponsiblePersonSelector from "./FormComponents/ResponsiblePersonSelector";
 import { useResources } from "@/app/context/ResourceContext";
 import { mapResourcesToSelectableOptions } from "@/app/utils/resourceAdapters";
 import {
@@ -108,7 +110,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
     }));
   };
 
-  // Generic handler for single-select MultipleSelector components
+  // Generic handler for single-select SingleSelector components
   const handleSingleSelectChange = (
     field: keyof AppointmentUpdateFormUI,
     selectedOptions: SelectableOption[],
@@ -411,16 +413,10 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
                 />{" "}
                 Choose Participants
               </label>
-              <MultipleSelector
+              <ResponsiblePersonSelector
                 options={responsiblePersons}
                 onSelectionChange={handleResponsiblePersonsChange}
                 subHeading="Select Responsible Persons"
-                showSelectAll={true}
-                showCount={true}
-                showImages={true}
-                selectedBorderColor="blue"
-                selectedBadgeColor="blue"
-                singleSelect={false}
               />
             </div>
 
@@ -464,17 +460,14 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
                   <Image src={repeatIcon} alt="icon" width={14} height={14} />{" "}
                   Repeat
                 </label>
-                <MultipleSelector
+                <SingleSelector
                   options={REPEAT_OPTIONS.map((o) => ({
                     ...o,
                     isSelected: o.id === formData.repeat,
                   }))}
                   onSelectionChange={(s) =>
-                    handleSingleSelectChange("repeat", s)
+                    handleSingleSelectChange("repeat", [s])
                   }
-                  showSelectAll={false}
-                  showCount={false}
-                  singleSelect={true}
                   selectedBorderColor="blue"
                   selectedBadgeColor="blue"
                 />
@@ -484,17 +477,14 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
                   <Image src={alarmIcon} alt="icon" width={14} height={14} />{" "}
                   Alarm
                 </label>
-                <MultipleSelector
+                <SingleSelector
                   options={ALERT_OPTIONS.map((o) => ({
                     ...o,
                     isSelected: o.id === formData.alert,
                   }))}
                   onSelectionChange={(s) =>
-                    handleSingleSelectChange("alert", s)
+                    handleSingleSelectChange("alert", [s])
                   }
-                  showSelectAll={false}
-                  showCount={false}
-                  singleSelect={true}
                   selectedBorderColor="blue"
                   selectedBadgeColor="blue"
                 />

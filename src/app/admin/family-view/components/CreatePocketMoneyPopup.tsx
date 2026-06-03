@@ -14,9 +14,10 @@ import participantsIcon from "@/app/admin/assets/participantsIcon.png";
 import repeatIcon from "@/app/admin/assets/repeatIcon.png";
 import nameIcon from "@/app/admin/assets/name.png";
 import alarmIcon from "@/app/admin/assets/alarmIcon.png";
-import MultipleSelector, {
-  SelectableOption,
-} from "./FormComponents/MultipleSelector";
+import SingleSelector from "./FormComponents/SingleSelector";
+import ResponsiblePersonSelector from "./FormComponents/ResponsiblePersonSelector";
+import MultipleSelector from "./FormComponents/MultipleSelector";
+import { SelectableOption } from "./FormComponents/MultipleSelector";
 import { REPEAT_OPTIONS, ALERT_OPTIONS } from "@/app/constants/appointmentForm";
 import { mapResourcesToSelectableOptions } from "@/app/utils/resourceAdapters";
 import { useResources } from "@/app/context/ResourceContext";
@@ -223,16 +224,12 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
                 <Image src={nameIcon} alt="icon" width={12} height={12} />{" "}
                 Choose Standard Task
               </label>
-              <MultipleSelector
+              <SingleSelector
                 options={standardTasks}
-                onSelectionChange={handleStandardTaskChange}
-                subHeading="Select a task from the list"
-                showSelectAll={false}
-                showCount={true}
-                showImages={false}
+                onSelectionChange={(s) => handleStandardTaskChange([s])}
+                mainHeading="Select a task from the list"
                 selectedBorderColor="blue"
                 selectedBadgeColor="blue"
-                singleSelect={true}
               />
             </div>
 
@@ -318,16 +315,10 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
                   />
                 </div>
               </div>
-              <MultipleSelector
+              <ResponsiblePersonSelector
                 options={responsiblePersons}
                 onSelectionChange={handleResponsiblePersonsChange}
                 subHeading="Select who can do this task"
-                showSelectAll={true}
-                showCount={true}
-                showImages={true}
-                selectedBorderColor="blue"
-                selectedBadgeColor="blue"
-                singleSelect={false}
               />
             </div>
 
@@ -337,15 +328,11 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
                 <Image src={repeatIcon} alt="icon" width={14} height={14} />{" "}
                 Repeat Sequence
               </label>
-              <MultipleSelector
+              <SingleSelector
                 options={repeatSequence}
-                onSelectionChange={handleRepeatChange}
-                showSelectAll={true}
-                showCount={true}
-                showImages={false}
+                onSelectionChange={(s) => handleRepeatChange([s])}
                 selectedBorderColor="blue"
                 selectedBadgeColor="blue"
-                singleSelect={true}
               />
             </div>
 

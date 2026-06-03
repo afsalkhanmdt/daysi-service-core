@@ -16,6 +16,8 @@ import { ToggleSwitch } from "./FormComponents/ToggleSwitch";
 import MultipleSelector, {
   SelectableOption,
 } from "./FormComponents/MultipleSelector";
+import SingleSelector from "./FormComponents/SingleSelector";
+import ResponsiblePersonSelector from "./FormComponents/ResponsiblePersonSelector";
 import CustomDropdown from "./FormComponents/DropDown";
 import {
   mapResourcesToSelectableOptions,
@@ -285,16 +287,10 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
                 />{" "}
                 Responsible Persons
               </label>
-              <MultipleSelector
+              <ResponsiblePersonSelector
                 options={responsiblePersons}
                 onSelectionChange={handleResponsiblePersonsChange}
                 subHeading="Select who should complete this task"
-                showSelectAll={true}
-                showCount={true}
-                showImages={true}
-                selectedBorderColor="blue"
-                selectedBadgeColor="blue"
-                singleSelect={false}
               />
             </div>
 
@@ -309,16 +305,12 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
                 />{" "}
                 Status
               </label>
-              <MultipleSelector
+              <SingleSelector
                 options={status}
-                onSelectionChange={handleStatusChange}
-                subHeading="Select task status"
-                showSelectAll={false}
-                showCount={true}
-                showImages={false}
+                onSelectionChange={(s) => handleStatusChange([s])}
+                mainHeading="Select task status"
                 selectedBorderColor="blue"
                 selectedBadgeColor="blue"
-                singleSelect={true}
               />
             </div>
 

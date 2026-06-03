@@ -15,6 +15,8 @@ import { ToggleSwitch } from "./FormComponents/ToggleSwitch";
 import MultipleSelector, {
   SelectableOption,
 } from "./FormComponents/MultipleSelector";
+import SingleSelector from "./FormComponents/SingleSelector";
+import ResponsiblePersonSelector from "./FormComponents/ResponsiblePersonSelector";
 import LocationInput from "./FormComponents/LocationInput";
 import DateTimeRange from "./FormComponents/DateTimeRange";
 import { useResources } from "@/app/context/ResourceContext";
@@ -29,7 +31,6 @@ import {
   buildLocalTimestamp,
   buildTimestamp,
   initialFormDataForAppointmentApi,
-  parseDateToForm,
   REPEAT_OPTIONS,
 } from "@/app/constants/appointmentForm";
 
@@ -148,12 +149,12 @@ const CreateAppointmentPopup: React.FC<
         formData.endTimeOnly,
       ),
       repeatEndDate,
-    };
+    } as UserEventCreateRequest;
 
-    delete (payload as any).startDateOnly;
-    delete (payload as any).startTimeOnly;
-    delete (payload as any).endDateOnly;
-    delete (payload as any).endTimeOnly;
+    delete (payload as Record<string, any>).startDateOnly;
+    delete (payload as Record<string, any>).startTimeOnly;
+    delete (payload as Record<string, any>).endDateOnly;
+    delete (payload as Record<string, any>).endTimeOnly;
 
     onSubmit(payload);
     handleClose();
@@ -309,16 +310,10 @@ const CreateAppointmentPopup: React.FC<
                 />{" "}
                 Choose Participants
               </label>
-              <MultipleSelector
+              <ResponsiblePersonSelector
                 options={responsiblePersons}
                 onSelectionChange={handleResponsiblePersonsChange}
                 subHeading="Select Responsible Persons"
-                showSelectAll={true}
-                showCount={true}
-                showImages={true}
-                selectedBorderColor="blue"
-                selectedBadgeColor="blue"
-                singleSelect={false}
               />
             </div>
 
@@ -362,17 +357,14 @@ const CreateAppointmentPopup: React.FC<
                   <Image src={repeatIcon} alt="icon" width={14} height={14} />{" "}
                   Repeat
                 </label>
-                <MultipleSelector
+                <SingleSelector
                   options={REPEAT_OPTIONS.map((o) => ({
                     ...o,
                     isSelected: o.id === formData.repeat,
                   }))}
                   onSelectionChange={(s) =>
-                    handleSingleSelectChange("repeat", s)
+                    handleSingleSelectChange("repeat", [s])
                   }
-                  showSelectAll={false}
-                  showCount={false}
-                  singleSelect={true}
                   selectedBorderColor="blue"
                   selectedBadgeColor="blue"
                 />
@@ -382,17 +374,14 @@ const CreateAppointmentPopup: React.FC<
                   <Image src={alarmIcon} alt="icon" width={14} height={14} />{" "}
                   Alarm
                 </label>
-                <MultipleSelector
+                <SingleSelector
                   options={ALERT_OPTIONS.map((o) => ({
                     ...o,
                     isSelected: o.id === formData.alert,
                   }))}
                   onSelectionChange={(s) =>
-                    handleSingleSelectChange("alert", s)
+                    handleSingleSelectChange("alert", [s])
                   }
-                  showSelectAll={false}
-                  showCount={false}
-                  singleSelect={true}
                   selectedBorderColor="blue"
                   selectedBadgeColor="blue"
                 />

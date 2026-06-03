@@ -13,6 +13,8 @@ import { ToggleSwitch } from "./FormComponents/ToggleSwitch";
 import MultipleSelector, {
   SelectableOption,
 } from "./FormComponents/MultipleSelector";
+import SingleSelector from "./FormComponents/SingleSelector";
+import ResponsiblePersonSelector from "./FormComponents/ResponsiblePersonSelector";
 import participantsIcon from "@/app/admin/assets/participantsIcon.png";
 import descriptionIcon from "@/app/admin/assets/descriptionIcon.png";
 import groupIcon from "@/app/admin/assets/groupIcon.png";
@@ -271,16 +273,10 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
                 />{" "}
                 Responsible Persons
               </label>
-              <MultipleSelector
+              <ResponsiblePersonSelector
                 options={responsiblePersons}
                 onSelectionChange={handleResponsiblePersonsChange}
-                subHeading="Select who should complete this task"
-                showSelectAll={true}
-                showCount={true}
-                showImages={true}
-                selectedBorderColor="blue"
-                selectedBadgeColor="blue"
-                singleSelect={false}
+                subHeading="Select who can do this task"
               />
             </div>
 
@@ -295,16 +291,12 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
                 />{" "}
                 Status
               </label>
-              <MultipleSelector
+              <SingleSelector
                 options={status}
-                onSelectionChange={handleStatusChange}
-                subHeading="Select task status"
-                showSelectAll={false}
-                showCount={true}
-                showImages={false}
+                onSelectionChange={(s) => handleStatusChange([s])}
+                mainHeading="Select task status"
                 selectedBorderColor="blue"
                 selectedBadgeColor="blue"
-                singleSelect={true}
               />
             </div>
 
