@@ -126,12 +126,24 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
   const handleResponsiblePersonsChange = (
     selectedPersons: SelectableOption[],
   ) => {
-    setResponsiblePersons(selectedPersons);
+    setResponsiblePersons((prev) =>
+      prev.map((person) => ({
+        ...person,
+        isSelected: selectedPersons.some((sp) => sp.id === person.id),
+      })),
+    );
+
+    // When calculating isForAll, we need to account for the family member who is hidden but always selected
+    setFormData((prev) => ({
+      ...prev,
+      isForAll: (selectedPersons.length + 1) === resources.length ? 1 : 0,
+    }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    const firstResource = resources[0];
     const initialParticipantIds = new Set(
       initialData?.participants?.map(
         (p: any) => p.memberId || p.ParticipantId || p.id,
@@ -181,6 +193,39 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
 
         return participantData;
       });
+
+    // Always include the first member (Family)
+    if (firstResource) {
+      const familyMemberId = firstResource.extendedProps?.memberId || "";
+      const existingFamilyParticipant = (initialData?.participants as any[])?.find(
+        (p) =>
+          String(p.ParticipantId || p.memberId || p.id) === String(familyMemberId),
+      );
+
+      const familyParticipant: any = {
+        ParticipantId: familyMemberId,
+        MemberId: familyMemberId,
+        localId: firstResource.id,
+        memberId: familyMemberId,
+      };
+
+      if (initialData?.id) {
+        familyParticipant.EventId = Number(initialData.id);
+        familyParticipant.eventId = Number(initialData.id);
+      }
+
+      if (existingFamilyParticipant) {
+        familyParticipant.EventId = existingFamilyParticipant.EventId || existingFamilyParticipant.eventId || familyParticipant.EventId;
+        familyParticipant.ParentEventId = existingFamilyParticipant.ParentEventId || existingFamilyParticipant.parentEventId || initialData?.parentEventId;
+      } else {
+        familyParticipant.ParentEventId = initialData?.parentEventId || "";
+      }
+
+      familyParticipant.eventId = familyParticipant.EventId;
+      familyParticipant.parentEventId = familyParticipant.ParentEventId;
+
+      formattedParticipants.unshift(familyParticipant);
+    }
 
     const { participants, ...formDataWithoutParticipants } = formData;
 
@@ -265,6 +310,8 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
   // Initialize responsible persons from resources
   useEffect(() => {
     const mappedPersons = mapResourcesToSelectableOptions(resources);
+    // Filter out the family member (index 0) from UI
+    const otherMembers = mappedPersons.slice(1);
 
     if (initialData?.participants && initialData.participants.length > 0) {
       const selectedMemberIds = new Set(
@@ -273,7 +320,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
         ),
       );
 
-      const updatedPersons = mappedPersons.map((person) => ({
+      const updatedPersons = otherMembers.map((person) => ({
         ...person,
         isSelected:
           selectedMemberIds.has(person.memberId) ||
@@ -281,7 +328,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
       }));
       setResponsiblePersons(updatedPersons);
     } else {
-      setResponsiblePersons(mappedPersons);
+      setResponsiblePersons(otherMembers);
     }
   }, [resources, initialData?.participants]);
 

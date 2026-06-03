@@ -112,16 +112,33 @@ const CreateAppointmentPopup: React.FC<
       })),
     );
 
-    setFormData((prev) => ({
-      ...prev,
-      participants: selectedPersons.map((person) => ({
-        ParticipantId: person.memberId,
-        MemberId: person.memberId,
-        localId: person.id,
-        memberId: person.memberId,
+    const firstResource = resources[0];
+    const participants = selectedPersons.map((person) => ({
+      ParticipantId: person.memberId,
+      MemberId: person.memberId,
+      localId: person.id,
+      memberId: person.memberId,
+      EventId: 0,
+      ParentEventId: "",
+    }));
+
+    // Always include the first member (Family)
+    if (firstResource) {
+      const familyParticipant = {
+        ParticipantId: firstResource.extendedProps?.memberId || "",
+        MemberId: firstResource.extendedProps?.memberId || "",
+        localId: firstResource.id,
+        memberId: firstResource.extendedProps?.memberId || "",
         EventId: 0,
         ParentEventId: "",
-      })),
+      };
+      participants.unshift(familyParticipant);
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      participants,
+      isForAll: participants.length === resources.length ? 1 : 0,
     }));
   };
 
@@ -163,6 +180,11 @@ const CreateAppointmentPopup: React.FC<
   const handleClose = () => {
     onClose();
     setFormData(initialFormData);
+    // Reset selection state when closing
+    if (resources.length > 0) {
+      const otherMembers = mapResourcesToSelectableOptions(resources).slice(1);
+      setResponsiblePersons(otherMembers);
+    }
   };
 
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -185,8 +207,32 @@ const CreateAppointmentPopup: React.FC<
   }, [isOpen, handleClose]);
 
   useEffect(() => {
-    setResponsiblePersons(mapResourcesToSelectableOptions(resources));
-  }, [resources]);
+    if (resources.length > 0) {
+      const allOptions = mapResourcesToSelectableOptions(resources);
+      const familyMember = allOptions[0];
+      const otherMembers = allOptions.slice(1);
+
+      setResponsiblePersons(otherMembers);
+
+      // Initialize formData with the family member already selected
+      if (familyMember) {
+        setFormData((prev) => ({
+          ...prev,
+          participants: [
+            {
+              ParticipantId: familyMember.memberId || "",
+              MemberId: familyMember.memberId || "",
+              localId: familyMember.id,
+              memberId: familyMember.memberId || "",
+              EventId: 0,
+              ParentEventId: "",
+            },
+          ],
+          isForAll: resources.length === 1 ? 1 : 0,
+        }));
+      }
+    }
+  }, [resources, isOpen]);
 
   if (!isOpen) return null;
 

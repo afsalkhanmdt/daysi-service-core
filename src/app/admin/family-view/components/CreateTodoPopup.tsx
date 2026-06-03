@@ -115,9 +115,18 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
       })),
     );
 
+    const firstResourceId = resources[0]?.extendedProps?.memberId;
+    const assignedTo = selectedPersons.map((person) => person.memberId!);
+
+    // Always include the first member (Family)
+    if (firstResourceId) {
+      assignedTo.unshift(firstResourceId);
+    }
+
     setFormData((prev) => ({
       ...prev,
-      assignedTo: selectedPersons.map((person) => person.memberId!),
+      assignedTo,
+      isForAll: assignedTo.length === resources.length,
     }));
   };
 
@@ -146,26 +155,43 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(formData);
-    resetForm();
-    onClose();
+    handleClose();
   };
 
   const handleClose = () => {
     resetForm();
     onClose();
+    // Reset selection state when closing
+    if (resources.length > 0) {
+      const otherMembers = mapResourcesToSelectableOptions(resources).slice(1);
+      setResponsiblePersons(otherMembers);
+    }
   };
 
   const resetForm = () => {
     setFormData(initialToDoCreateBody);
     setStatus(statusOptions);
-    setResponsiblePersons((prev) =>
-      prev.map((p) => ({ ...p, isSelected: false })),
-    );
+    // Responsible persons are updated via the useEffect on resources/isOpen
   };
 
   useEffect(() => {
-    setResponsiblePersons(mapResourcesToSelectableOptions(resources));
-  }, [resources]);
+    if (resources.length > 0) {
+      const allOptions = mapResourcesToSelectableOptions(resources);
+      const familyMember = allOptions[0];
+      const otherMembers = allOptions.slice(1);
+
+      setResponsiblePersons(otherMembers);
+
+      // Initialize formData with the family member already selected
+      if (familyMember) {
+        setFormData((prev) => ({
+          ...prev,
+          assignedTo: [familyMember.memberId || ""],
+          isForAll: resources.length === 1,
+        }));
+      }
+    }
+  }, [resources, isOpen]);
 
   if (!isOpen) return null;
 
