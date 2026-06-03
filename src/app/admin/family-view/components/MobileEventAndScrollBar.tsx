@@ -43,7 +43,9 @@ const MobileEventAndScrollBar = ({
       End: new Date(Number(event.End)),
     })) || [];
 
-  // Filter events for the selected day + check for full participation if MemberType===1
+  const firstResourceId = resources.length > 0 ? resources[0].id : null;
+
+  // Filter events for the selected day
   const selectedDaysEvents = normalizedEvents.filter((event) => {
     const eventStart = dayjs(event.Start);
     const eventEnd = dayjs(event.End);
@@ -53,15 +55,19 @@ const MobileEventAndScrollBar = ({
 
     const isSameDay = eventStart.isBefore(dayEnd) && eventEnd.isAfter(dayStart);
 
-    //  If member.MemberType === 1 -> only include events where all members participate
-    if (member?.MemberType === 1) {
-      return (
-        isSameDay && event.Attendee?.length === familyData.Members.length - 1
-      );
+    if (!isSameDay) return false;
+
+    // If it's a "For All" event, it should only show for the first resource (Family column)
+    if (event.IsForAll === 1) {
+      return String(selectedMember) === String(firstResourceId);
     }
 
-    // Otherwise, just return events for that day
-    return isSameDay;
+    // For non-"For All" events, don't show them in the Family column
+    if (String(selectedMember) === String(firstResourceId)) {
+      return false;
+    }
+
+    return true;
   });
 
   // scroll selected member into view

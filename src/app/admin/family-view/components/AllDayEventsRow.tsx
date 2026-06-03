@@ -40,18 +40,10 @@ const AllDayEventsRow = ({
         if (Number(event.IsAllDayEvent) !== 1) return;
 
         // Apply same filtering as CalendarView
-        if (
-          member.MemberType === 1 &&
-          event.EventParticipant?.length !== data.Members.length - 1
-        ) {
-          return;
-        }
-
-        if (
-          member.MemberType !== 1 &&
-          event.EventParticipant?.length === data.Members.length - 1
-        ) {
-          return;
+        if (event.IsForAll === 1) {
+          if (member.MemberType !== 1) return;
+        } else {
+          if (member.MemberType === 1) return;
         }
 
         let isMatch = false;

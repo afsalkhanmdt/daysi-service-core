@@ -127,13 +127,38 @@ const CalendarView = ({
   const events: EventInput[] = useMemo(() => {
     const allEvents: EventInput[] = [];
     const seenEventMemberPairs = new Set<string>(); // Track eventId-memberId pairs
-    const duplicateWarnings = new Set<string>(); // Track already warned duplicates
+    const processedForAllEventKeys = new Set<string>(); // Track processed IsForAll events by content
+
+    const firstResourceId = resources.length > 0 ? String(resources[0].id) : null;
+    const firstResourceColor =
+      resources.length > 0 ? resources[0].extendedProps?.color : "000000";
 
     data.Members.forEach((member: MemberResponse) => {
       member.Events.forEach((event) => {
-        const eventKey = `${event.Id}-${member.Id}`;
+        let targetResourceId = String(member.Id);
+        let targetColor = member.ColorCode || "000000";
 
-        // Skip if we've already processed this event for this member
+        // Special handling for IsForAll events: only display in the first column (Family Events)
+        if (event.IsForAll === 1) {
+          const contentKey = `${event.Title}-${event.Start}-${event.End}-${event.Location || ""}`;
+          if (processedForAllEventKeys.has(contentKey)) {
+            return;
+          }
+          processedForAllEventKeys.add(contentKey);
+          if (firstResourceId) {
+            targetResourceId = firstResourceId;
+            targetColor = firstResourceColor || "000000";
+          }
+        } else {
+          // Non-"For All" events should not be shown for the Family member column
+          if (firstResourceId && String(member.Id) === firstResourceId) {
+            return;
+          }
+        }
+
+        const eventKey = `${event.Id}-${targetResourceId}`;
+
+        // Skip if we've already processed this event for this target resource
         if (seenEventMemberPairs.has(eventKey)) {
           return;
         }
@@ -149,8 +174,8 @@ const CalendarView = ({
          Base Event
       ========================== */
         const baseEvent: EventInput = {
-          id: eventKey, // Use unique event-member key as ID to avoid collisions
-          resourceId: String(member.Id),
+          id: eventKey, // Use unique event-resource key as ID to avoid collisions
+          resourceId: targetResourceId,
           title: event.Title,
           start,
           end,
@@ -160,7 +185,7 @@ const CalendarView = ({
             ...event,
             participants: event.EventParticipant,
             externalCalender: event.ExternalCalendarName,
-            userColorCode: member.ColorCode || "000000",
+            userColorCode: targetColor,
             description: event.Description || "",
             location: event.Location || "",
             isRecurrence: false,
@@ -211,9 +236,7 @@ const CalendarView = ({
           addInterval();
 
           while (currentStart <= repeatEnd) {
-            const recurrenceId = `${event.Id}-${currentStart.getTime()}-${
-              member.Id
-            }`;
+            const recurrenceId = `${event.Id}-${currentStart.getTime()}-${targetResourceId}`;
             recurrenceEvents.push({
               ...baseEvent,
               id: recurrenceId,
@@ -246,7 +269,7 @@ const CalendarView = ({
     }
 
     return allEvents;
-  }, [data.Members]);
+  }, [data.Members, resources]);
 
   // Function to determine exactly which time and resource to scroll to
   const getScrollTarget = useCallback(() => {
