@@ -144,11 +144,6 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
     e.preventDefault();
 
     const firstResource = resources[0];
-    const initialParticipantIds = new Set(
-      initialData?.participants?.map(
-        (p: any) => p.memberId || p.ParticipantId || p.id,
-      ) || [],
-    );
 
     const formattedParticipants = responsiblePersons
       .filter((person) => person.isSelected)
@@ -164,13 +159,11 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
           MemberId: person.memberId,
           localId: person.id,
           memberId: person.memberId,
+          Participant: person.label,
+          ParticipantFirstName: person.label,
+          ParticipantClass: "",
+          EventId: initialData?.id ? Number(initialData.id) : 0,
         };
-
-        // Always associate with the current event
-        if (initialData?.id) {
-          participantData.EventId = Number(initialData.id);
-          participantData.eventId = Number(initialData.id);
-        }
 
         if (existingParticipant) {
           participantData.EventId =
@@ -185,11 +178,9 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
           participantData.ParentEventId = initialData?.parentEventId || "";
         }
 
-        // Standardize both casings
+        // Add both casings for safety
         participantData.eventId = participantData.EventId;
         participantData.parentEventId = participantData.ParentEventId;
-        participantData.EventId = participantData.EventId;
-        participantData.ParentEventId = participantData.ParentEventId;
 
         return participantData;
       });
@@ -207,12 +198,11 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
         MemberId: familyMemberId,
         localId: firstResource.id,
         memberId: familyMemberId,
+        Participant: firstResource.title,
+        ParticipantFirstName: firstResource.title,
+        ParticipantClass: "",
+        EventId: initialData?.id ? Number(initialData.id) : 0,
       };
-
-      if (initialData?.id) {
-        familyParticipant.EventId = Number(initialData.id);
-        familyParticipant.eventId = Number(initialData.id);
-      }
 
       if (existingFamilyParticipant) {
         familyParticipant.EventId = existingFamilyParticipant.EventId || existingFamilyParticipant.eventId || familyParticipant.EventId;
@@ -309,6 +299,8 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
 
   // Initialize responsible persons from resources
   useEffect(() => {
+    if (resources.length === 0 || !isOpen) return;
+
     const mappedPersons = mapResourcesToSelectableOptions(resources);
     // Filter out the family member (index 0) from UI
     const otherMembers = mappedPersons.slice(1);
@@ -316,21 +308,33 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
     if (initialData?.participants && initialData.participants.length > 0) {
       const selectedMemberIds = new Set(
         initialData.participants.map(
-          (p: any) => p.memberId || p.ParticipantId || p.id,
+          (p: any) => String(p.ParticipantId || p.memberId || p.id),
         ),
       );
 
       const updatedPersons = otherMembers.map((person) => ({
         ...person,
         isSelected:
-          selectedMemberIds.has(person.memberId) ||
-          selectedMemberIds.has(person.id),
+          selectedMemberIds.has(String(person.memberId)) ||
+          selectedMemberIds.has(String(person.id)),
       }));
       setResponsiblePersons(updatedPersons);
+
+      // Recalculate isForAll initially based on selected persons + family member
+      const selectedCount = updatedPersons.filter(p => p.isSelected).length + 1;
+      setFormData(prev => ({
+        ...prev,
+        isForAll: selectedCount === resources.length ? 1 : 0
+      }));
     } else {
       setResponsiblePersons(otherMembers);
+      // If no participants provided, default isForAll to 1 if only family member exists
+      setFormData(prev => ({
+        ...prev,
+        isForAll: resources.length === 1 ? 1 : 0
+      }));
     }
-  }, [resources, initialData?.participants]);
+  }, [resources, initialData?.participants, isOpen]);
 
   if (!isOpen) return null;
 
