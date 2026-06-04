@@ -419,9 +419,10 @@ const FamilyViewWrapper = ({
           dataReload={reload}
           onFreemium={() => setShowFreemiumModal(true)}
           isLoading={isActionLoading}
+          setIsLoading={setIsActionLoading}
           onImportAppointments={() =>
             // checkSubscription(() => setShowImportAppointments(true))
-            setShowImportAppointments(true)
+            setShowCreateAppointment(true)
           }
         />
       </div>

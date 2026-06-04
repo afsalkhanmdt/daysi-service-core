@@ -136,9 +136,13 @@ const ToDoAndPMComponent = ({
       const response = await updateToDoTaskCall(todoData);
       if (response) {
         await dataReload();
-        if (todoData.StartDate) {
-          setCurrentDate(new Date(todoData.StartDate));
+        // Shift view to the date the todo was created
+        const shiftDate = todoData.CreatedDate || todoData.createdDate;
+        if (shiftDate) {
+          setCurrentDate(new Date(Number(shiftDate)));
         }
+        // Artificial delay to allow UI to sync with new data
+        await new Promise((resolve) => setTimeout(resolve, 500));
       }
     } finally {
       setIsLoading?.(false);
@@ -154,6 +158,8 @@ const ToDoAndPMComponent = ({
         if (pocketMoneyData.ActivityDate) {
           setCurrentDate(new Date(pocketMoneyData.ActivityDate));
         }
+        // Artificial delay to allow UI to sync with new data
+        await new Promise((resolve) => setTimeout(resolve, 500));
       }
     } finally {
       setIsLoading?.(false);

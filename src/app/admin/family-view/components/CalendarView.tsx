@@ -59,6 +59,7 @@ const CalendarView = ({
   onFreemium,
   onImportAppointments,
   isLoading,
+  setIsLoading,
 }: {
   data: FamilyData;
   currentDate: Date;
@@ -67,6 +68,7 @@ const CalendarView = ({
   onFreemium: () => void;
   onImportAppointments?: () => void;
   isLoading?: boolean;
+  setIsLoading?: (loading: boolean) => void;
 }) => {
   const { resources, setMembers } = useResources();
 
@@ -87,7 +89,6 @@ const CalendarView = ({
   const [selectedAppointment, setSelectedAppointment] =
     useState<EventApi | null>(null);
   const [selectedRawEvent, setSelectedRawEvent] = useState<any>(null);
-  const [localActionLoading, setLocalActionLoading] = useState(false);
 
   const checkSubscription = (callback: () => void) => {
     if (data?.Family.SubscriptionType !== "Premium") {
@@ -114,67 +115,76 @@ const CalendarView = ({
     [data?.Family.SubscriptionType, onFreemium],
   );
 
-  const imageUrls = useMemo(
-    () =>
-      data.Members.map((member) => ({
-        id: member.MemberId,
-        name: member.FirstName,
-        imageUrl: member.ResourceUrl || dp.src,
-      })),
-    [data.Members],
-  );
+  const memberLookup = useMemo(() => {
+    const lookup = new Map<string, MemberResponse>();
+    data.Members.forEach((m) => {
+      lookup.set(String(m.Id), m);
+      lookup.set(String(m.MemberId), m);
+    });
+    return lookup;
+  }, [data.Members]);
 
   const events: EventInput[] = useMemo(() => {
     const allEvents: EventInput[] = [];
-    const seenEventMemberPairs = new Set<string>(); // Track eventId-memberId pairs
-    const processedForAllEventKeys = new Set<string>(); // Track processed IsForAll events by content
+    const seenEventResourcePairs = new Set<string>();
+    const seenContentKeys = new Set<string>();
 
-    const firstResourceId = resources.length > 0 ? String(resources[0].id) : null;
+    // 1. Collect all logically unique events across all members
+    const uniqueEventsList: any[] = [];
+    data.Members.forEach((m) => {
+      m.Events.forEach((e) => {
+        const contentKey = `${e.Title}-${e.Start}-${e.End}-${e.Location || ""}`;
+        if (!seenContentKeys.has(contentKey)) {
+          seenContentKeys.add(contentKey);
+          uniqueEventsList.push(e);
+        }
+      });
+    });
+
+    const firstResourceId =
+      resources.length > 0 ? String(resources[0].id) : null;
     const firstResourceColor =
       resources.length > 0 ? resources[0].extendedProps?.color : "000000";
 
-    data.Members.forEach((member: MemberResponse) => {
-      member.Events.forEach((event) => {
-        let targetResourceId = String(member.Id);
-        let targetColor = member.ColorCode || "000000";
+    // 2. Map each unique event to all its participants' columns
+    uniqueEventsList.forEach((event) => {
+      const targetResourceIds = new Set<string>();
 
-        // Special handling for IsForAll events: only display in the first column (Family Events)
-        if (event.IsForAll === 1) {
-          const contentKey = `${event.Title}-${event.Start}-${event.End}-${event.Location || ""}`;
-          if (processedForAllEventKeys.has(contentKey)) {
-            return;
+      if (event.IsForAll === 1) {
+        // "For All" events show only in the first column
+        if (firstResourceId) targetResourceIds.add(firstResourceId);
+      } else {
+        // Non-"For All" events show in the column of every participant
+        // except the family column (first column) as per original logic
+        const participants = event.EventParticipant || [];
+        participants.forEach((p: any) => {
+          const participantId = p.ParticipantId || p.memberId || p.id;
+          const member = memberLookup.get(String(participantId));
+          if (member) {
+            const rid = String(member.Id);
+            if (rid !== firstResourceId) {
+              targetResourceIds.add(rid);
+            }
           }
-          processedForAllEventKeys.add(contentKey);
-          if (firstResourceId) {
-            targetResourceId = firstResourceId;
-            targetColor = firstResourceColor || "000000";
-          }
-        } else {
-          // Non-"For All" events should not be shown for the Family member column
-          if (firstResourceId && String(member.Id) === firstResourceId) {
-            return;
-          }
-        }
+        });
+      }
 
-        const eventKey = `${event.Id}-${targetResourceId}`;
-
-        // Skip if we've already processed this event for this target resource
-        if (seenEventMemberPairs.has(eventKey)) {
-          return;
-        }
-
-        seenEventMemberPairs.add(eventKey);
+      targetResourceIds.forEach((targetResourceId) => {
+        const member = data.Members.find(
+          (m) => String(m.Id) === targetResourceId,
+        );
+        const targetColor = member?.ColorCode || "000000";
 
         let start = new Date(Number(event.Start));
         let end = new Date(Number(event.End));
-
         const isAllDay = event.IsAllDayEvent === 1;
 
-        /* ==========================
-         Base Event
-      ========================== */
+        const eventKey = `${event.Id}-${targetResourceId}`;
+        if (seenEventResourcePairs.has(eventKey)) return;
+        seenEventResourcePairs.add(eventKey);
+
         const baseEvent: EventInput = {
-          id: eventKey, // Use unique event-resource key as ID to avoid collisions
+          id: eventKey,
           resourceId: targetResourceId,
           title: event.Title,
           start,
@@ -192,9 +202,7 @@ const CalendarView = ({
           },
         };
 
-        /* ==========================
-         Recurrence Events
-      ========================== */
+        // Recurrence logic
         const recurrenceEvents: EventInput[] = [];
         const rule = event.RecurrenceRule;
         const repeatEnd = event.RepeatEndDate
@@ -232,9 +240,7 @@ const CalendarView = ({
             }
           };
 
-          // skip base event
           addInterval();
-
           while (currentStart <= repeatEnd) {
             const recurrenceId = `${event.Id}-${currentStart.getTime()}-${targetResourceId}`;
             recurrenceEvents.push({
@@ -247,7 +253,6 @@ const CalendarView = ({
                 isRecurrence: true,
               },
             });
-
             addInterval();
           }
         }
@@ -256,20 +261,8 @@ const CalendarView = ({
       });
     });
 
-    // Check for any remaining duplicate IDs (should be 0)
-    const eventIds = allEvents.map((e) => e.id);
-    const duplicateIds = eventIds.filter(
-      (id, index) => eventIds.indexOf(id) !== index,
-    );
-    if (duplicateIds.length > 0) {
-      console.error(
-        `Found ${duplicateIds.length} duplicate event IDs in final array:`,
-        [...new Set(duplicateIds)],
-      );
-    }
-
     return allEvents;
-  }, [data.Members, resources]);
+  }, [data.Members, resources, memberLookup]);
 
   // Function to determine exactly which time and resource to scroll to
   const getScrollTarget = useCallback(() => {
@@ -425,7 +418,7 @@ const CalendarView = ({
   const handleEditAppointment = async (
     appointmentData: UserEventUpdateRequest,
   ) => {
-    setLocalActionLoading(true);
+    setIsLoading?.(true);
 
     const now = new Date().toISOString();
 
@@ -461,14 +454,16 @@ const CalendarView = ({
 
     try {
       const response = await updateAppointmentCall(updatedAppointmentData);
-      if (response.ok) {
+      if (response) {
         await dataReload();
         if (updatedAppointmentData.startDate) {
           setCurrentDate(new Date(updatedAppointmentData.startDate));
         }
+        // Artificial delay to allow UI to sync with new data
+        await new Promise((resolve) => setTimeout(resolve, 500));
       }
     } finally {
-      setLocalActionLoading(false);
+      setIsLoading?.(false);
     }
   };
 
@@ -478,7 +473,7 @@ const CalendarView = ({
     }
   }, [data.Members, setMembers]);
 
-  const combinedLoading = isLoading || localActionLoading;
+  const combinedLoading = isLoading;
 
   return (
     <div className="sm:p-2.5 bg-slate-100 flex flex-col sm:h-full sm:rounded-xl relative">
@@ -592,12 +587,11 @@ const CalendarView = ({
                 .participants as EventParticipant[]) || [];
 
             const participantImages = participants
-              .map(
-                (p) =>
-                  imageUrls.find(
-                    (m) => String(m.id) === String(p.ParticipantId),
-                  )?.imageUrl,
-              )
+              .map((p) => {
+                const participantId = p.ParticipantId;
+                const member = memberLookup.get(String(participantId));
+                return member?.ResourceUrl || dp.src;
+              })
               .filter((img): img is string => Boolean(img));
 
             return (
@@ -654,7 +648,8 @@ const CalendarView = ({
                     alarms: selectedRawEvent.Alarms,
                     participants: selectedRawEvent.EventParticipant,
                     externalCalendarName: selectedRawEvent.ExternalCalendarName,
-                    localStartDate: selectedRawEvent.extendedProps.LocalStartDate,
+                    localStartDate:
+                      selectedRawEvent.extendedProps.LocalStartDate,
                     localEndDate: selectedRawEvent.extendedProps.LocalEndDate,
                   }
                 : selectedAppointment
@@ -689,8 +684,10 @@ const CalendarView = ({
                         selectedAppointment.extendedProps.participants,
                       externalCalendarName:
                         selectedAppointment.extendedProps.ExternalCalendarName,
-                      localStartDate: selectedAppointment.extendedProps.LocalStartDate,
-                      localEndDate: selectedAppointment.extendedProps.LocalEndDate,
+                      localStartDate:
+                        selectedAppointment.extendedProps.LocalStartDate,
+                      localEndDate:
+                        selectedAppointment.extendedProps.LocalEndDate,
                     }
                   : undefined
             }
@@ -707,7 +704,7 @@ const CalendarView = ({
               dataReload={dataReload}
               onFreemium={onFreemium}
               setCurrentDate={setCurrentDate}
-              setIsLoading={setLocalActionLoading}
+              setIsLoading={setIsLoading}
             />
           </div>
         )}
@@ -723,7 +720,7 @@ const CalendarView = ({
             dataReload={dataReload}
             onFreemium={onFreemium}
             setCurrentDate={setCurrentDate}
-            setIsLoading={setLocalActionLoading}
+            setIsLoading={setIsLoading}
           />
         </div>
       )}
