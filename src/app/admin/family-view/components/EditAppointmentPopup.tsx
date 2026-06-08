@@ -57,6 +57,8 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
   const [responsiblePersons, setResponsiblePersons] = useState<
     SelectableOption[]
   >([]);
+  const [selectionError, setSelectionError] = useState<string | null>(null);
+  const [titleError, setTitleError] = useState<string | null>(null);
 
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -97,6 +99,9 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    // Clear title error on input change
+    if (name === "title") setTitleError(null);
   };
 
   // Generic handler for toggle switches
@@ -255,6 +260,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
 
   const handleClose = () => {
     onClose();
+    setSelectionError(null); // Clear error on close
   };
 
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -388,9 +394,13 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
                     placeholder="Enter appointment title"
                     value={formData.title || ""}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm"
-                    required
+                    className={`w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm ${titleError ? 'border-red-500' : 'border-gray-200'}`}
                   />
+                  {titleError && (
+                    <p className="text-xs text-red-500 font-medium mt-1">
+                      {titleError}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-bold flex items-center gap-1.5 text-gray-700 uppercase tracking-wider">
@@ -469,6 +479,11 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
                 onSelectionChange={handleResponsiblePersonsChange}
                 subHeading="Select Responsible Persons"
               />
+              {selectionError && (
+                <p className="text-xs text-red-500 font-medium mt-1">
+                  {selectionError}
+                </p>
+              )}
             </div>
 
             {/* Date & Time */}
