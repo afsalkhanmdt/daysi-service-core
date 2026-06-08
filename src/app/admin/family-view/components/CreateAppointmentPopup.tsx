@@ -19,6 +19,7 @@ import SingleSelector from "./FormComponents/SingleSelector";
 import ResponsiblePersonSelector from "./FormComponents/ResponsiblePersonSelector";
 import LocationInput from "./FormComponents/LocationInput";
 import DateTimeRange from "./FormComponents/DateTimeRange";
+import { useAppointmentValidation } from "@/app/hooks/useAppointmentValidation";
 import { useResources } from "@/app/context/ResourceContext";
 import { mapResourcesToSelectableOptions } from "@/app/utils/resourceAdapters";
 import {
@@ -52,6 +53,8 @@ const CreateAppointmentPopup: React.FC<
   const [responsiblePersons, setResponsiblePersons] = useState<
     SelectableOption[]
   >([]);
+  const [titleError, setTitleError] = useState<string | null>(null);
+  const [selectionError, setSelectionError] = useState<string | null>(null);
 
   const modalRef = useRef<HTMLDivElement>(null);
   const [formData, setFormData] =
@@ -112,6 +115,9 @@ const CreateAppointmentPopup: React.FC<
       })),
     );
 
+    // Clear error when user interacts with selection
+    setSelectionError(null);
+
     const firstResource = resources[0];
     const participants = selectedPersons.map((person) => ({
       ParticipantId: person.memberId,
@@ -144,6 +150,22 @@ const CreateAppointmentPopup: React.FC<
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    let hasError = false;
+
+    // Check if at least one person is selected
+    if (!responsiblePersons.some((p) => p.isSelected)) {
+      setSelectionError("Please select at least one responsible person.");
+      hasError = true;
+    }
+
+    // Check if title is empty
+    if (!formData.title || formData.title.trim() === "") {
+      setTitleError("Please enter an appointment name.");
+      hasError = true;
+    }
+
+    if (hasError) return;
 
     let repeatEndDate: string | null = null;
     if (formData.repeatEndDate) {
@@ -180,6 +202,7 @@ const CreateAppointmentPopup: React.FC<
   const handleClose = () => {
     onClose();
     setFormData(initialFormData);
+    setSelectionError(null); // Clear error on close
     // Reset selection state when closing
     if (resources.length > 0) {
       const otherMembers = mapResourcesToSelectableOptions(resources).slice(1);
@@ -286,9 +309,13 @@ const CreateAppointmentPopup: React.FC<
                     placeholder="Enter appointment title"
                     value={formData.title}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm"
-                    required
+                    className={`w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm ${titleError ? "border-red-500" : "border-gray-200"}`}
                   />
+                  {titleError && (
+                    <p className="text-xs text-red-500 font-medium mt-1">
+                      {titleError}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-bold flex items-center gap-1.5 text-gray-700 uppercase tracking-wider">
@@ -361,6 +388,11 @@ const CreateAppointmentPopup: React.FC<
                 onSelectionChange={handleResponsiblePersonsChange}
                 subHeading="Select Responsible Persons"
               />
+              {selectionError && (
+                <p className="text-xs text-red-500 font-medium mt-1">
+                  {selectionError}
+                </p>
+              )}
             </div>
 
             {/* Date & Time */}
