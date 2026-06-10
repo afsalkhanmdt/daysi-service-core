@@ -119,7 +119,11 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
       })),
     );
 
-    const assignedTo = selectedPersons.map((person) => person.memberId!);
+    const familyMemberId = resources[0]?.extendedProps?.memberId || "";
+    const assignedTo = [
+      familyMemberId,
+      ...selectedPersons.map((person) => person.memberId!),
+    ].filter((id) => id);
 
     setFormData((prev) => ({
       ...prev,
@@ -164,8 +168,8 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
     onClose();
     // Reset selection state when closing
     if (resources.length > 0) {
-      const allMembers = mapResourcesToSelectableOptions(resources);
-      setResponsiblePersons(allMembers);
+      const otherMembers = mapResourcesToSelectableOptions(resources).slice(1);
+      setResponsiblePersons(otherMembers);
     }
   };
 
@@ -179,14 +183,18 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
   useEffect(() => {
     if (resources.length > 0) {
       const allOptions = mapResourcesToSelectableOptions(resources);
-      setResponsiblePersons(allOptions);
+      const otherMembers = allOptions.slice(1);
+      setResponsiblePersons(otherMembers);
 
-      // Don't pre-select anyone
-      setFormData((prev) => ({
-        ...prev,
-        assignedTo: [],
-        isForAll: false,
-      }));
+      // Initialize formData with the family member already selected
+      const familyMember = allOptions[0];
+      if (familyMember) {
+        setFormData((prev) => ({
+          ...prev,
+          assignedTo: [familyMember.memberId || ""],
+          isForAll: resources.length === 1,
+        }));
+      }
     }
   }, [resources, isOpen]);
 

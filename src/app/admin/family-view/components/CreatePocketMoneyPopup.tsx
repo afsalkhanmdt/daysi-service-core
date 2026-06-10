@@ -112,9 +112,14 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
       })),
     );
 
+    const familyMemberId = resources[0]?.extendedProps?.memberId || "";
+
     setFormData((prev) => ({
       ...prev,
-      FamilyMembersPlanned: selectedPersons.map((person) => person.memberId!),
+      FamilyMembersPlanned: [
+        familyMemberId,
+        ...selectedPersons.map((person) => person.memberId!),
+      ].filter((id) => id),
     }));
   };
 
@@ -169,6 +174,11 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
   const handleClose = () => {
     resetForm();
     onClose();
+    // Reset selection state when closing
+    if (resources.length > 0) {
+      const otherMembers = mapResourcesToSelectableOptions(resources).slice(1);
+      setResponsiblePersons(otherMembers);
+    }
   };
 
   const resetForm = () => {
@@ -186,13 +196,17 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
   useEffect(() => {
     if (resources.length > 0) {
       const allOptions = mapResourcesToSelectableOptions(resources);
-      setResponsiblePersons(allOptions);
+      const otherMembers = allOptions.slice(1);
+      setResponsiblePersons(otherMembers);
 
-      // Don't pre-select anyone
-      setFormData((prev) => ({
-        ...prev,
-        FamilyMembersPlanned: [],
-      }));
+      // Initialize formData with the family member already selected
+      const familyMember = allOptions[0];
+      if (familyMember) {
+        setFormData((prev) => ({
+          ...prev,
+          FamilyMembersPlanned: [familyMember.memberId || ""],
+        }));
+      }
     }
   }, [resources, isOpen]);
 
