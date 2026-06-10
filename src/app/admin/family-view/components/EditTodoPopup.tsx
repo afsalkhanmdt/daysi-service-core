@@ -68,9 +68,22 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
 
   /* ---------- Load family members ---------- */
   useEffect(() => {
-    const allOptions = mapResourcesToSelectableOptions(resources);
-    setResponsiblePersons(allOptions);
-  }, [resources]);
+    if (resources.length > 0) {
+      const allOptions = mapResourcesToSelectableOptions(resources);
+      const otherMembers = allOptions.slice(1);
+      setResponsiblePersons(otherMembers);
+
+      if (todo) {
+        const mapped = mapToDoTaskToCreateCommand(todo);
+        setResponsiblePersons((prev) =>
+          prev.map((person) => ({
+            ...person,
+            isSelected: mapped.assignedTo?.includes(String(person.memberId)),
+          })),
+        );
+      }
+    }
+  }, [resources, todo]);
 
   /* ---------- Map todo → formData ---------- */
   useEffect(() => {
@@ -86,19 +99,6 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
     };
     setFormData(currentMapped as any);
 
-    setResponsiblePersons((prev) =>
-      prev.map((person) => ({
-        ...person,
-        isSelected: mapped.assignedTo?.includes(String(person.memberId)),
-      })),
-    );
-
-    setStatus((prev) =>
-      prev.map((option) => ({
-        ...option,
-        isSelected: option.id === todo.Status,
-      })),
-    );
     clearAllErrors();
   }, [todo, resources.length]);
 
@@ -159,7 +159,11 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
       })),
     );
 
-    const assignedTo = selectedPersons.map((person) => person.memberId!);
+    const familyMemberId = resources[0]?.extendedProps?.memberId || "";
+    const assignedTo = [
+      familyMemberId,
+      ...selectedPersons.map((person) => person.memberId!),
+    ].filter((id) => id);
 
     setFormData((prev) => ({
       ...prev,
