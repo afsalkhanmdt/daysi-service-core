@@ -80,26 +80,47 @@ const ToDoAndPMComponent = ({
 
   const pmTasksByMember = useMemo(() => {
     const map = new Map<string, PMTask[]>();
+    const firstResourceId =
+      familyDetails?.Members && familyDetails.Members.length > 0
+        ? normalizeId(familyDetails.Members[0].MemberId)
+        : null;
+
     for (const pm of pmTasksArr) {
       const planned = Array.isArray(pm.FamilyMembersPlanned)
         ? pm.FamilyMembersPlanned
         : [];
-      for (const p of planned) {
-        const mid = normalizeId(p.MemberId);
-        if (!map.has(mid)) map.set(mid, []);
-        map.get(mid)!.push(pm);
+      
+      const isForAll = planned.length === (familyDetails?.Members?.length || 0);
+
+      if (isForAll && firstResourceId) {
+        if (!map.has(firstResourceId)) map.set(firstResourceId, []);
+        map.get(firstResourceId)!.push(pm);
+      } else {
+        for (const p of planned) {
+          const mid = normalizeId(p.MemberId);
+          if (!map.has(mid)) map.set(mid, []);
+          map.get(mid)!.push(pm);
+        }
       }
     }
     return map;
-  }, [pmTasksArr]);
+  }, [pmTasksArr, familyDetails?.Members]);
 
   const todosByMember = useMemo(() => {
     const map = new Map<string, ToDoTaskType[]>();
+    const firstResourceId =
+      familyDetails?.Members && familyDetails.Members.length > 0
+        ? normalizeId(familyDetails.Members[0].MemberId)
+        : null;
 
     for (const t of todosArr) {
-      let assignedIds: string[] = [];
+      if (t.IsForAll && firstResourceId) {
+        if (!map.has(firstResourceId)) map.set(firstResourceId, []);
+        map.get(firstResourceId)!.push(t);
+        continue;
+      }
 
-      // Use type assertion to handle the unknown type
+      let assignedIds: string[] = [];
       const assignedTo = t.AssignedTo as any;
 
       if (Array.isArray(assignedTo)) {
@@ -113,7 +134,7 @@ const ToDoAndPMComponent = ({
             .filter((id) => id);
         }
       } else {
-        continue; // Skip if not string or array
+        continue;
       }
 
       if (assignedIds.length === 0) {
@@ -128,7 +149,7 @@ const ToDoAndPMComponent = ({
     }
 
     return map;
-  }, [todosArr]);
+  }, [todosArr, familyDetails?.Members]);
 
   const handleEditTodo = async (todoData: any) => {
     setIsLoading?.(true);
