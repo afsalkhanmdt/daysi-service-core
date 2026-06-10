@@ -157,9 +157,14 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
       })),
     );
 
+    const familyMemberId = resources[0]?.extendedProps?.memberId || "";
+
     setFormData((prev) => ({
       ...prev,
-      FamilyMembersPlanned: selectedPersons.map((p) => p.memberId!),
+      FamilyMembersPlanned: [
+        familyMemberId,
+        ...selectedPersons.map((p) => p.memberId!),
+      ].filter((id) => id),
     }));
     clearError("participants");
   };
@@ -232,8 +237,24 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
   };
 
   useEffect(() => {
-    setResponsiblePersons(mapResourcesToSelectableOptions(resources));
-  }, [resources]);
+    if (resources.length > 0) {
+      const allOptions = mapResourcesToSelectableOptions(resources);
+      const otherMembers = allOptions.slice(1);
+      setResponsiblePersons(otherMembers);
+
+      if (pocketMoney) {
+        const mappedFormData = mapPMTaskToCreateCommand(pocketMoney);
+        setResponsiblePersons((prev) =>
+          prev.map((person) => ({
+            ...person,
+            isSelected: mappedFormData.FamilyMembersPlanned.includes(
+              person.memberId!,
+            ),
+          })),
+        );
+      }
+    }
+  }, [resources, pocketMoney]);
 
   if (!isOpen || !pocketMoney) return null;
 
