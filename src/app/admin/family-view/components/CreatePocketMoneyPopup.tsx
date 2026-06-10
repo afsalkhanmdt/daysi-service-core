@@ -22,6 +22,7 @@ import { REPEAT_OPTIONS, ALERT_OPTIONS } from "@/app/constants/appointmentForm";
 import { mapResourcesToSelectableOptions } from "@/app/utils/resourceAdapters";
 import { useResources } from "@/app/context/ResourceContext";
 import { initialFormDataForPMTaskApi } from "@/app/constants/pocketMoneyForm";
+import { usePocketMoneyValidation } from "@/app/hooks/usePocketMoneyValidation";
 
 // Standard task options
 const standardTaskOptions: SelectableOption[] = [
@@ -56,6 +57,8 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
     useState<SelectableOption[]>(standardTaskOptions);
   const [repeatSequence, setRepeatSequence] =
     useState<SelectableOption[]>(REPEAT_OPTIONS);
+
+  const { validate, errors, clearAllErrors } = usePocketMoneyValidation();
 
   // ===== HANDLER FUNCTIONS =====
 
@@ -155,6 +158,9 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validate(formData.PMDescription, formData.PMAmount, responsiblePersons)) {
+      return;
+    }
     onSubmit(formData);
     resetForm();
     onClose();
@@ -174,11 +180,21 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
       standardTaskOptions.map((t) => ({ ...t, isSelected: false })),
     );
     setRepeatSequence(REPEAT_OPTIONS);
+    clearAllErrors();
   };
 
   useEffect(() => {
-    setResponsiblePersons(mapResourcesToSelectableOptions(resources));
-  }, [resources]);
+    if (resources.length > 0) {
+      const allOptions = mapResourcesToSelectableOptions(resources);
+      setResponsiblePersons(allOptions);
+
+      // Don't pre-select anyone
+      setFormData((prev) => ({
+        ...prev,
+        FamilyMembersPlanned: [],
+      }));
+    }
+  }, [resources, isOpen]);
 
   if (!isOpen) return null;
 
