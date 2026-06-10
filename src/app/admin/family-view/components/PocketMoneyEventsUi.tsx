@@ -13,8 +13,11 @@ const PocketMoneyEventUi = ({
 }) => {
   const { t } = useTranslation("common");
 
-  const participants = familyDetails.Members.filter((m) =>
-    PMEventData.FamilyMembersPlanned.some((pm) => pm.MemberId === m.MemberId)
+  if (!PMEventData || !familyDetails) return null;
+
+  const plannedMembers = PMEventData.FamilyMembersPlanned || [];
+  const participants = (familyDetails.Members || []).filter((m) =>
+    plannedMembers.some((pm) => String(pm.MemberId) === String(m.MemberId))
   );
 
   return (
@@ -27,10 +30,11 @@ const PocketMoneyEventUi = ({
           <input
             type="checkbox"
             className="w-3 h-3 accent-sky-500 rounded mr-2"
+            readOnly
           />
         </div>
         <div className="font-semibold text-[13px] text-black max-w-40 truncate">
-          {PMEventData.PMDescription}
+          {PMEventData.PMDescription || "No Description"}
         </div>
       </div>
       <div className="flex flex-wrap justify-between w-full">
@@ -38,7 +42,7 @@ const PocketMoneyEventUi = ({
           <div className="flex gap-2 overflow-hidden">
             {participants.map((participant, index) => (
               <div
-                key={participant.Id}
+                key={participant.MemberId || participant.Id}
                 className={`flex-shrink-0 transition-all duration-200 ${
                   index > 0 ? "ml-[-4px]" : ""
                 }`}
@@ -48,10 +52,10 @@ const PocketMoneyEventUi = ({
               >
                 <Image
                   src={participant.ResourceUrl || "/fallback.png"}
-                  alt={participant.MemberName}
-                  width={22}
-                  height={22}
-                  className="w-8 h-8 rounded-full border border-gray-200 bg-white shadow-sm shadow-gray-200  hover:scale-110 transition-transform"
+                  alt={participant.MemberName || "Member"}
+                  width={32}
+                  height={32}
+                  className="w-8 h-8 rounded-full border border-gray-200 bg-white shadow-sm shadow-gray-200  hover:scale-110 transition-transform object-cover"
                 />
               </div>
             ))}

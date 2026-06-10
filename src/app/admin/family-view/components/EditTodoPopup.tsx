@@ -25,6 +25,7 @@ import {
 } from "@/app/utils/resourceAdapters";
 import { useResources } from "@/app/context/ResourceContext";
 import { initialToDoCreateBody, statusOptions } from "@/app/constants/toDoForm";
+import { useTodoValidation } from "@/app/hooks/useTodoValidation";
 
 const EditTodoPopup: React.FC<todoPopupPropsType> = ({
   ToDoFamilyGroup,
@@ -39,6 +40,7 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
 
   const { resources } = useResources();
   const modalRef = useRef<HTMLDivElement>(null);
+  const { errors, validate, clearError, clearAllErrors } = useTodoValidation();
   const [status, setStatus] = useState<SelectableOption[]>(statusOptions);
   const [responsiblePersons, setResponsiblePersons] = useState<
     SelectableOption[]
@@ -67,8 +69,7 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
   /* ---------- Load family members ---------- */
   useEffect(() => {
     const allOptions = mapResourcesToSelectableOptions(resources);
-    // Filter out the family member (index 0) from UI
-    setResponsiblePersons(allOptions.slice(1));
+    setResponsiblePersons(allOptions);
   }, [resources]);
 
   /* ---------- Map todo → formData ---------- */
@@ -76,12 +77,6 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
     if (!todo || resources.length === 0) return;
 
     const mapped = mapToDoTaskToCreateCommand(todo);
-    const familyMemberId = resources[0]?.extendedProps?.memberId;
-
-    // Ensure family member is in assignedTo
-    if (familyMemberId && !mapped.assignedTo?.includes(familyMemberId)) {
-      mapped.assignedTo = [familyMemberId, ...(mapped.assignedTo || [])];
-    }
 
     // Add statusId if it exists in the original task structure or map from status
     const currentMapped = {
@@ -104,6 +99,7 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
         isSelected: option.id === todo.Status,
       })),
     );
+    clearAllErrors();
   }, [todo, resources.length]);
 
   /* ---------- Handlers ---------- */
@@ -113,6 +109,7 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === "description") clearError("description");
   };
 
   const handleGroupSelect = (id: string) => {
@@ -120,6 +117,7 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
       ...prev,
       toDoGroupId: Number(id),
     }));
+    clearError("toDoGroupId");
   };
 
   const handleToggleChange = (
@@ -161,12 +159,7 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
       })),
     );
 
-    const firstResourceId = resources[0]?.extendedProps?.memberId;
     const assignedTo = selectedPersons.map((person) => person.memberId!);
-
-    if (firstResourceId) {
-      assignedTo.unshift(firstResourceId);
-    }
 
     setFormData((prev) => ({
       ...prev,
@@ -177,6 +170,9 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validate(formData.description || "", formData.toDoGroupId)) {
+      return;
+    }
     onSubmit(formData);
     onClose();
   };
@@ -273,22 +269,35 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
                     placeholder="Enter task description"
                     value={formData.description ?? ""}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-all"
-                    required
+                    className={`w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-all ${
+                      errors.description ? "border-red-500" : "border-gray-200"
+                    }`}
                   />
+                  {errors.description && (
+                    <p className="text-xs text-red-500 font-medium mt-1">
+                      {errors.description}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-bold flex items-center gap-1.5 text-gray-700 uppercase tracking-wider">
                     <Image src={groupIcon} alt="icon" width={12} height={12} />{" "}
                     Group
                   </label>
-                  <CustomDropdown
-                    options={groupOptions}
-                    selectedValue={getSelectedGroupLabel()}
-                    onSelect={handleGroupSelect}
-                    placeholder="Select a group"
-                    iconUrl={groupIcon.src}
-                  />
+                  <div className={errors.toDoGroupId ? "border border-red-500 rounded-lg" : ""}>
+                    <CustomDropdown
+                      options={groupOptions}
+                      selectedValue={getSelectedGroupLabel()}
+                      onSelect={handleGroupSelect}
+                      placeholder="Select a group"
+                      iconUrl={groupIcon.src}
+                    />
+                  </div>
+                  {errors.toDoGroupId && (
+                    <p className="text-xs text-red-500 font-medium mt-1">
+                      {errors.toDoGroupId}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

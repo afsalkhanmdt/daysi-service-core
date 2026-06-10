@@ -1,6 +1,5 @@
 "use client";
 import Image from "next/image";
-import icon from "../../assets/try.jpg";
 import { FamilyData } from "./FamilyViewWrapper";
 import { ToDoTaskType } from "@/app/types/todo";
 
@@ -11,8 +10,31 @@ const TodoEventUi = ({
   ToDoData: ToDoTaskType;
   familyDetails: FamilyData;
 }) => {
-  const assignedMembers = familyDetails.Members.filter((m) =>
-    ToDoData.AssignedTo.includes(m.MemberId)
+  if (!ToDoData || !familyDetails) return null;
+
+  const assignedTo = ToDoData.AssignedTo as any;
+  let assignedIds: string[] = [];
+
+  if (Array.isArray(assignedTo)) {
+    // Check if it's an array of objects or strings
+    assignedIds = assignedTo.map((id: any) => {
+      if (typeof id === "object" && id !== null) {
+        return String(id.MemberId || id.id || "");
+      }
+      return String(id);
+    }).filter(id => id !== "");
+    
+    // Also handle case where an element in the array might be a comma-separated string
+    if (assignedIds.length === 1 && assignedIds[0].includes(",")) {
+        assignedIds = assignedIds[0].split(",").map(id => id.trim());
+    }
+  } else if (typeof assignedTo === "string") {
+    assignedIds = assignedTo.split(",").map((id: string) => id.trim()).filter(id => id !== "");
+  }
+
+  const members = familyDetails.Members || [];
+  const assignedMembers = members.filter((m) =>
+    assignedIds.includes(String(m.MemberId))
   );
 
   return (
@@ -25,16 +47,17 @@ const TodoEventUi = ({
           <input
             type="checkbox"
             className="w-3 h-3 accent-sky-500 rounded mr-2"
+            readOnly
           />
         </div>
         <div className="font-semibold text-[13px] text-black max-w-40 truncate">
-          {ToDoData.Description}
+          {ToDoData.Description || "No Description"}
         </div>
       </div>
       <div className="flex gap-2 overflow-hidden">
         {assignedMembers.map((participant, index) => (
           <div
-            key={participant.Id}
+            key={participant.MemberId || participant.Id}
             className={`flex-shrink-0 transition-all duration-200 ${
               index > 0 ? "ml-[-4px]" : ""
             }`}
@@ -44,10 +67,10 @@ const TodoEventUi = ({
           >
             <Image
               src={participant.ResourceUrl || "/fallback.png"}
-              alt={participant.MemberName}
-              width={22}
-              height={22}
-              className="w-8 h-8 rounded-full border border-gray-200 bg-white shadow-sm shadow-gray-200  hover:scale-110 transition-transform"
+              alt={participant.MemberName || "Member"}
+              width={32}
+              height={32}
+              className="w-8 h-8 rounded-full border border-gray-200 bg-white shadow-sm shadow-gray-200  hover:scale-110 transition-transform object-cover"
             />
           </div>
         ))}
