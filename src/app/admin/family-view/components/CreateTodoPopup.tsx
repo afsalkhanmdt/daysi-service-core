@@ -14,7 +14,7 @@ import MultipleSelector, {
   SelectableOption,
 } from "./FormComponents/MultipleSelector";
 import SingleSelector from "./FormComponents/SingleSelector";
-import ResponsiblePersonSelector from "./FormComponents/ResponsiblePersonSelector";
+import SingleResponsiblePersonSelector from "./FormComponents/SingleResponsiblePersonSelector";
 import participantsIcon from "@/app/admin/assets/participantsIcon.png";
 import descriptionIcon from "@/app/admin/assets/descriptionIcon.png";
 import groupIcon from "@/app/admin/assets/groupIcon.png";
@@ -34,9 +34,7 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
   const modalRef = useRef<HTMLDivElement>(null);
   const { errors, validate, clearError, clearAllErrors } = useTodoValidation();
 
-  const [formData, setFormData] = useState<ToDoCreateCommand>(
-    initialToDoCreateBody,
-  );
+  const [formData, setFormData] = useState<ToDoCreateCommand>(initialToDoCreateBody);
 
   // Component states for selector components
   const [responsiblePersons, setResponsiblePersons] = useState<
@@ -68,12 +66,12 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev: ToDoCreateCommand) => ({ ...prev, [name]: value }));
     if (name === "description") clearError("description");
   };
 
   const handleGroupSelect = (id: string) => {
-    setFormData((prev) => ({
+    setFormData((prev: ToDoCreateCommand) => ({
       ...prev,
       toDoGroupId: Number(id),
     }));
@@ -84,7 +82,7 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
     field: keyof ToDoCreateCommand,
     checked: boolean,
   ) => {
-    setFormData((prev) => ({
+    setFormData((prev: ToDoCreateCommand) => ({
       ...prev,
       [field]: checked ? 1 : 0,
     }));
@@ -102,7 +100,7 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
 
     const selectedOption = selectedOptions.find((opt) => opt.isSelected);
     if (selectedOption) {
-      setFormData((prev) => ({
+      setFormData((prev: ToDoCreateCommand) => ({
         ...prev,
         statusId: selectedOption.id,
       }));
@@ -110,26 +108,25 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
   };
 
   const handleResponsiblePersonsChange = (
-    selectedPersons: SelectableOption[],
+    selectedPerson: SelectableOption,
   ) => {
     setResponsiblePersons((prev) =>
       prev.map((person) => ({
         ...person,
-        isSelected: selectedPersons.some((sp) => sp.id === person.id),
+        isSelected: person.id === selectedPerson.id,
       })),
     );
 
-    const familyMemberId = resources[0]?.extendedProps?.memberId || "";
-    const assignedTo = [
-      familyMemberId,
-      ...selectedPersons.map((person) => person.memberId!),
-    ].filter((id) => id);
+    const firstResourceId = resources[0]?.extendedProps?.memberId || "";
+    const memberId = selectedPerson.memberId!;
+    const assignedTo = [memberId];
 
-    setFormData((prev) => ({
+    setFormData((prev: ToDoCreateCommand) => ({
       ...prev,
       assignedTo,
-      isForAll: assignedTo.length === resources.length,
+      isForAll: memberId === firstResourceId,
     }));
+    clearError("assignedTo");
   };
 
   // Handle click on overlay
@@ -156,7 +153,7 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate(formData.description || "", formData.toDoGroupId)) {
+    if (!validate(formData.description || "", formData.toDoGroupId, formData.assignedTo)) {
       return;
     }
     onSubmit(formData);
@@ -168,8 +165,8 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
     onClose();
     // Reset selection state when closing
     if (resources.length > 0) {
-      const otherMembers = mapResourcesToSelectableOptions(resources).slice(1);
-      setResponsiblePersons(otherMembers);
+      const allMembers = mapResourcesToSelectableOptions(resources);
+      setResponsiblePersons(allMembers);
     }
   };
 
@@ -183,17 +180,21 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
   useEffect(() => {
     if (resources.length > 0) {
       const allOptions = mapResourcesToSelectableOptions(resources);
-      const otherMembers = allOptions.slice(1);
-      setResponsiblePersons(otherMembers);
+      setResponsiblePersons(allOptions);
 
-      // Initialize formData with the family member already selected
+      // Default to family member (first resource)
       const familyMember = allOptions[0];
       if (familyMember) {
-        setFormData((prev) => ({
+        setFormData((prev: ToDoCreateCommand) => ({
           ...prev,
           assignedTo: [familyMember.memberId || ""],
-          isForAll: resources.length === 1,
+          isForAll: true,
         }));
+        
+        setResponsiblePersons(prev => prev.map(p => ({
+            ...p,
+            isSelected: p.id === familyMember.id
+        })));
       }
     }
   }, [resources, isOpen]);
@@ -315,13 +316,18 @@ const CreateTodoPopup: React.FC<todoPopupPropsType> = ({
                   width={14}
                   height={14}
                 />{" "}
-                Responsible Persons
+                Responsible Person
               </label>
-              <ResponsiblePersonSelector
+              <SingleResponsiblePersonSelector
                 options={responsiblePersons}
                 onSelectionChange={handleResponsiblePersonsChange}
                 subHeading="Select who can do this task"
               />
+              {errors.assignedTo && (
+                <p className="text-xs text-red-500 font-medium mt-1">
+                  {errors.assignedTo}
+                </p>
+              )}
             </div>
 
             {/* Status - Moved to its own row */}

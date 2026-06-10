@@ -17,7 +17,7 @@ import MultipleSelector, {
   SelectableOption,
 } from "./FormComponents/MultipleSelector";
 import SingleSelector from "./FormComponents/SingleSelector";
-import ResponsiblePersonSelector from "./FormComponents/ResponsiblePersonSelector";
+import SingleResponsiblePersonSelector from "./FormComponents/SingleResponsiblePersonSelector";
 import CustomDropdown from "./FormComponents/DropDown";
 import {
   mapResourcesToSelectableOptions,
@@ -70,8 +70,7 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
   useEffect(() => {
     if (resources.length > 0) {
       const allOptions = mapResourcesToSelectableOptions(resources);
-      const otherMembers = allOptions.slice(1);
-      setResponsiblePersons(otherMembers);
+      setResponsiblePersons(allOptions);
 
       if (todo) {
         const mapped = mapToDoTaskToCreateCommand(todo);
@@ -149,32 +148,34 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
     }
   };
 
-  const handleResponsiblePersonsChange = (
-    selectedPersons: SelectableOption[],
-  ) => {
+  const handleResponsiblePersonsChange = (selectedPerson: SelectableOption) => {
     setResponsiblePersons((prev) =>
       prev.map((person) => ({
         ...person,
-        isSelected: selectedPersons.some((sp) => sp.id === person.id),
+        isSelected: person.id === selectedPerson.id,
       })),
     );
 
-    const familyMemberId = resources[0]?.extendedProps?.memberId || "";
-    const assignedTo = [
-      familyMemberId,
-      ...selectedPersons.map((person) => person.memberId!),
-    ].filter((id) => id);
+    const firstResourceId = resources[0]?.extendedProps?.memberId || "";
+    const memberId = selectedPerson.memberId!;
+    const assignedTo = [memberId];
 
     setFormData((prev) => ({
       ...prev,
       assignedTo,
-      isForAll: assignedTo.length === resources.length,
+      isForAll: memberId === firstResourceId,
     }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate(formData.description || "", formData.toDoGroupId)) {
+    if (
+      !validate(
+        formData.description || "",
+        formData.toDoGroupId,
+        formData.assignedTo,
+      )
+    ) {
       return;
     }
     onSubmit(formData);
@@ -288,7 +289,13 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
                     <Image src={groupIcon} alt="icon" width={12} height={12} />{" "}
                     Group
                   </label>
-                  <div className={errors.toDoGroupId ? "border border-red-500 rounded-lg" : ""}>
+                  <div
+                    className={
+                      errors.toDoGroupId
+                        ? "border border-red-500 rounded-lg"
+                        : ""
+                    }
+                  >
                     <CustomDropdown
                       options={groupOptions}
                       selectedValue={getSelectedGroupLabel()}
@@ -306,7 +313,7 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
               </div>
             </div>
 
-            {/* Responsible Persons */}
+            {/* Responsible Person */}
             <div className="space-y-1">
               <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
                 <Image
@@ -315,13 +322,18 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
                   width={14}
                   height={14}
                 />{" "}
-                Responsible Persons
+                Responsible Person
               </label>
-              <ResponsiblePersonSelector
+              <SingleResponsiblePersonSelector
                 options={responsiblePersons}
                 onSelectionChange={handleResponsiblePersonsChange}
                 subHeading="Select who should complete this task"
               />
+              {errors.assignedTo && (
+                <p className="text-xs text-red-500 font-medium mt-1">
+                  {errors.assignedTo}
+                </p>
+              )}
             </div>
 
             {/* Status - Moved to its own row */}
