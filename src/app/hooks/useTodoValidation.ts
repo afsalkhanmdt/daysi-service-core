@@ -3,12 +3,13 @@ import { useState } from 'react';
 export type TodoValidationErrors = {
   description?: string;
   toDoGroupId?: string;
+  assignedTo?: string;
 };
 
 export const useTodoValidation = () => {
   const [errors, setErrors] = useState<TodoValidationErrors>({});
 
-  const validate = (description: string, toDoGroupId: number) => {
+  const validate = (description: string, toDoGroupId: number, assignedTo?: string[]) => {
     const newErrors: TodoValidationErrors = {};
     let isValid = true;
 
@@ -20,6 +21,11 @@ export const useTodoValidation = () => {
     if (!toDoGroupId || toDoGroupId === 0) {
       newErrors.toDoGroupId = "Please select a group.";
       isValid = false;
+    }
+
+    if (!assignedTo || assignedTo.length === 0) {
+        newErrors.assignedTo = "Please select a responsible person.";
+        isValid = false;
     }
 
     setErrors(newErrors);
