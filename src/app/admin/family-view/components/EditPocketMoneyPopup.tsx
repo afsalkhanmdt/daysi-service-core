@@ -26,6 +26,7 @@ import {
 } from "@/app/utils/resourceAdapters";
 import { useResources } from "@/app/context/ResourceContext";
 import { initialFormDataForPMTaskApi } from "@/app/constants/pocketMoneyForm";
+import { usePocketMoneyValidation } from "@/app/hooks/usePocketMoneyValidation";
 
 const standardTaskOptions: SelectableOption[] = [
   { id: 1, label: "Clean up the room", isSelected: false },
@@ -49,6 +50,7 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
   );
   const { resources } = useResources();
   const modalRef = useRef<HTMLDivElement>(null);
+  const { errors, validate, clearError, clearAllErrors } = usePocketMoneyValidation();
   
   const [responsiblePersons, setResponsiblePersons] = useState<
     SelectableOption[]
@@ -94,6 +96,7 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
         isSelected: option.label === repeatMap[mappedFormData.Repeat],
       })),
     );
+    clearAllErrors();
   }, [pocketMoney]);
 
   // ===== HANDLER FUNCTIONS =====
@@ -135,6 +138,7 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
         ...prev,
         PMDescription: selectedTasks[0].label,
       }));
+      clearError("PMDescription");
     } else {
       setFormData((prev) => ({
         ...prev,
@@ -157,6 +161,7 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
       ...prev,
       FamilyMembersPlanned: selectedPersons.map((p) => p.memberId!),
     }));
+    clearError("participants");
   };
 
   const handleDescriptionChange = (
@@ -166,13 +171,16 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
       ...prev,
       PMDescription: e.target.value,
     }));
+    clearError("PMDescription");
   };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = parseFloat(e.target.value) || 0;
     setFormData((prev) => ({
       ...prev,
-      PMAmount: parseFloat(e.target.value) || 0,
+      PMAmount: val,
     }));
+    if (val > 0) clearError("PMAmount");
   };
 
   const handleFirstComeFirstServeToggle = (checked: boolean) => {
@@ -211,13 +219,7 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.PMDescription.trim()) {
-      alert("Please enter a description or select a standard task");
-      return;
-    }
-
-    if (formData.FamilyMembersPlanned.length === 0) {
-      alert("Please select at least one responsible person");
+    if (!validate(formData.PMDescription, formData.PMAmount, responsiblePersons)) {
       return;
     }
 
@@ -284,7 +286,7 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
               <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
                 <Image src={DescriptionIcon} alt="icon" width={14} height={14} /> Task Description
               </label>
-              <div className="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100">
+              <div className={`bg-blue-50/50 p-2.5 rounded-xl border flex flex-col ${errors.PMDescription ? "border-red-500" : "border-blue-100"}`}>
                 <textarea
                   placeholder="Detailed description of the task..."
                   value={formData.PMDescription}
@@ -292,6 +294,11 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
                   rows={2}
                   className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm min-h-[50px]"
                 />
+                {errors.PMDescription && (
+                  <p className="text-xs text-red-500 font-medium mt-1">
+                    {errors.PMDescription}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -300,7 +307,7 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
               <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
                 <Image src={participantsIcon} alt="icon" width={14} height={14} /> Payment Details
               </label>
-              <div className="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100 flex gap-3">
+              <div className={`bg-blue-50/50 p-2.5 rounded-xl border flex flex-col ${errors.PMAmount ? "border-red-500" : "border-blue-100"}`}>
                 <div className="flex-1">
                   <input
                     type="number"
@@ -310,6 +317,11 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
                     className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-all"
                   />
                 </div>
+                {errors.PMAmount && (
+                  <p className="text-xs text-red-500 font-medium mt-1">
+                    {errors.PMAmount}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -332,6 +344,11 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
                 onSelectionChange={handleResponsiblePersonsChange}
                 subHeading="Select who can do this task"
               />
+              {errors.participants && (
+                <p className="text-xs text-red-500 font-medium mt-1">
+                  {errors.participants}
+                </p>
+              )}
             </div>
 
             {/* Recurring - Moved to its own row */}
