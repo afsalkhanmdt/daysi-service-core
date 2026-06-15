@@ -32,6 +32,7 @@ import {
   buildLocalTimestamp,
   buildTimestamp,
   initialFormDataForAppointmentApi,
+  parseDateToForm,
   REPEAT_OPTIONS,
 } from "@/app/constants/appointmentForm";
 
@@ -467,7 +468,7 @@ const CreateAppointmentPopup: React.FC<
             </div>
 
             {/* Repeat End Date - Only show if repeat is not Never */}
-            {/* {formData.repeat !== 0 && (
+            {formData.repeat !== 0 && (
               <div className="space-y-1">
                 <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
                   Repeat End Date
@@ -489,7 +490,7 @@ const CreateAppointmentPopup: React.FC<
                   </div>
                 </div>
               </div>
-            )} */}
+            )}
 
             {/* Notes - Moved to its own row */}
             <div className="space-y-1">
