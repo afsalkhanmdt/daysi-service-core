@@ -20,6 +20,7 @@ import { mapResourcesToSelectableOptions } from "@/app/utils/resourceAdapters";
 import {
   AppointmentUpdateFormUI,
   appointmentPopupPropsType,
+  SpecialEventEnum,
   UserEventCreateRequest,
   UserEventUpdateRequest,
 } from "@/app/types/appoinment";
@@ -35,6 +36,7 @@ import {
 import { EventInput } from "@fullcalendar/core";
 import LocationInput from "./FormComponents/LocationInput";
 import DateTimeRange from "./FormComponents/DateTimeRange";
+import { deserializeDescription, serializeDescription } from "@/app/utils/specialEventMetadata";
 
 // Helper function to check if string contains coordinates
 const isCoordinateString = (str: string): boolean => {
@@ -62,24 +64,49 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
 
   const modalRef = useRef<HTMLDivElement>(null);
 
-  const [formData, setFormData] = useState<AppointmentUpdateFormUI>(() => {
+  const normalizeInitialData = (data: any): AppointmentUpdateFormUI => {
+    const rawDescription = 
+      data?.description ?? 
+      data?.extendedProps?.description ?? 
+      data?.Description ?? 
+      data?.extendedProps?.Description ?? 
+      "";
+    const { description, metadata } = deserializeDescription(rawDescription);
+
     return {
-      ...initialData,
-      startDateOnly: initialData?.startDate
-        ? parseTimestampToDateOnly(initialData.startDate)
+      ...data,
+      description,
+      // Normalize Enums and Booleans
+      repeat: data?.repeat ?? data?.Repeat ?? data?.extendedProps?.Repeat ?? data?.extendedProps?.repeat ?? 0,
+      alert: data?.alert ?? data?.Alert ?? data?.extendedProps?.Alert ?? data?.extendedProps?.alert ?? 0,
+      isForAll: data?.isForAll ?? data?.IsForAll ?? data?.extendedProps?.IsForAll ?? 0,
+      isAllDayEvent: data?.isAllDayEvent ?? data?.IsAllDayEvent ?? data?.extendedProps?.IsAllDayEvent ?? 0,
+      isSpecialEvent: data?.isSpecialEvent ?? data?.IsSpecialEvent ?? data?.extendedProps?.IsSpecialEvent ?? 0,
+      isPrivateEvent: data?.isPrivateEvent ?? data?.IsPrivateEvent ?? data?.extendedProps?.IsPrivateEvent ?? 0,
+      specialEvent: data?.specialEvent ?? data?.SpecialEvent ?? data?.extendedProps?.SpecialEvent ?? undefined,
+      
+      // Normalize Metadata and End Dates
+      repeatEndDate: data?.repeatEndDate ?? data?.RepeatEndDate ?? data?.extendedProps?.RepeatEndDate ?? data?.extendedProps?.repeatEndDate ?? null,
+      specialEventWhatWhom: metadata.whatWhom || "",
+      specialEventDate: metadata.date || "",
+      startDateOnly: data?.startDate
+        ? parseTimestampToDateOnly(data.startDate as string)
         : "",
-      startTimeOnly: initialData?.startDate
-        ? parseTimestampToTimeOnly(initialData.startDate)
+      startTimeOnly: data?.startDate
+        ? parseTimestampToTimeOnly(data.startDate as string)
         : "",
-      endDateOnly: initialData?.endDate
-        ? parseTimestampToDateOnly(initialData.endDate)
+      endDateOnly: data?.endDate
+        ? parseTimestampToDateOnly(data.endDate as string)
         : "",
-      endTimeOnly: initialData?.endDate
-        ? parseTimestampToTimeOnly(initialData.endDate)
+      endTimeOnly: data?.endDate
+        ? parseTimestampToTimeOnly(data.endDate as string)
         : "",
     } as AppointmentUpdateFormUI;
-  });
+  };
 
+  const [formData, setFormData] = useState<AppointmentUpdateFormUI>(() => {
+    return normalizeInitialData(initialData);
+  });
   const handleLocationChange = (
     location: string,
     lat?: number,
@@ -112,6 +139,18 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
     setFormData((prev) => ({
       ...prev,
       [field]: checked ? 1 : 0,
+      // Default to Birthday if Special Event is turned on
+      specialEvent:
+        field === "isSpecialEvent" && checked
+          ? prev.specialEvent ?? SpecialEventEnum.Birthday
+          : prev.specialEvent,
+    }));
+  };
+
+  const handleSpecialEventChange = (value: SpecialEventEnum) => {
+    setFormData((prev) => ({
+      ...prev,
+      specialEvent: value,
     }));
   };
 
@@ -121,9 +160,13 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
     selectedOptions: SelectableOption[],
   ) => {
     const selectedOption = selectedOptions.find((option) => option.isSelected);
+    const newValue = selectedOption ? selectedOption.id : 0;
+    
     setFormData((prev) => ({
       ...prev,
-      [field]: selectedOption ? selectedOption.id : 0,
+      [field]: newValue,
+      // Force repeatEndDate to null if repeat is set to Never
+      repeatEndDate: field === 'repeat' && newValue === 0 ? null : prev.repeatEndDate
     }));
   };
 
@@ -222,19 +265,30 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
       formattedParticipants.unshift(familyParticipant);
     }
 
-    const { participants, ...formDataWithoutParticipants } = formData;
-
     let repeatEndDate: string | null = null;
-    if (formData.repeatEndDate) {
-      const date = new Date(formData.repeatEndDate);
+    if (formData.repeat !== 0 && formData.repeatEndDate !== null && formData.repeatEndDate !== undefined && String(formData.repeatEndDate).trim() !== "") {
+      // Handle numeric timestamps as strings or numbers
+      const timestamp = typeof formData.repeatEndDate === 'string' && !isNaN(Number(formData.repeatEndDate)) 
+        ? Number(formData.repeatEndDate) 
+        : formData.repeatEndDate;
+      
+      const date = new Date(timestamp as any);
       if (!isNaN(date.getTime())) {
         repeatEndDate = date.toISOString();
       }
     }
 
+    // Serialize metadata into description
+    const finalDescription = serializeDescription(formData.description || "", {
+      whatWhom: formData.specialEventWhatWhom,
+      date: formData.specialEventDate,
+    });
+
     const payload: UserEventUpdateRequest = {
-      ...formDataWithoutParticipants,
       id: String(initialData?.id || ""),
+      title: formData.title,
+      description: finalDescription,
+      location: formData.location,
       startDate: buildTimestamp(formData.startDateOnly, formData.startTimeOnly),
       endDate: buildTimestamp(formData.endDateOnly, formData.endTimeOnly),
       localStartDate: buildLocalTimestamp(
@@ -245,14 +299,26 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
         formData.endDateOnly,
         formData.endTimeOnly,
       ),
+      repeat: formData.repeat,
       repeatEndDate,
+      alert: formData.alert,
+      isForAll: formData.isForAll,
+      isAllDayEvent: formData.isAllDayEvent,
+      isSpecialEvent: formData.isSpecialEvent,
+      isPrivateEvent: formData.isPrivateEvent,
+      specialEvent: formData.specialEvent,
       participants: formattedParticipants,
+      addedBy: formData.addedBy || "",
+      familyId: formData.familyId,
+      familyUserId: formData.familyUserId,
+      recurrenceRule: formData.recurrenceRule,
+      alarms: formData.alarms,
+      latitude: formData.latitude,
+      longitude: formData.longitude,
+      eventGuID: formData.eventGuID,
+      externalCalendarId: formData.externalCalendarId,
+      noPush: formData.noPush,
     };
-
-    delete (payload as any).startDateOnly;
-    delete (payload as any).startTimeOnly;
-    delete (payload as any).endDateOnly;
-    delete (payload as any).endTimeOnly;
 
     onSubmit(payload);
     onClose();
@@ -285,21 +351,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
   // Initialize form when initialData changes
   useEffect(() => {
     if (initialData && isOpen) {
-      setFormData({
-        ...initialData,
-        startDateOnly: initialData.startDate
-          ? parseTimestampToDateOnly(initialData.startDate)
-          : "",
-        startTimeOnly: initialData.startDate
-          ? parseTimestampToTimeOnly(initialData.startDate)
-          : "",
-        endDateOnly: initialData.endDate
-          ? parseTimestampToDateOnly(initialData.endDate)
-          : "",
-        endTimeOnly: initialData.endDate
-          ? parseTimestampToTimeOnly(initialData.endDate)
-          : "",
-      } as AppointmentUpdateFormUI);
+      setFormData(normalizeInitialData(initialData));
     }
   }, [initialData, isOpen]);
 
@@ -441,6 +493,61 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
                     }
                   />
                 </div>
+              </div>
+
+              {/* Special Event Options */}
+              {formData.isSpecialEvent === 1 && (
+                <div className="mt-3 p-3 bg-white rounded-lg border border-blue-100 shadow-sm space-y-3">
+                  <div className="flex items-center gap-6">
+                    <label className="flex items-center gap-2 cursor-pointer group">
+                      <input
+                        type="radio"
+                        name="specialEvent"
+                        checked={formData.specialEvent === SpecialEventEnum.Birthday}
+                        onChange={() => handleSpecialEventChange(SpecialEventEnum.Birthday)}
+                        className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 transition-all cursor-pointer"
+                      />
+                      <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">Birthday</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer group">
+                      <input
+                        type="radio"
+                        name="specialEvent"
+                        checked={formData.specialEvent === SpecialEventEnum.Anniversary}
+                        onChange={() => handleSpecialEventChange(SpecialEventEnum.Anniversary)}
+                        className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 transition-all cursor-pointer"
+                      />
+                      <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">Anniversary</span>
+                    </label>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-gray-600 uppercase tracking-tight">What / Whom</label>
+                      <input
+                        type="text"
+                        name="specialEventWhatWhom"
+                        value={formData.specialEventWhatWhom}
+                        onChange={handleInputChange}
+                        placeholder="e.g., John's Birthday"
+                        className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-gray-50/30"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-gray-600 uppercase tracking-tight">Date</label>
+                      <input
+                        type="date"
+                        name="specialEventDate"
+                        value={formData.specialEventDate}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-gray-50/30"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                 <div className="flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-gray-100 shadow-sm">
                   <div className="flex items-center gap-2">
                     <Image
