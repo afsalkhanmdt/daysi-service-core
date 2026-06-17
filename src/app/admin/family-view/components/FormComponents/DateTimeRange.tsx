@@ -29,21 +29,77 @@ const getCurrentDate = (): string => {
   return `${year}-${month}-${day}`;
 };
 
-// Helper function to get current time in HH:MM format
+// Helper function to get current time in HH:MM format, rounded up to next hour if minutes > 0
 const getCurrentTime = (): string => {
   const now = new Date();
-  const hours = String(now.getHours()).padStart(2, "0");
-  const minutes = String(now.getMinutes()).padStart(2, "0");
-  return `${hours}:${minutes}`;
+  if (now.getMinutes() > 0) {
+    now.setHours(now.getHours() + 1);
+  }
+  const hours = String(now.getHours() % 24).padStart(2, "0");
+  return `${hours}:00`;
 };
 
-// Helper function to get time 1 hour from now
+// Helper function to get time 1 hour from now, also rounded
 const getCurrentTimePlusOneHour = (): string => {
   const now = new Date();
+  if (now.getMinutes() > 0) {
+    now.setHours(now.getHours() + 1);
+  }
   now.setHours(now.getHours() + 1);
-  const hours = String(now.getHours()).padStart(2, "0");
-  const minutes = String(now.getMinutes()).padStart(2, "0");
-  return `${hours}:${minutes}`;
+  const hours = String(now.getHours() % 24).padStart(2, "0");
+  return `${hours}:00`;
+};
+
+const TimePicker: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+  required?: boolean;
+}> = ({ value, onChange, required }) => {
+  // Ensure we have a valid HH:MM format
+  const timePart = value || "00:00";
+  const [h, m] = timePart.split(":");
+  
+  // Round minute to nearest 15-minute interval for the display
+  const normalizeMinute = (minStr: string) => {
+    const min = parseInt(minStr) || 0;
+    if (min < 8) return "00";
+    if (min < 23) return "15";
+    if (min < 38) return "30";
+    if (min < 53) return "45";
+    return "00";
+  };
+
+  const hour = h.padStart(2, "0");
+  const minute = normalizeMinute(m);
+
+  const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
+  const minutes = ["00", "15", "30", "45"];
+
+  return (
+    <div className="flex gap-1 items-center">
+      <select
+        value={hour}
+        onChange={(e) => onChange(`${e.target.value}:${minute}`)}
+        className="w-1/2 px-2 py-1 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+        required={required}
+      >
+        {hours.map((h) => (
+          <option key={h} value={h}>{h}</option>
+        ))}
+      </select>
+      <span className="text-gray-500 font-bold">:</span>
+      <select
+        value={minute}
+        onChange={(e) => onChange(`${hour}:${e.target.value}`)}
+        className="w-1/2 px-2 py-1 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+        required={required}
+      >
+        {minutes.map((m) => (
+          <option key={m} value={m}>{m}</option>
+        ))}
+      </select>
+    </div>
+  );
 };
 
 const DateTimeRange: React.FC<DateTimeRangeProps> = ({
@@ -152,11 +208,9 @@ const DateTimeRange: React.FC<DateTimeRangeProps> = ({
             {showLabels && (
               <label className="block text-[10px] font-bold text-gray-600 uppercase mb-0.5">Start Time</label>
             )}
-            <input
-              type="time"
+            <TimePicker
               value={startTime}
-              onChange={(e) => onStartTimeChange(e.target.value)}
-              className="w-full px-2 py-1 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              onChange={onStartTimeChange}
               required={required}
             />
           </div>
@@ -164,11 +218,9 @@ const DateTimeRange: React.FC<DateTimeRangeProps> = ({
             {showLabels && (
               <label className="block text-[10px] font-bold text-gray-600 uppercase mb-0.5">End Time</label>
             )}
-            <input
-              type="time"
+            <TimePicker
               value={endTime}
-              onChange={(e) => onEndTimeChange(e.target.value)}
-              className="w-full px-2 py-1 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              onChange={onEndTimeChange}
               required={required}
             />
           </div>
