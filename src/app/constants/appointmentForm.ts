@@ -70,10 +70,13 @@ export const FREQUENCY_OPTIONS: SelectableOption[] = [
 ];
 
 // Add these functions to your existing appointmentForm.ts constants file
-export const parseDateToForm = (dateString: string | null | undefined): string => {
+export const parseDateToForm = (dateString: string | number | null | undefined): string => {
   if (!dateString) return "";
   try {
-    const date = new Date(dateString);
+    // Handle numeric timestamps as strings or numbers
+    const timestamp = typeof dateString === 'string' ? Number(dateString) : dateString;
+    const date = !isNaN(timestamp as number) ? new Date(timestamp as number) : new Date(dateString as string);
+    
     if (isNaN(date.getTime())) return "";
     return date.toISOString().split("T")[0];
   } catch {
@@ -81,10 +84,12 @@ export const parseDateToForm = (dateString: string | null | undefined): string =
   }
 };
 
-export const parseTimeToForm = (dateString: string | null): string => {
+export const parseTimeToForm = (dateString: string | number | null): string => {
   if (!dateString) return "";
   try {
-    const date = new Date(dateString);
+    const timestamp = typeof dateString === 'string' ? Number(dateString) : dateString;
+    const date = !isNaN(timestamp as number) ? new Date(timestamp as number) : new Date(dateString as string);
+    
     if (isNaN(date.getTime())) return "";
     return date.toTimeString().slice(0, 5);
   } catch {
