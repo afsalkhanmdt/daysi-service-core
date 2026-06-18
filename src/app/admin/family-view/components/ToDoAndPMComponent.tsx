@@ -18,18 +18,24 @@ const ToDoAndPMComponent = ({
   familyDetails,
   PMTaskDetails,
   dataReload,
+  reloadTodo,
+  reloadPM,
   onFreemium,
   setCurrentDate,
   setIsLoading,
+  isLoading,
 }: {
   todoDetails: ToDoTaskType[];
   familyDetails: FamilyData;
   selectedMember?: number;
   PMTaskDetails: PMData;
   dataReload: () => void;
+  reloadTodo: () => void;
+  reloadPM: () => void;
   onFreemium: () => void;
   setCurrentDate: (date: Date) => void;
   setIsLoading?: (loading: boolean) => void;
+  isLoading?: boolean;
 }) => {
   const { t } = useTranslation("common");
   const [isTasksOpen, setIsTasksOpen] = useState(false);
@@ -156,14 +162,12 @@ const ToDoAndPMComponent = ({
     try {
       const response = await updateToDoTaskCall(todoData);
       if (response) {
-        await dataReload();
+        await Promise.all([reloadTodo(), dataReload()]);
         // Shift view to the date the todo was created
         const shiftDate = todoData.CreatedDate || todoData.createdDate;
         if (shiftDate) {
           setCurrentDate(new Date(Number(shiftDate)));
         }
-        // Artificial delay to allow UI to sync with new data
-        await new Promise((resolve) => setTimeout(resolve, 500));
       }
     } finally {
       setIsLoading?.(false);
@@ -175,12 +179,10 @@ const ToDoAndPMComponent = ({
     try {
       const response = await updatePocketMoneyTaskCall([pocketMoneyData]);
       if (response) {
-        await dataReload();
+        await Promise.all([reloadPM(), dataReload()]);
         if (pocketMoneyData.ActivityDate) {
           setCurrentDate(new Date(pocketMoneyData.ActivityDate));
         }
-        // Artificial delay to allow UI to sync with new data
-        await new Promise((resolve) => setTimeout(resolve, 500));
       }
     } finally {
       setIsLoading?.(false);
@@ -354,6 +356,7 @@ const ToDoAndPMComponent = ({
             setSelectedTodo(null);
           }}
           onSubmit={handleEditTodo}
+          isLoading={isLoading}
         />
       )}
 
@@ -365,6 +368,7 @@ const ToDoAndPMComponent = ({
           setSelectedPocketMoney(null);
         }}
         onSubmit={handleEditPocketMoney}
+        isLoading={isLoading}
       />
     </div>
   );

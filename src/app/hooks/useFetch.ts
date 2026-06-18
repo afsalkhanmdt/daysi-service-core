@@ -56,5 +56,5 @@ export function useFetch<T>(url: string | null, options?: RequestInit) {
     }
   }, [fetchData, url]); // ⬅️ Make sure url is in dependencies
 
-  return { ...state, reload: fetchData };
+  return { ...state, reload: fetchData, setData: (newData: T) => setState(prev => ({ ...prev, data: newData })) };
 }

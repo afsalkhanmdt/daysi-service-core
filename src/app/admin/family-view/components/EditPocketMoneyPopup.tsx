@@ -39,11 +39,12 @@ const standardTaskOptions: SelectableOption[] = [
   { id: 8, label: "Do Homework", isSelected: false },
 ];
 
-const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
+const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps & { isLoading?: boolean }> = ({
   isOpen,
   onClose,
   onSubmit,
   pocketMoney,
+  isLoading,
 }) => {
   const [formData, setFormData] = useState<PMTaskCreateCommand>(
     initialFormDataForPMTaskApi,
@@ -414,9 +415,10 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
           </button>
           <button
             onClick={(e) => handleSubmit(e as any)}
-            className="px-5 py-1.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-all active:scale-95"
+            disabled={isLoading}
+            className="px-5 py-1.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Save Changes
+            {isLoading ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
       </div>
