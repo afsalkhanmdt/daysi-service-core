@@ -28,14 +28,14 @@ import i18next from "i18next";
 import "../../../../../i18n";
 import CreatePocketMoneyPopup from "./CreatePocketMoneyPopup";
 import { UserEventCreateRequest } from "@/app/types/appoinment";
-import { PMTaskCreateCommand } from "@/app/types/pocketMoney";
+import { PMData, PMTaskCreateCommand } from "@/app/types/pocketMoney";
 import {
   createAppointmentCall,
   createCalendarFeedCall,
   createToDoTaskCall,
 } from "@/services/api";
 import { createPocketMoneyTaskCall } from "@/services/api";
-import { ToDoCreateCommand } from "@/app/types/todo";
+import { ToDoCreateCommand, ToDoTaskType } from "@/app/types/todo";
 import FreemiumModal from "@/components/Modals/FreemiumModal";
 
 export type FamilyData = {
