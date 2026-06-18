@@ -27,12 +27,13 @@ import { useResources } from "@/app/context/ResourceContext";
 import { initialToDoCreateBody, statusOptions } from "@/app/constants/toDoForm";
 import { useTodoValidation } from "@/app/hooks/useTodoValidation";
 
-const EditTodoPopup: React.FC<todoPopupPropsType> = ({
+const EditTodoPopup: React.FC<todoPopupPropsType & { isLoading?: boolean }> = ({
   ToDoFamilyGroup,
   isOpen,
   onClose,
   todo,
   onSubmit,
+  isLoading,
 }) => {
   const [formData, setFormData] = useState<ToDoCreateCommand>(
     initialToDoCreateBody,
@@ -392,9 +393,10 @@ const EditTodoPopup: React.FC<todoPopupPropsType> = ({
           </button>
           <button
             onClick={(e) => handleSubmit(e as any)}
-            className="px-5 py-1.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-all active:scale-95"
+            disabled={isLoading}
+            className="px-5 py-1.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Save Changes
+            {isLoading ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
       </div>

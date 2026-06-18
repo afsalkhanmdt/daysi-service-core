@@ -60,6 +60,13 @@ const FamilyViewWrapper = ({
     loading,
   } = useFetch<FamilyData>(`Families/GetAllFamilies?familyId=${familyId}`);
 
+  const { data: PMTaskDetails, reload: reloadPM } = useFetch<PMData>(
+    `PocketMoney/GetPMTasks?familyId=${familyId}`,
+  );
+  const { data: todoData, reload: reloadTodo } = useFetch<ToDoTaskType[]>(
+    `ToDo/GetToDos?familyId=${familyId}`,
+  );
+
   const [familyDetails, setFamilyDetails] = useState<FamilyData | null>(null);
   const [isLangReady, setIsLangReady] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -136,10 +143,7 @@ const FamilyViewWrapper = ({
     const response = await createToDoTaskCall(updatedTodoData);
 
     if (response) {
-      // optionally refresh data
-      await reload();
-      // If we want to shift to "today" or a specific date, we can do it here
-      // For now, let's just ensure reload is awaited
+      await Promise.all([reload(), reloadTodo()]);
     }
     setIsActionLoading(false);
   };
@@ -192,15 +196,6 @@ const FamilyViewWrapper = ({
     const response: any = await createAppointmentCall([updatedAppointmentData]);
 
     if (response) {
-      // The CreateV1 response returns the generated junction-table IDs 
-      // in response.EventData[0].Participants. We capture this structure 
-      // conceptually to ensure alignment, then trigger a full reload()
-      // to update the global family state with these authoritative values.
-      const createdParticipants = response?.EventData?.[0]?.Participants;
-      if (createdParticipants) {
-        console.log("Syncing participant IDs:", createdParticipants);
-      }
-      
       await reload();
       if (updatedAppointmentData.startDate) {
         setCurrentDate(new Date(updatedAppointmentData.startDate));
@@ -232,7 +227,7 @@ const FamilyViewWrapper = ({
     const response = await createPocketMoneyTaskCall([updatedPocketMoneyData]);
 
     if (response) {
-      await reload();
+      await Promise.all([reload(), reloadPM()]);
       if (updatedPocketMoneyData.ActivityDate) {
         setCurrentDate(new Date(updatedPocketMoneyData.ActivityDate));
       }
@@ -244,7 +239,7 @@ const FamilyViewWrapper = ({
     setIsActionLoading(true);
     const response = await createCalendarFeedCall(importData);
     if (response) {
-      await reload();
+      reload();
     }
     setIsActionLoading(false);
   };
@@ -417,6 +412,10 @@ const FamilyViewWrapper = ({
           currentDate={currentDate}
           setCurrentDate={setCurrentDate}
           dataReload={reload}
+          reloadTodo={reloadTodo}
+          reloadPM={reloadPM}
+          PMTaskDetails={PMTaskDetails}
+          todoData={todoData}
           onFreemium={() => setShowFreemiumModal(true)}
           isLoading={isActionLoading}
           setIsLoading={setIsActionLoading}
@@ -451,12 +450,14 @@ const FamilyViewWrapper = ({
         onClose={() => setShowCreateTodo(false)}
         onSubmit={handleCreateTodo}
         ToDoFamilyGroup={apiData?.Family.ToDoFamilyGroups}
+        isLoading={isActionLoading}
       />
 
       <CreatePocketMoneyPopup
         isOpen={showCreatePocketMoney}
         onClose={() => setShowCreatePocketMoney(false)}
         onSubmit={handleCreatePocketMoney}
+        isLoading={isActionLoading}
       />
 
       <FreemiumModal
