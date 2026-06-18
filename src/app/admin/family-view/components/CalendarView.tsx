@@ -40,7 +40,11 @@ import {
 } from "@/app/types/appoinment";
 import { PMData } from "@/app/types/pocketMoney";
 import { ToDoTaskType } from "@/app/types/todo";
-import { updateAppointmentCall } from "@/services/api";
+import {
+  updateAppointmentCall,
+  updatePocketMoneyTaskCall,
+  updateToDoTaskCall,
+} from "@/services/api";
 
 const memberOrder: Record<number, number> = {
   1: 0,
@@ -56,6 +60,10 @@ const CalendarView = ({
   currentDate,
   setCurrentDate,
   dataReload,
+  reloadTodo,
+  reloadPM,
+  PMTaskDetails,
+  todoData,
   onFreemium,
   onImportAppointments,
   isLoading,
@@ -65,6 +73,10 @@ const CalendarView = ({
   currentDate: Date;
   setCurrentDate: Dispatch<SetStateAction<Date>>;
   dataReload: () => void;
+  reloadTodo: () => void;
+  reloadPM: () => void;
+  PMTaskDetails: PMData | null;
+  todoData: ToDoTaskType[] | null;
   onFreemium: () => void;
   onImportAppointments?: () => void;
   isLoading?: boolean;
@@ -97,13 +109,6 @@ const CalendarView = ({
       callback();
     }
   };
-
-  const { data: PMTaskDetails } = useFetch<PMData>(
-    `PocketMoney/GetPMTasks?familyId=${familyId}`,
-  );
-  const { data: todoData } = useFetch<ToDoTaskType[]>(
-    `ToDo/GetToDos?familyId=${familyId}`,
-  );
 
   const handleRawEventClick = useCallback(
     (event: any) => {
@@ -455,12 +460,42 @@ const CalendarView = ({
     try {
       const response = await updateAppointmentCall(updatedAppointmentData);
       if (response) {
-        await dataReload();
+        dataReload();
         if (updatedAppointmentData.startDate) {
           setCurrentDate(new Date(updatedAppointmentData.startDate));
         }
-        // Artificial delay to allow UI to sync with new data
-        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+    } finally {
+      setIsLoading?.(false);
+    }
+  };
+
+  const handleEditTodo = async (todoData: any) => {
+    setIsLoading?.(true);
+    try {
+      const response = await updateToDoTaskCall(todoData);
+      if (response) {
+        await Promise.all([reloadTodo(), dataReload()]);
+        // Shift view to the date the todo was created
+        const shiftDate = todoData.CreatedDate || todoData.createdDate;
+        if (shiftDate) {
+          setCurrentDate(new Date(Number(shiftDate)));
+        }
+      }
+    } finally {
+      setIsLoading?.(false);
+    }
+  };
+
+  const handleEditPocketMoney = async (pocketMoneyData: any) => {
+    setIsLoading?.(true);
+    try {
+      const response = await updatePocketMoneyTaskCall([pocketMoneyData]);
+      if (response) {
+        await Promise.all([reloadPM(), dataReload()]);
+        if (pocketMoneyData.ActivityDate) {
+          setCurrentDate(new Date(pocketMoneyData.ActivityDate));
+        }
       }
     } finally {
       setIsLoading?.(false);
@@ -629,39 +664,101 @@ const CalendarView = ({
             initialData={
               selectedRawEvent
                 ? {
-                    id: String(selectedRawEvent.extendedProps?.Id || selectedRawEvent.Id || selectedRawEvent.id),
+                    id: String(
+                      selectedRawEvent.extendedProps?.Id ||
+                        selectedRawEvent.Id ||
+                        selectedRawEvent.id,
+                    ),
                     title: selectedRawEvent.Title || selectedRawEvent.title,
-                    startDate: selectedRawEvent.Start ? new Date(Number(selectedRawEvent.Start)) : (selectedRawEvent.start ? new Date(selectedRawEvent.start) : new Date()),
-                    endDate: selectedRawEvent.End ? new Date(Number(selectedRawEvent.End)) : (selectedRawEvent.end ? new Date(selectedRawEvent.end) : new Date()),
-                    description: selectedRawEvent.Description || selectedRawEvent.description || "",
-                    location: selectedRawEvent.Location || selectedRawEvent.location || "",
-                    isAllDayEvent: selectedRawEvent.IsAllDayEvent !== undefined ? selectedRawEvent.IsAllDayEvent : selectedRawEvent.isAllDayEvent,
-                    isSpecialEvent: selectedRawEvent.IsSpecialEvent !== undefined ? selectedRawEvent.IsSpecialEvent : selectedRawEvent.isSpecialEvent,
-                    specialEvent: selectedRawEvent.SpecialEvent !== undefined ? selectedRawEvent.SpecialEvent : selectedRawEvent.specialEvent,
-                    isPrivateEvent: selectedRawEvent.IsPrivateEvent !== undefined ? selectedRawEvent.IsPrivateEvent : selectedRawEvent.isPrivateEvent,
-                    recurrenceRule: selectedRawEvent.RecurrenceRule || selectedRawEvent.recurrenceRule || {
-                      frequency: 0,
-                      interval: 1,
-                    },
-                    repeat: selectedRawEvent.Repeat !== undefined ? selectedRawEvent.Repeat : (selectedRawEvent.repeat !== undefined ? selectedRawEvent.repeat : 0),
-                    repeatEndDate: selectedRawEvent.RepeatEndDate || selectedRawEvent.repeatEndDate,
-                    alert: selectedRawEvent.Alert !== undefined ? selectedRawEvent.Alert : (selectedRawEvent.alert !== undefined ? selectedRawEvent.alert : 0),
+                    startDate: selectedRawEvent.Start
+                      ? new Date(Number(selectedRawEvent.Start))
+                      : selectedRawEvent.start
+                        ? new Date(selectedRawEvent.start)
+                        : new Date(),
+                    endDate: selectedRawEvent.End
+                      ? new Date(Number(selectedRawEvent.End))
+                      : selectedRawEvent.end
+                        ? new Date(selectedRawEvent.end)
+                        : new Date(),
+                    description:
+                      selectedRawEvent.Description ||
+                      selectedRawEvent.description ||
+                      "",
+                    location:
+                      selectedRawEvent.Location ||
+                      selectedRawEvent.location ||
+                      "",
+                    isAllDayEvent:
+                      selectedRawEvent.IsAllDayEvent !== undefined
+                        ? selectedRawEvent.IsAllDayEvent
+                        : selectedRawEvent.isAllDayEvent,
+                    isSpecialEvent:
+                      selectedRawEvent.IsSpecialEvent !== undefined
+                        ? selectedRawEvent.IsSpecialEvent
+                        : selectedRawEvent.isSpecialEvent,
+                    specialEvent:
+                      selectedRawEvent.SpecialEvent !== undefined
+                        ? selectedRawEvent.SpecialEvent
+                        : selectedRawEvent.specialEvent,
+                    isPrivateEvent:
+                      selectedRawEvent.IsPrivateEvent !== undefined
+                        ? selectedRawEvent.IsPrivateEvent
+                        : selectedRawEvent.isPrivateEvent,
+                    recurrenceRule: selectedRawEvent.RecurrenceRule ||
+                      selectedRawEvent.recurrenceRule || {
+                        frequency: 0,
+                        interval: 1,
+                      },
+                    repeat:
+                      selectedRawEvent.Repeat !== undefined
+                        ? selectedRawEvent.Repeat
+                        : selectedRawEvent.repeat !== undefined
+                          ? selectedRawEvent.repeat
+                          : 0,
+                    repeatEndDate:
+                      selectedRawEvent.RepeatEndDate ||
+                      selectedRawEvent.repeatEndDate,
+                    alert:
+                      selectedRawEvent.Alert !== undefined
+                        ? selectedRawEvent.Alert
+                        : selectedRawEvent.alert !== undefined
+                          ? selectedRawEvent.alert
+                          : 0,
                     alarms: selectedRawEvent.Alarms || selectedRawEvent.alarms,
-                    participants: selectedRawEvent.EventParticipant || selectedRawEvent.participants,
-                    externalCalendarName: selectedRawEvent.ExternalCalendarName || selectedRawEvent.externalCalendarName,
+                    participants:
+                      selectedRawEvent.EventParticipant ||
+                      selectedRawEvent.participants,
+                    externalCalendarName:
+                      selectedRawEvent.ExternalCalendarName ||
+                      selectedRawEvent.externalCalendarName,
                     localStartDate:
-                      selectedRawEvent.extendedProps?.LocalStartDate || selectedRawEvent.extendedProps?.localStartDate || selectedRawEvent.LocalStartDate || selectedRawEvent.localStartDate,
-                    localEndDate: selectedRawEvent.extendedProps?.LocalEndDate || selectedRawEvent.extendedProps?.localEndDate || selectedRawEvent.LocalEndDate || selectedRawEvent.localEndDate,
+                      selectedRawEvent.extendedProps?.LocalStartDate ||
+                      selectedRawEvent.extendedProps?.localStartDate ||
+                      selectedRawEvent.LocalStartDate ||
+                      selectedRawEvent.localStartDate,
+                    localEndDate:
+                      selectedRawEvent.extendedProps?.LocalEndDate ||
+                      selectedRawEvent.extendedProps?.localEndDate ||
+                      selectedRawEvent.LocalEndDate ||
+                      selectedRawEvent.localEndDate,
                   }
                 : selectedAppointment
                   ? {
-                      id: String(selectedAppointment.extendedProps?.Id || selectedAppointment.id),
+                      id: String(
+                        selectedAppointment.extendedProps?.Id ||
+                          selectedAppointment.id,
+                      ),
                       title: selectedAppointment.title,
                       startDate: selectedAppointment.start || undefined,
                       endDate: selectedAppointment.end || undefined,
                       description:
-                        selectedAppointment.extendedProps?.Description || selectedAppointment.extendedProps?.description || "",
-                      location: selectedAppointment.extendedProps?.Location || selectedAppointment.extendedProps?.location || "",
+                        selectedAppointment.extendedProps?.Description ||
+                        selectedAppointment.extendedProps?.description ||
+                        "",
+                      location:
+                        selectedAppointment.extendedProps?.Location ||
+                        selectedAppointment.extendedProps?.location ||
+                        "",
                       isAllDayEvent:
                         selectedAppointment.extendedProps?.IsAllDayEvent,
                       isSpecialEvent:
@@ -671,26 +768,44 @@ const CalendarView = ({
                       isPrivateEvent:
                         selectedAppointment.extendedProps?.IsPrivateEvent,
                       recurrenceRule: selectedAppointment.extendedProps
-                        ?.RecurrenceRule || selectedAppointment.extendedProps?.recurrenceRule || {
-                        frequency: 0,
-                        interval: 1,
-                      },
+                        ?.RecurrenceRule ||
+                        selectedAppointment.extendedProps?.recurrenceRule || {
+                          frequency: 0,
+                          interval: 1,
+                        },
                       repeat:
-                        selectedAppointment.extendedProps?.Repeat !== undefined ? selectedAppointment.extendedProps.Repeat : (selectedAppointment.extendedProps?.repeat !== undefined ? selectedAppointment.extendedProps.repeat : 0),
+                        selectedAppointment.extendedProps?.Repeat !== undefined
+                          ? selectedAppointment.extendedProps.Repeat
+                          : selectedAppointment.extendedProps?.repeat !==
+                              undefined
+                            ? selectedAppointment.extendedProps.repeat
+                            : 0,
                       repeatEndDate:
-                        selectedAppointment.extendedProps?.RepeatEndDate || selectedAppointment.extendedProps?.repeatEndDate,
+                        selectedAppointment.extendedProps?.RepeatEndDate ||
+                        selectedAppointment.extendedProps?.repeatEndDate,
                       alert:
-                        selectedAppointment.extendedProps?.Alert !== undefined ? selectedAppointment.extendedProps.Alert : (selectedAppointment.extendedProps?.alert !== undefined ? selectedAppointment.extendedProps.alert : 0),
+                        selectedAppointment.extendedProps?.Alert !== undefined
+                          ? selectedAppointment.extendedProps.Alert
+                          : selectedAppointment.extendedProps?.alert !==
+                              undefined
+                            ? selectedAppointment.extendedProps.alert
+                            : 0,
                       alarms:
-                        selectedAppointment.extendedProps?.Alarms || selectedAppointment.extendedProps?.alarms,
+                        selectedAppointment.extendedProps?.Alarms ||
+                        selectedAppointment.extendedProps?.alarms,
                       participants:
-                        selectedAppointment.extendedProps?.EventParticipant || selectedAppointment.extendedProps?.participants,
+                        selectedAppointment.extendedProps?.EventParticipant ||
+                        selectedAppointment.extendedProps?.participants,
                       externalCalendarName:
-                        selectedAppointment.extendedProps?.ExternalCalendarName || selectedAppointment.extendedProps?.externalCalendarName,
+                        selectedAppointment.extendedProps
+                          ?.ExternalCalendarName ||
+                        selectedAppointment.extendedProps?.externalCalendarName,
                       localStartDate:
-                        selectedAppointment.extendedProps?.LocalStartDate || selectedAppointment.extendedProps?.localStartDate,
+                        selectedAppointment.extendedProps?.LocalStartDate ||
+                        selectedAppointment.extendedProps?.localStartDate,
                       localEndDate:
-                        selectedAppointment.extendedProps?.LocalEndDate || selectedAppointment.extendedProps?.localEndDate,
+                        selectedAppointment.extendedProps?.LocalEndDate ||
+                        selectedAppointment.extendedProps?.localEndDate,
                     }
                   : undefined
             }
@@ -705,9 +820,12 @@ const CalendarView = ({
               familyDetails={data}
               selectedMember={selectedMember}
               dataReload={dataReload}
+              reloadTodo={reloadTodo}
+              reloadPM={reloadPM}
               onFreemium={onFreemium}
               setCurrentDate={setCurrentDate}
               setIsLoading={setIsLoading}
+              isLoading={isLoading}
             />
           </div>
         )}
@@ -721,9 +839,12 @@ const CalendarView = ({
             familyDetails={data}
             selectedMember={selectedMember}
             dataReload={dataReload}
+            reloadTodo={reloadTodo}
+            reloadPM={reloadPM}
             onFreemium={onFreemium}
             setCurrentDate={setCurrentDate}
             setIsLoading={setIsLoading}
+            isLoading={isLoading}
           />
         </div>
       )}

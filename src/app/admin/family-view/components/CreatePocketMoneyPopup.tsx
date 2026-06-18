@@ -36,10 +36,11 @@ const standardTaskOptions: SelectableOption[] = [
   { id: 8, label: "Do Homework", isSelected: false },
 ];
 
-const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
+const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps & { isLoading?: boolean }> = ({
   isOpen,
   onClose,
   onSubmit,
+  isLoading,
 }) => {
   const { resources } = useResources();
   const modalRef = useRef<HTMLDivElement>(null);
@@ -402,9 +403,10 @@ const CreatePocketMoneyPopup: React.FC<PocketMoneyPopupProps> = ({
           </button>
           <button
             onClick={(e) => handleSubmit(e as any)}
-            className="px-5 py-1.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-all active:scale-95"
+            disabled={isLoading}
+            className="px-5 py-1.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Create Task
+            {isLoading ? 'Creating...' : 'Create Task'}
           </button>
         </div>
       </div>
