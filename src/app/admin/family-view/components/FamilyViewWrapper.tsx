@@ -37,6 +37,7 @@ import {
 import { createPocketMoneyTaskCall } from "@/services/api";
 import { ToDoCreateCommand, ToDoTaskType } from "@/app/types/todo";
 import FreemiumModal from "@/components/Modals/FreemiumModal";
+import ScheduleView from "@/app/family-view/components/ScheduleView";
 
 export type FamilyData = {
   Family: FamilyResponse;
@@ -424,6 +425,7 @@ const FamilyViewWrapper = ({
             setShowCreateAppointment(true)
           }
         />
+        {/* <ScheduleView data={familyDetails} currentUserId={userId} /> */}
       </div>
 
       {/* Popup Modals */}
