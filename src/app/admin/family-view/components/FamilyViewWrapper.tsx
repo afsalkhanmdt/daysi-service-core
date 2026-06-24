@@ -38,10 +38,21 @@ import { createPocketMoneyTaskCall } from "@/services/api";
 import { ToDoCreateCommand, ToDoTaskType } from "@/app/types/todo";
 import FreemiumModal from "@/components/Modals/FreemiumModal";
 import ScheduleView from "@/app/family-view/components/ScheduleView";
+import ExternalCalendarDisplayCard from "./ExternalCalendarDisplayCard";
+
+type ExternalCalendarProvider = {
+  Id: number;
+  Language: string;
+  SequenceNumber: number;
+  Name: string;
+  Link: string;
+  Logo: string;
+};
 
 export type FamilyData = {
   Family: FamilyResponse;
   Members: MemberResponse[];
+  ExternalCalendarTypes: ExternalCalendarProvider[];
   LoggedInUserId: string;
 };
 
@@ -403,7 +414,6 @@ const FamilyViewWrapper = ({
             </div>
           )}
         </div>
-
         <div className="flex-1 min-h-0 flex flex-col">
           <div className="p-3 text-base font-semibold grid place-content-center border-b dark:border-gray-700">
             {t("PocketMoney")}
@@ -415,6 +425,21 @@ const FamilyViewWrapper = ({
                 .map((member, i) => (
                   <PMDisplayCard key={i} memberDetails={member} />
                 ))}
+            </div>
+          </div>
+        </div>
+        <div className="flex-1 min-h-0 flex flex-col">
+          <div className="p-3 text-base font-semibold grid place-content-center border-b dark:border-gray-700">
+            {t("ExternalCalendars")}
+          </div>
+          <div className="flex-1 overflow-y-auto p-3">
+            <div className="grid gap-2">
+              {familyDetails.ExternalCalendarTypes.map((calendarDetail, i) => (
+                <ExternalCalendarDisplayCard
+                  key={i}
+                  calendarDescription={calendarDetail}
+                />
+              ))}
             </div>
           </div>
         </div>
