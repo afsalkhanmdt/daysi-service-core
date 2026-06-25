@@ -38,10 +38,22 @@ import { createPocketMoneyTaskCall } from "@/services/api";
 import { ToDoCreateCommand, ToDoTaskType } from "@/app/types/todo";
 import FreemiumModal from "@/components/Modals/FreemiumModal";
 import ScheduleView from "@/app/family-view/components/ScheduleView";
+import ExternalCalendarDisplayCard from "./ExternalCalendarDisplayCard";
+import { createOptimisticEvents } from "@/app/utils/createOptimisticEvents";
+
+type ExternalCalendarProvider = {
+  Id: number;
+  Language: string;
+  SequenceNumber: number;
+  Name: string;
+  Link: string;
+  Logo: string;
+};
 
 export type FamilyData = {
   Family: FamilyResponse;
   Members: MemberResponse[];
+  ExternalCalendarTypes: ExternalCalendarProvider[];
   LoggedInUserId: string;
 };
 
@@ -80,6 +92,9 @@ const FamilyViewWrapper = ({
   const [isActionLoading, setIsActionLoading] = useState(false);
 
   const [optimisticEvents, setOptimisticEvents] = useState<any[]>([]);
+  const [optimisticUpdates, setOptimisticUpdates] = useState<
+    Record<string, any>
+  >({});
 
   const { t } = useTranslation("common");
 
@@ -94,41 +109,6 @@ const FamilyViewWrapper = ({
   useEffect(() => {
     console.log("optimisticEvents changed", optimisticEvents);
   }, [optimisticEvents]);
-
-  const createOptimisticEvents = (data: any, members: MemberResponse[]) => {
-    const familyMemberId = members[0]?.MemberId; // or however you identify family
-
-    return (
-      data.participants
-        ?.filter((participant: any) => {
-          const participantId =
-            participant.ParticipantId || participant.MemberId;
-
-          // Don't create an optimistic event for the family participant
-          // unless this is a family event
-          return data.isForAll === 1 || participantId !== familyMemberId;
-        })
-        .map((participant: any) => {
-          const participantId =
-            participant.ParticipantId || participant.MemberId;
-
-          const member = members.find((m) => m.MemberId === participantId);
-
-          return {
-            id: `temp-${crypto.randomUUID()}`,
-            title: data.title,
-            start: new Date(data.startDate),
-            end: new Date(data.endDate),
-            allDay: data.isAllDayEvent === 1,
-            resourceId: member?.Id ? String(member.Id) : undefined,
-            extendedProps: {
-              ...data,
-              isOptimistic: true,
-            },
-          };
-        }) || []
-    );
-  };
 
   useEffect(() => {
     const cached = localStorage.getItem(STORAGE_KEY);
@@ -403,7 +383,6 @@ const FamilyViewWrapper = ({
             </div>
           )}
         </div>
-
         <div className="flex-1 min-h-0 flex flex-col">
           <div className="p-3 text-base font-semibold grid place-content-center border-b dark:border-gray-700">
             {t("PocketMoney")}
@@ -415,6 +394,21 @@ const FamilyViewWrapper = ({
                 .map((member, i) => (
                   <PMDisplayCard key={i} memberDetails={member} />
                 ))}
+            </div>
+          </div>
+        </div>
+        <div className="flex-1 min-h-0 flex flex-col">
+          <div className="p-3 text-base font-semibold grid place-content-center border-b dark:border-gray-700">
+            {t("ExternalCalendars")}
+          </div>
+          <div className="flex-1 overflow-y-auto p-3">
+            <div className="grid gap-2">
+              {familyDetails.ExternalCalendarTypes.map((calendarDetail, i) => (
+                <ExternalCalendarDisplayCard
+                  key={i}
+                  calendarDescription={calendarDetail}
+                />
+              ))}
             </div>
           </div>
         </div>
@@ -491,6 +485,8 @@ const FamilyViewWrapper = ({
             // checkSubscription(() => setShowImportAppointments(true))
             setShowCreateAppointment(true)
           }
+          optimisticUpdates={optimisticUpdates}
+          setOptimisticUpdates={setOptimisticUpdates}
         />
         {/* <ScheduleView data={familyDetails} currentUserId={userId} /> */}
       </div>

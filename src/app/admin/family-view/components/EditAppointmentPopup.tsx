@@ -36,7 +36,10 @@ import {
 import { EventInput } from "@fullcalendar/core";
 import LocationInput from "./FormComponents/LocationInput";
 import DateTimeRange from "./FormComponents/DateTimeRange";
-import { deserializeDescription, serializeDescription } from "@/app/utils/specialEventMetadata";
+import {
+  deserializeDescription,
+  serializeDescription,
+} from "@/app/utils/specialEventMetadata";
 
 // Helper function to check if string contains coordinates
 const isCoordinateString = (str: string): boolean => {
@@ -65,11 +68,11 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
   const modalRef = useRef<HTMLDivElement>(null);
 
   const normalizeInitialData = (data: any): AppointmentUpdateFormUI => {
-    const rawDescription = 
-      data?.description ?? 
-      data?.extendedProps?.description ?? 
-      data?.Description ?? 
-      data?.extendedProps?.Description ?? 
+    const rawDescription =
+      data?.description ??
+      data?.extendedProps?.description ??
+      data?.Description ??
+      data?.extendedProps?.Description ??
       "";
     const { description, metadata } = deserializeDescription(rawDescription);
 
@@ -77,16 +80,48 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
       ...data,
       description,
       // Normalize Enums and Booleans
-      repeat: data?.repeat ?? data?.Repeat ?? data?.extendedProps?.Repeat ?? data?.extendedProps?.repeat ?? 0,
-      alert: data?.alert ?? data?.Alert ?? data?.extendedProps?.Alert ?? data?.extendedProps?.alert ?? 0,
-      isForAll: data?.isForAll ?? data?.IsForAll ?? data?.extendedProps?.IsForAll ?? 0,
-      isAllDayEvent: data?.isAllDayEvent ?? data?.IsAllDayEvent ?? data?.extendedProps?.IsAllDayEvent ?? 0,
-      isSpecialEvent: data?.isSpecialEvent ?? data?.IsSpecialEvent ?? data?.extendedProps?.IsSpecialEvent ?? 0,
-      isPrivateEvent: data?.isPrivateEvent ?? data?.IsPrivateEvent ?? data?.extendedProps?.IsPrivateEvent ?? 0,
-      specialEvent: data?.specialEvent ?? data?.SpecialEvent ?? data?.extendedProps?.SpecialEvent ?? undefined,
-      
+      repeat:
+        data?.repeat ??
+        data?.Repeat ??
+        data?.extendedProps?.Repeat ??
+        data?.extendedProps?.repeat ??
+        0,
+      alert:
+        data?.alert ??
+        data?.Alert ??
+        data?.extendedProps?.Alert ??
+        data?.extendedProps?.alert ??
+        0,
+      isForAll:
+        data?.isForAll ?? data?.IsForAll ?? data?.extendedProps?.IsForAll ?? 0,
+      isAllDayEvent:
+        data?.isAllDayEvent ??
+        data?.IsAllDayEvent ??
+        data?.extendedProps?.IsAllDayEvent ??
+        0,
+      isSpecialEvent:
+        data?.isSpecialEvent ??
+        data?.IsSpecialEvent ??
+        data?.extendedProps?.IsSpecialEvent ??
+        0,
+      isPrivateEvent:
+        data?.isPrivateEvent ??
+        data?.IsPrivateEvent ??
+        data?.extendedProps?.IsPrivateEvent ??
+        0,
+      specialEvent:
+        data?.specialEvent ??
+        data?.SpecialEvent ??
+        data?.extendedProps?.SpecialEvent ??
+        undefined,
+
       // Normalize Metadata and End Dates
-      repeatEndDate: data?.repeatEndDate ?? data?.RepeatEndDate ?? data?.extendedProps?.RepeatEndDate ?? data?.extendedProps?.repeatEndDate ?? null,
+      repeatEndDate:
+        data?.repeatEndDate ??
+        data?.RepeatEndDate ??
+        data?.extendedProps?.RepeatEndDate ??
+        data?.extendedProps?.repeatEndDate ??
+        null,
       specialEventWhatWhom: metadata.whatWhom || "",
       specialEventDate: metadata.date || "",
       startDateOnly: data?.startDate
@@ -126,7 +161,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    
+
     // Clear title error on input change
     if (name === "title") setTitleError(null);
   };
@@ -142,7 +177,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
       // Default to Birthday if Special Event is turned on
       specialEvent:
         field === "isSpecialEvent" && checked
-          ? prev.specialEvent ?? SpecialEventEnum.Birthday
+          ? (prev.specialEvent ?? SpecialEventEnum.Birthday)
           : prev.specialEvent,
     }));
   };
@@ -161,12 +196,13 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
   ) => {
     const selectedOption = selectedOptions.find((option) => option.isSelected);
     const newValue = selectedOption ? selectedOption.id : 0;
-    
+
     setFormData((prev) => ({
       ...prev,
       [field]: newValue,
       // Force repeatEndDate to null if repeat is set to Never
-      repeatEndDate: field === 'repeat' && newValue === 0 ? null : prev.repeatEndDate
+      repeatEndDate:
+        field === "repeat" && newValue === 0 ? null : prev.repeatEndDate,
     }));
   };
 
@@ -184,7 +220,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
     // When calculating isForAll, we need to account for the family member who is hidden but always selected
     setFormData((prev) => ({
       ...prev,
-      isForAll: (selectedPersons.length + 1) === resources.length ? 1 : 0,
+      isForAll: selectedPersons.length + 1 === resources.length ? 1 : 0,
     }));
   };
 
@@ -236,9 +272,12 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
     // Always include the first member (Family)
     if (firstResource) {
       const familyMemberId = firstResource.extendedProps?.memberId || "";
-      const existingFamilyParticipant = (initialData?.participants as any[])?.find(
+      const existingFamilyParticipant = (
+        initialData?.participants as any[]
+      )?.find(
         (p) =>
-          String(p.ParticipantId || p.memberId || p.id) === String(familyMemberId),
+          String(p.ParticipantId || p.memberId || p.id) ===
+          String(familyMemberId),
       );
 
       const familyParticipant: any = {
@@ -253,8 +292,14 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
       };
 
       if (existingFamilyParticipant) {
-        familyParticipant.EventId = existingFamilyParticipant.EventId || existingFamilyParticipant.eventId || familyParticipant.EventId;
-        familyParticipant.ParentEventId = existingFamilyParticipant.ParentEventId || existingFamilyParticipant.parentEventId || initialData?.parentEventId;
+        familyParticipant.EventId =
+          existingFamilyParticipant.EventId ||
+          existingFamilyParticipant.eventId ||
+          familyParticipant.EventId;
+        familyParticipant.ParentEventId =
+          existingFamilyParticipant.ParentEventId ||
+          existingFamilyParticipant.parentEventId ||
+          initialData?.parentEventId;
       } else {
         familyParticipant.ParentEventId = initialData?.parentEventId || "";
       }
@@ -266,12 +311,19 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
     }
 
     let repeatEndDate: string | null = null;
-    if (formData.repeat !== 0 && formData.repeatEndDate !== null && formData.repeatEndDate !== undefined && String(formData.repeatEndDate).trim() !== "") {
+    if (
+      formData.repeat !== 0 &&
+      formData.repeatEndDate !== null &&
+      formData.repeatEndDate !== undefined &&
+      String(formData.repeatEndDate).trim() !== ""
+    ) {
       // Handle numeric timestamps as strings or numbers
-      const timestamp = typeof formData.repeatEndDate === 'string' && !isNaN(Number(formData.repeatEndDate)) 
-        ? Number(formData.repeatEndDate) 
-        : formData.repeatEndDate;
-      
+      const timestamp =
+        typeof formData.repeatEndDate === "string" &&
+        !isNaN(Number(formData.repeatEndDate))
+          ? Number(formData.repeatEndDate)
+          : formData.repeatEndDate;
+
       const date = new Date(timestamp as any);
       if (!isNaN(date.getTime())) {
         repeatEndDate = date.toISOString();
@@ -365,8 +417,8 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
 
     if (initialData?.participants && initialData.participants.length > 0) {
       const selectedMemberIds = new Set(
-        initialData.participants.map(
-          (p: any) => String(p.ParticipantId || p.memberId || p.id),
+        initialData.participants.map((p: any) =>
+          String(p.ParticipantId || p.memberId || p.id),
         ),
       );
 
@@ -379,17 +431,18 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
       setResponsiblePersons(updatedPersons);
 
       // Recalculate isForAll initially based on selected persons + family member
-      const selectedCount = updatedPersons.filter(p => p.isSelected).length + 1;
-      setFormData(prev => ({
+      const selectedCount =
+        updatedPersons.filter((p) => p.isSelected).length + 1;
+      setFormData((prev) => ({
         ...prev,
-        isForAll: selectedCount === resources.length ? 1 : 0
+        isForAll: selectedCount === resources.length ? 1 : 0,
       }));
     } else {
       setResponsiblePersons(otherMembers);
       // If no participants provided, default isForAll to 1 if only family member exists
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        isForAll: resources.length === 1 ? 1 : 0
+        isForAll: resources.length === 1 ? 1 : 0,
       }));
     }
   }, [resources, initialData?.participants, isOpen]);
@@ -403,7 +456,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
     >
       <div
         ref={modalRef}
-        className="bg-white rounded-xl w-full max-w-7xl max-h-[98vh] flex flex-col shadow-2xl relative"
+        className="bg-white rounded-xl w-full max-w-5xl max-h-[98vh] flex flex-col shadow-2xl relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Compact Header */}
@@ -446,7 +499,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
                     placeholder="Enter appointment title"
                     value={formData.title || ""}
                     onChange={handleInputChange}
-                    className={`w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm ${titleError ? 'border-red-500' : 'border-gray-200'}`}
+                    className={`w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm ${titleError ? "border-red-500" : "border-gray-200"}`}
                   />
                   {titleError && (
                     <p className="text-xs text-red-500 font-medium mt-1">
@@ -503,27 +556,41 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
                       <input
                         type="radio"
                         name="specialEvent"
-                        checked={formData.specialEvent === SpecialEventEnum.Birthday}
-                        onChange={() => handleSpecialEventChange(SpecialEventEnum.Birthday)}
+                        checked={
+                          formData.specialEvent === SpecialEventEnum.Birthday
+                        }
+                        onChange={() =>
+                          handleSpecialEventChange(SpecialEventEnum.Birthday)
+                        }
                         className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 transition-all cursor-pointer"
                       />
-                      <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">Birthday</span>
+                      <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">
+                        Birthday
+                      </span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer group">
                       <input
                         type="radio"
                         name="specialEvent"
-                        checked={formData.specialEvent === SpecialEventEnum.Anniversary}
-                        onChange={() => handleSpecialEventChange(SpecialEventEnum.Anniversary)}
+                        checked={
+                          formData.specialEvent === SpecialEventEnum.Anniversary
+                        }
+                        onChange={() =>
+                          handleSpecialEventChange(SpecialEventEnum.Anniversary)
+                        }
                         className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 transition-all cursor-pointer"
                       />
-                      <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">Anniversary</span>
+                      <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">
+                        Anniversary
+                      </span>
                     </label>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-600 uppercase tracking-tight">What / Whom</label>
+                      <label className="text-[10px] font-bold text-gray-600 uppercase tracking-tight">
+                        What / Whom
+                      </label>
                       <input
                         type="text"
                         name="specialEventWhatWhom"
@@ -534,7 +601,9 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-600 uppercase tracking-tight">Date</label>
+                      <label className="text-[10px] font-bold text-gray-600 uppercase tracking-tight">
+                        Date
+                      </label>
                       <input
                         type="date"
                         name="specialEventDate"
@@ -593,41 +662,40 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
               )}
             </div>
 
-            {/* Date & Time */}
-            <div className="space-y-1">
-              <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
-                <Image
-                  src={participantsIcon}
-                  alt="icon"
-                  width={14}
-                  height={14}
-                />{" "}
-                Choose Dates & Time
-              </label>
-              <DateTimeRange
-                startDate={formData.startDateOnly}
-                endDate={formData.endDateOnly}
-                startTime={formData.startTimeOnly}
-                endTime={formData.endTimeOnly}
-                onStartDateChange={(v) =>
-                  setFormData((p) => ({ ...p, startDateOnly: v }))
-                }
-                onEndDateChange={(v) =>
-                  setFormData((p) => ({ ...p, endDateOnly: v }))
-                }
-                onStartTimeChange={(v) =>
-                  setFormData((p) => ({ ...p, startTimeOnly: v }))
-                }
-                onEndTimeChange={(v) =>
-                  setFormData((p) => ({ ...p, endTimeOnly: v }))
-                }
-                hideHeading={true}
-                required
-              />
-            </div>
-
             {/* Repeat & Alarm Side-by-Side */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Date & Time */}
+              <div className="space-y-1">
+                <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
+                  <Image
+                    src={participantsIcon}
+                    alt="icon"
+                    width={14}
+                    height={14}
+                  />{" "}
+                  Choose Dates & Time
+                </label>
+                <DateTimeRange
+                  startDate={formData.startDateOnly}
+                  endDate={formData.endDateOnly}
+                  startTime={formData.startTimeOnly}
+                  endTime={formData.endTimeOnly}
+                  onStartDateChange={(v) =>
+                    setFormData((p) => ({ ...p, startDateOnly: v }))
+                  }
+                  onEndDateChange={(v) =>
+                    setFormData((p) => ({ ...p, endDateOnly: v }))
+                  }
+                  onStartTimeChange={(v) =>
+                    setFormData((p) => ({ ...p, startTimeOnly: v }))
+                  }
+                  onEndTimeChange={(v) =>
+                    setFormData((p) => ({ ...p, endTimeOnly: v }))
+                  }
+                  hideHeading={true}
+                  required
+                />
+              </div>
               <div className="space-y-1">
                 <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
                   <Image src={repeatIcon} alt="icon" width={14} height={14} />{" "}
@@ -645,23 +713,24 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
                   selectedBadgeColor="blue"
                 />
               </div>
-              <div className="space-y-1">
-                <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
-                  <Image src={alarmIcon} alt="icon" width={14} height={14} />{" "}
-                  Alarm
-                </label>
-                <SingleSelector
-                  options={ALERT_OPTIONS.map((o) => ({
-                    ...o,
-                    isSelected: o.id === formData.alert,
-                  }))}
-                  onSelectionChange={(s) =>
-                    handleSingleSelectChange("alert", [s])
-                  }
-                  selectedBorderColor="blue"
-                  selectedBadgeColor="blue"
-                />
-              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
+                <Image src={alarmIcon} alt="icon" width={14} height={14} />{" "}
+                Alarm
+              </label>
+              <SingleSelector
+                options={ALERT_OPTIONS.map((o) => ({
+                  ...o,
+                  isSelected: o.id === formData.alert,
+                }))}
+                onSelectionChange={(s) =>
+                  handleSingleSelectChange("alert", [s])
+                }
+                selectedBorderColor="blue"
+                selectedBadgeColor="blue"
+              />
             </div>
 
             {/* Repeat End Date - Only show if repeat is not Never */}
