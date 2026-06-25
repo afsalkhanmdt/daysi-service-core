@@ -99,7 +99,7 @@ const CreateAppointmentPopup: React.FC<
       // Default to Birthday if Special Event is turned on
       specialEvent:
         field === "isSpecialEvent" && checked
-          ? prev.specialEvent ?? SpecialEventEnum.Birthday
+          ? (prev.specialEvent ?? SpecialEventEnum.Birthday)
           : prev.specialEvent,
     }));
   };
@@ -307,7 +307,7 @@ const CreateAppointmentPopup: React.FC<
     >
       <div
         ref={modalRef}
-        className="bg-white rounded-xl w-full max-w-7xl max-h-[98vh] flex flex-col shadow-2xl relative"
+        className="bg-white rounded-xl w-full max-w-5xl max-h-[98vh] flex flex-col shadow-2xl relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Compact Header */}
@@ -401,27 +401,41 @@ const CreateAppointmentPopup: React.FC<
                       <input
                         type="radio"
                         name="specialEvent"
-                        checked={formData.specialEvent === SpecialEventEnum.Birthday}
-                        onChange={() => handleSpecialEventChange(SpecialEventEnum.Birthday)}
+                        checked={
+                          formData.specialEvent === SpecialEventEnum.Birthday
+                        }
+                        onChange={() =>
+                          handleSpecialEventChange(SpecialEventEnum.Birthday)
+                        }
                         className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 transition-all cursor-pointer"
                       />
-                      <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">Birthday</span>
+                      <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">
+                        Birthday
+                      </span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer group">
                       <input
                         type="radio"
                         name="specialEvent"
-                        checked={formData.specialEvent === SpecialEventEnum.Anniversary}
-                        onChange={() => handleSpecialEventChange(SpecialEventEnum.Anniversary)}
+                        checked={
+                          formData.specialEvent === SpecialEventEnum.Anniversary
+                        }
+                        onChange={() =>
+                          handleSpecialEventChange(SpecialEventEnum.Anniversary)
+                        }
                         className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 transition-all cursor-pointer"
                       />
-                      <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">Anniversary</span>
+                      <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">
+                        Anniversary
+                      </span>
                     </label>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-600 uppercase tracking-tight">What / Whom</label>
+                      <label className="text-[10px] font-bold text-gray-600 uppercase tracking-tight">
+                        What / Whom
+                      </label>
                       <input
                         type="text"
                         name="specialEventWhatWhom"
@@ -432,7 +446,9 @@ const CreateAppointmentPopup: React.FC<
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-600 uppercase tracking-tight">Date</label>
+                      <label className="text-[10px] font-bold text-gray-600 uppercase tracking-tight">
+                        Date
+                      </label>
                       <input
                         type="date"
                         name="specialEventDate"
@@ -491,41 +507,40 @@ const CreateAppointmentPopup: React.FC<
               )}
             </div>
 
-            {/* Date & Time */}
-            <div className="space-y-1">
-              <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
-                <Image
-                  src={participantsIcon}
-                  alt="icon"
-                  width={14}
-                  height={14}
-                />{" "}
-                Choose Dates & Time
-              </label>
-              <DateTimeRange
-                startDate={formData.startDateOnly}
-                endDate={formData.endDateOnly}
-                startTime={formData.startTimeOnly}
-                endTime={formData.endTimeOnly}
-                onStartDateChange={(v) =>
-                  setFormData((p) => ({ ...p, startDateOnly: v }))
-                }
-                onEndDateChange={(v) =>
-                  setFormData((p) => ({ ...p, endDateOnly: v }))
-                }
-                onStartTimeChange={(v) =>
-                  setFormData((p) => ({ ...p, startTimeOnly: v }))
-                }
-                onEndTimeChange={(v) =>
-                  setFormData((p) => ({ ...p, endTimeOnly: v }))
-                }
-                hideHeading={true}
-                required
-              />
-            </div>
-
             {/* Repeat & Alarm Side-by-Side */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Date & Time */}
+              <div className="space-y-1">
+                <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
+                  <Image
+                    src={participantsIcon}
+                    alt="icon"
+                    width={14}
+                    height={14}
+                  />{" "}
+                  Choose Dates & Time
+                </label>
+                <DateTimeRange
+                  startDate={formData.startDateOnly}
+                  endDate={formData.endDateOnly}
+                  startTime={formData.startTimeOnly}
+                  endTime={formData.endTimeOnly}
+                  onStartDateChange={(v) =>
+                    setFormData((p) => ({ ...p, startDateOnly: v }))
+                  }
+                  onEndDateChange={(v) =>
+                    setFormData((p) => ({ ...p, endDateOnly: v }))
+                  }
+                  onStartTimeChange={(v) =>
+                    setFormData((p) => ({ ...p, startTimeOnly: v }))
+                  }
+                  onEndTimeChange={(v) =>
+                    setFormData((p) => ({ ...p, endTimeOnly: v }))
+                  }
+                  hideHeading={true}
+                  required
+                />
+              </div>
               <div className="space-y-1">
                 <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
                   <Image src={repeatIcon} alt="icon" width={14} height={14} />{" "}
@@ -543,23 +558,24 @@ const CreateAppointmentPopup: React.FC<
                   selectedBadgeColor="blue"
                 />
               </div>
-              <div className="space-y-1">
-                <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
-                  <Image src={alarmIcon} alt="icon" width={14} height={14} />{" "}
-                  Alarm
-                </label>
-                <SingleSelector
-                  options={ALERT_OPTIONS.map((o) => ({
-                    ...o,
-                    isSelected: o.id === formData.alert,
-                  }))}
-                  onSelectionChange={(s) =>
-                    handleSingleSelectChange("alert", [s])
-                  }
-                  selectedBorderColor="blue"
-                  selectedBadgeColor="blue"
-                />
-              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
+                <Image src={alarmIcon} alt="icon" width={14} height={14} />{" "}
+                Alarm
+              </label>
+              <SingleSelector
+                options={ALERT_OPTIONS.map((o) => ({
+                  ...o,
+                  isSelected: o.id === formData.alert,
+                }))}
+                onSelectionChange={(s) =>
+                  handleSingleSelectChange("alert", [s])
+                }
+                selectedBorderColor="blue"
+                selectedBadgeColor="blue"
+              />
             </div>
 
             {/* Repeat End Date - Only show if repeat is not Never */}

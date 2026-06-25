@@ -45,6 +45,7 @@ import {
   updatePocketMoneyTaskCall,
   updateToDoTaskCall,
 } from "@/services/api";
+import { createOptimisticEvents } from "@/app/utils/createOptimisticEvents";
 
 const memberOrder: Record<number, number> = {
   1: 0,
@@ -69,6 +70,8 @@ const CalendarView = ({
   optimisticEvents,
   isLoading,
   setIsLoading,
+  optimisticUpdates,
+  setOptimisticUpdates,
 }: {
   data: FamilyData;
   currentDate: Date;
@@ -83,6 +86,8 @@ const CalendarView = ({
   onImportAppointments?: () => void;
   isLoading?: boolean;
   setIsLoading?: (loading: boolean) => void;
+  optimisticUpdates: Record<string, any[]>;
+  setOptimisticUpdates: Dispatch<SetStateAction<Record<string, any[]>>>;
 }) => {
   const { resources, setMembers } = useResources();
 
@@ -285,10 +290,19 @@ const CalendarView = ({
     return allEvents;
   }, [data.Members, resources, memberLookup]);
 
-  const calendarEvents = useMemo(
-    () => [...events, ...optimisticEvents],
-    [events, optimisticEvents],
-  );
+  const calendarEvents = useMemo(() => {
+    const editedEventIds = Object.keys(optimisticUpdates);
+
+    const filteredEvents = events.filter(
+      (e) => !editedEventIds.some((id) => String(e.id).startsWith(`${id}-`)),
+    );
+
+    return [
+      ...filteredEvents,
+      ...Object.values(optimisticUpdates).flat(),
+      ...optimisticEvents,
+    ];
+  }, [events, optimisticUpdates, optimisticEvents]);
 
   // Function to determine exactly which time and resource to scroll to
   const getScrollTarget = useCallback(() => {
@@ -444,11 +458,10 @@ const CalendarView = ({
   const handleEditAppointment = async (
     appointmentData: UserEventUpdateRequest,
   ) => {
-    setIsLoading?.(true);
+    // setIsLoading?.(true);
 
     const now = new Date().toISOString();
 
-    // Create a new object with all the added values
     const updatedAppointmentData = {
       ...appointmentData,
       addedBy: data?.LoggedInUserId,
@@ -460,7 +473,6 @@ const CalendarView = ({
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       offSet: dayjs().format("Z"),
       eventsUpdatedOn: now,
-      // Add sync-related fields
       participants: appointmentData.participants || [],
       isForAll: appointmentData.isForAll || 0,
       isAllDayEvent: appointmentData.isAllDayEvent || 0,
@@ -478,15 +490,42 @@ const CalendarView = ({
       noPush: appointmentData.noPush || false,
     };
 
+    const originalEventId = String(appointmentData.id);
+
+    const optimisticEditedEvents = createOptimisticEvents(
+      updatedAppointmentData,
+      data?.Members || [],
+    );
+
+    setOptimisticUpdates((prev) => {
+      const next = { ...prev };
+
+      delete next[originalEventId];
+
+      next[originalEventId] = optimisticEditedEvents;
+
+      return next;
+    });
+
     try {
       const response = await updateAppointmentCall(updatedAppointmentData);
+
       if (response) {
-        dataReload();
+        await dataReload();
+
         if (updatedAppointmentData.startDate) {
           setCurrentDate(new Date(updatedAppointmentData.startDate));
         }
       }
+    } catch (error) {
+      console.error(error);
     } finally {
+      setOptimisticUpdates((prev) => {
+        const next = { ...prev };
+        delete next[originalEventId];
+        return next;
+      });
+
       setIsLoading?.(false);
     }
   };
