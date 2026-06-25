@@ -24,18 +24,16 @@ import { mapResourcesToSelectableOptions } from "@/app/utils/resourceAdapters";
 import { initialToDoCreateBody, statusOptions } from "@/app/constants/toDoForm";
 import { useTodoValidation } from "@/app/hooks/useTodoValidation";
 
-const CreateTodoPopup: React.FC<todoPopupPropsType & { isLoading?: boolean }> = ({
-  ToDoFamilyGroup,
-  isOpen,
-  onClose,
-  onSubmit,
-  isLoading,
-}) => {
+const CreateTodoPopup: React.FC<
+  todoPopupPropsType & { isLoading?: boolean }
+> = ({ ToDoFamilyGroup, isOpen, onClose, onSubmit, isLoading }) => {
   const { resources } = useResources();
   const modalRef = useRef<HTMLDivElement>(null);
   const { errors, validate, clearError, clearAllErrors } = useTodoValidation();
 
-  const [formData, setFormData] = useState<ToDoCreateCommand>(initialToDoCreateBody);
+  const [formData, setFormData] = useState<ToDoCreateCommand>(
+    initialToDoCreateBody,
+  );
 
   // Component states for selector components
   const [responsiblePersons, setResponsiblePersons] = useState<
@@ -108,9 +106,7 @@ const CreateTodoPopup: React.FC<todoPopupPropsType & { isLoading?: boolean }> = 
     }
   };
 
-  const handleResponsiblePersonsChange = (
-    selectedPerson: SelectableOption,
-  ) => {
+  const handleResponsiblePersonsChange = (selectedPerson: SelectableOption) => {
     setResponsiblePersons((prev) =>
       prev.map((person) => ({
         ...person,
@@ -154,7 +150,13 @@ const CreateTodoPopup: React.FC<todoPopupPropsType & { isLoading?: boolean }> = 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate(formData.description || "", formData.toDoGroupId, formData.assignedTo)) {
+    if (
+      !validate(
+        formData.description || "",
+        formData.toDoGroupId,
+        formData.assignedTo,
+      )
+    ) {
       return;
     }
     onSubmit(formData);
@@ -191,11 +193,13 @@ const CreateTodoPopup: React.FC<todoPopupPropsType & { isLoading?: boolean }> = 
           assignedTo: [familyMember.memberId || ""],
           isForAll: true,
         }));
-        
-        setResponsiblePersons(prev => prev.map(p => ({
+
+        setResponsiblePersons((prev) =>
+          prev.map((p) => ({
             ...p,
-            isSelected: p.id === familyMember.id
-        })));
+            isSelected: p.id === familyMember.id,
+          })),
+        );
       }
     }
   }, [resources, isOpen]);
@@ -209,7 +213,7 @@ const CreateTodoPopup: React.FC<todoPopupPropsType & { isLoading?: boolean }> = 
     >
       <div
         ref={modalRef}
-        className="bg-white rounded-xl w-full max-w-7xl max-h-[98vh] flex flex-col shadow-2xl relative"
+        className="bg-white rounded-xl w-full max-w-5xl max-h-[98vh] flex flex-col shadow-2xl relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Compact Header */}
@@ -290,7 +294,13 @@ const CreateTodoPopup: React.FC<todoPopupPropsType & { isLoading?: boolean }> = 
                     <Image src={groupIcon} alt="icon" width={12} height={12} />{" "}
                     Group
                   </label>
-                  <div className={errors.toDoGroupId ? "border border-red-500 rounded-lg" : ""}>
+                  <div
+                    className={
+                      errors.toDoGroupId
+                        ? "border border-red-500 rounded-lg"
+                        : ""
+                    }
+                  >
                     <CustomDropdown
                       options={groupOptions}
                       selectedValue={getSelectedGroupLabel()}
@@ -390,7 +400,7 @@ const CreateTodoPopup: React.FC<todoPopupPropsType & { isLoading?: boolean }> = 
             disabled={isLoading}
             className="px-5 py-1.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Creating...' : 'Create Task'}
+            {isLoading ? "Creating..." : "Create Task"}
           </button>
         </div>
       </div>

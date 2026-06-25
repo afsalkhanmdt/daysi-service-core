@@ -39,20 +39,17 @@ const standardTaskOptions: SelectableOption[] = [
   { id: 8, label: "Do Homework", isSelected: false },
 ];
 
-const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps & { isLoading?: boolean }> = ({
-  isOpen,
-  onClose,
-  onSubmit,
-  pocketMoney,
-  isLoading,
-}) => {
+const EditPocketMoneyPopup: React.FC<
+  PocketMoneyPopupProps & { isLoading?: boolean }
+> = ({ isOpen, onClose, onSubmit, pocketMoney, isLoading }) => {
   const [formData, setFormData] = useState<PMTaskCreateCommand>(
     initialFormDataForPMTaskApi,
   );
   const { resources } = useResources();
   const modalRef = useRef<HTMLDivElement>(null);
-  const { errors, validate, clearError, clearAllErrors } = usePocketMoneyValidation();
-  
+  const { errors, validate, clearError, clearAllErrors } =
+    usePocketMoneyValidation();
+
   const [responsiblePersons, setResponsiblePersons] = useState<
     SelectableOption[]
   >([]);
@@ -225,7 +222,9 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps & { isLoading?: boole
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validate(formData.PMDescription, formData.PMAmount, responsiblePersons)) {
+    if (
+      !validate(formData.PMDescription, formData.PMAmount, responsiblePersons)
+    ) {
       return;
     }
 
@@ -260,22 +259,29 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps & { isLoading?: boole
   if (!isOpen || !pocketMoney) return null;
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-2"
       onClick={handleOverlayClick}
     >
-      <div 
+      <div
         ref={modalRef}
-        className="bg-white rounded-xl w-full max-w-7xl max-h-[98vh] flex flex-col shadow-2xl relative"
+        className="bg-white rounded-xl w-full max-w-5xl max-h-[98vh] flex flex-col shadow-2xl relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Compact Header */}
         <div className="flex justify-between items-center px-4 py-2 border-b">
           <div className="flex items-center gap-2">
             <div className="bg-blue-100 p-1.5 rounded-lg">
-              <Image src={createPocketMoneyImage} alt="icon" width={16} height={16} />
+              <Image
+                src={createPocketMoneyImage}
+                alt="icon"
+                width={16}
+                height={16}
+              />
             </div>
-            <h2 className="text-lg font-bold text-gray-800">Edit Pocket Money</h2>
+            <h2 className="text-lg font-bold text-gray-800">
+              Edit Pocket Money
+            </h2>
           </div>
           <button
             onClick={handleClose}
@@ -288,11 +294,11 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps & { isLoading?: boole
         {/* Scrollable Form Content */}
         <div className="overflow-y-auto flex-1 p-3 lg:p-4">
           <form onSubmit={handleSubmit} className="space-y-3">
-            
             {/* Standard Task Selection */}
             <div className="space-y-1">
               <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
-                <Image src={nameIcon} alt="icon" width={12} height={12} /> Choose Standard Task
+                <Image src={nameIcon} alt="icon" width={12} height={12} />{" "}
+                Choose Standard Task
               </label>
               <SingleSelector
                 options={standardTasks}
@@ -306,9 +312,17 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps & { isLoading?: boole
             {/* Task Description */}
             <div className="space-y-1">
               <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
-                <Image src={DescriptionIcon} alt="icon" width={14} height={14} /> Task Description
+                <Image
+                  src={DescriptionIcon}
+                  alt="icon"
+                  width={14}
+                  height={14}
+                />{" "}
+                Task Description
               </label>
-              <div className={`bg-blue-50/50 p-2.5 rounded-xl border flex flex-col ${errors.PMDescription ? "border-red-500" : "border-blue-100"}`}>
+              <div
+                className={`bg-blue-50/50 p-2.5 rounded-xl border flex flex-col ${errors.PMDescription ? "border-red-500" : "border-blue-100"}`}
+              >
                 <textarea
                   placeholder="Detailed description of the task..."
                   value={formData.PMDescription}
@@ -327,9 +341,17 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps & { isLoading?: boole
             {/* Payment Details */}
             <div className="space-y-1">
               <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
-                <Image src={participantsIcon} alt="icon" width={14} height={14} /> Payment Details
+                <Image
+                  src={participantsIcon}
+                  alt="icon"
+                  width={14}
+                  height={14}
+                />{" "}
+                Payment Details
               </label>
-              <div className={`bg-blue-50/50 p-2.5 rounded-xl border flex flex-col ${errors.PMAmount ? "border-red-500" : "border-blue-100"}`}>
+              <div
+                className={`bg-blue-50/50 p-2.5 rounded-xl border flex flex-col ${errors.PMAmount ? "border-red-500" : "border-blue-100"}`}
+              >
                 <div className="flex-1">
                   <input
                     type="number"
@@ -351,10 +373,18 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps & { isLoading?: boole
             <div className="space-y-1">
               <div className="flex justify-between items-center mb-1">
                 <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
-                  <Image src={participantsIcon} alt="icon" width={14} height={14} /> Responsible Members
+                  <Image
+                    src={participantsIcon}
+                    alt="icon"
+                    width={14}
+                    height={14}
+                  />{" "}
+                  Responsible Members
                 </label>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold text-gray-500 uppercase">First Come First Serve</span>
+                  <span className="text-[10px] font-bold text-gray-500 uppercase">
+                    First Come First Serve
+                  </span>
                   <ToggleSwitch
                     checked={formData.FirstComeFirstServe}
                     onChange={handleFirstComeFirstServeToggle}
@@ -376,7 +406,8 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps & { isLoading?: boole
             {/* Recurring - Moved to its own row */}
             <div className="space-y-1">
               <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
-                <Image src={repeatIcon} alt="icon" width={14} height={14} /> Repeat Sequence
+                <Image src={repeatIcon} alt="icon" width={14} height={14} />{" "}
+                Repeat Sequence
               </label>
               <SingleSelector
                 options={repeatSequence}
@@ -389,7 +420,13 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps & { isLoading?: boole
             {/* Additional Notes - Moved to its own row */}
             <div className="space-y-1">
               <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
-                <Image src={additionalNoteIcon} alt="icon" width={14} height={14} /> Additional Notes
+                <Image
+                  src={additionalNoteIcon}
+                  alt="icon"
+                  width={14}
+                  height={14}
+                />{" "}
+                Additional Notes
               </label>
               <div className="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100">
                 <textarea
@@ -418,7 +455,7 @@ const EditPocketMoneyPopup: React.FC<PocketMoneyPopupProps & { isLoading?: boole
             disabled={isLoading}
             className="px-5 py-1.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Saving...' : 'Save Changes'}
+            {isLoading ? "Saving..." : "Save Changes"}
           </button>
         </div>
       </div>

@@ -211,7 +211,7 @@ const EditTodoPopup: React.FC<todoPopupPropsType & { isLoading?: boolean }> = ({
     >
       <div
         ref={modalRef}
-        className="bg-white rounded-xl w-full max-w-7xl max-h-[98vh] flex flex-col shadow-2xl relative"
+        className="bg-white rounded-xl w-full max-w-5xl max-h-[98vh] flex flex-col shadow-2xl relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Compact Header */}
@@ -396,7 +396,7 @@ const EditTodoPopup: React.FC<todoPopupPropsType & { isLoading?: boolean }> = ({
             disabled={isLoading}
             className="px-5 py-1.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Saving...' : 'Save Changes'}
+            {isLoading ? "Saving..." : "Save Changes"}
           </button>
         </div>
       </div>
