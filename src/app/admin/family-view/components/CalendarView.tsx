@@ -66,6 +66,7 @@ const CalendarView = ({
   todoData,
   onFreemium,
   onImportAppointments,
+  optimisticEvents,
   isLoading,
   setIsLoading,
 }: {
@@ -78,6 +79,7 @@ const CalendarView = ({
   PMTaskDetails: PMData | null;
   todoData: ToDoTaskType[] | null;
   onFreemium: () => void;
+  optimisticEvents: any[];
   onImportAppointments?: () => void;
   isLoading?: boolean;
   setIsLoading?: (loading: boolean) => void;
@@ -108,6 +110,20 @@ const CalendarView = ({
     } else {
       callback();
     }
+  };
+
+  const addEventOptimistically = (event: any) => {
+    const api = calendarRef.current?.getApi?.();
+    if (!api) return;
+
+    api.addEvent({
+      id: event.eventGuID,
+      title: event.title,
+      start: new Date(event.startDate),
+      end: new Date(event.endDate),
+      allDay: !!event.isAllDayEvent,
+      extendedProps: event,
+    });
   };
 
   const handleRawEventClick = useCallback(
@@ -268,6 +284,11 @@ const CalendarView = ({
 
     return allEvents;
   }, [data.Members, resources, memberLookup]);
+
+  const calendarEvents = useMemo(
+    () => [...events, ...optimisticEvents],
+    [events, optimisticEvents],
+  );
 
   // Function to determine exactly which time and resource to scroll to
   const getScrollTarget = useCallback(() => {
@@ -591,7 +612,7 @@ const CalendarView = ({
           slotEventOverlap={false}
           headerToolbar={false}
           resources={formattedResources}
-          events={events}
+          events={calendarEvents}
           resourceLabelContent={(arg) => (
             <div className="flex justify-between items-center w-full ">
               <div className="flex gap-1.5 items-center">

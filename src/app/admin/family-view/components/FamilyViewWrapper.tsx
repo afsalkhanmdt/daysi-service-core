@@ -79,6 +79,8 @@ const FamilyViewWrapper = ({
   const [showFreemiumModal, setShowFreemiumModal] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState(false);
 
+  const [optimisticEvents, setOptimisticEvents] = useState<any[]>([]);
+
   const { t } = useTranslation("common");
 
   const checkSubscription = (callback: () => void) => {
@@ -87,6 +89,45 @@ const FamilyViewWrapper = ({
     } else {
       callback();
     }
+  };
+
+  useEffect(() => {
+    console.log("optimisticEvents changed", optimisticEvents);
+  }, [optimisticEvents]);
+
+  const createOptimisticEvents = (data: any, members: MemberResponse[]) => {
+    const familyMemberId = members[0]?.MemberId; // or however you identify family
+
+    return (
+      data.participants
+        ?.filter((participant: any) => {
+          const participantId =
+            participant.ParticipantId || participant.MemberId;
+
+          // Don't create an optimistic event for the family participant
+          // unless this is a family event
+          return data.isForAll === 1 || participantId !== familyMemberId;
+        })
+        .map((participant: any) => {
+          const participantId =
+            participant.ParticipantId || participant.MemberId;
+
+          const member = members.find((m) => m.MemberId === participantId);
+
+          return {
+            id: `temp-${crypto.randomUUID()}`,
+            title: data.title,
+            start: new Date(data.startDate),
+            end: new Date(data.endDate),
+            allDay: data.isAllDayEvent === 1,
+            resourceId: member?.Id ? String(member.Id) : undefined,
+            extendedProps: {
+              ...data,
+              isOptimistic: true,
+            },
+          };
+        }) || []
+    );
   };
 
   useEffect(() => {
@@ -152,7 +193,7 @@ const FamilyViewWrapper = ({
   const handleCreateAppointment = async (
     appointmentData: UserEventCreateRequest,
   ) => {
-    setIsActionLoading(true);
+    // setIsActionLoading(true);
 
     const now = new Date().toISOString();
 
@@ -193,16 +234,41 @@ const FamilyViewWrapper = ({
       })),
     };
 
-    // Sending as an array of UserEventCreateCommand for CreateV1
-    const response: any = await createAppointmentCall([updatedAppointmentData]);
+    const createdOptimisticEvents = createOptimisticEvents(
+      updatedAppointmentData,
+      familyDetails?.Members || [],
+    );
 
-    if (response) {
-      await reload();
-      if (updatedAppointmentData.startDate) {
-        setCurrentDate(new Date(updatedAppointmentData.startDate));
-      }
+    setOptimisticEvents((prev) => [...prev, ...createdOptimisticEvents]);
+
+    const optimisticIds = createdOptimisticEvents.map((e: any) => e.id);
+
+    if (updatedAppointmentData.startDate) {
+      setCurrentDate(new Date(updatedAppointmentData.startDate));
     }
-    setIsActionLoading(false);
+
+    // Sending as an array of UserEventCreateCommand for CreateV1
+    try {
+      const response: any = await createAppointmentCall([
+        updatedAppointmentData,
+      ]);
+
+      if (response) {
+        await reload();
+
+        setOptimisticEvents((prev) =>
+          prev.filter((e) => !optimisticIds.includes(e.id)),
+        );
+      }
+    } catch (error) {
+      setOptimisticEvents((prev) =>
+        prev.filter((e) => !optimisticIds.includes(e.id)),
+      );
+
+      console.error(error);
+    } finally {
+      setIsActionLoading(false);
+    }
   };
 
   const handleCreatePocketMoney = async (
@@ -417,6 +483,7 @@ const FamilyViewWrapper = ({
           reloadPM={reloadPM}
           PMTaskDetails={PMTaskDetails}
           todoData={todoData}
+          optimisticEvents={optimisticEvents}
           onFreemium={() => setShowFreemiumModal(true)}
           isLoading={isActionLoading}
           setIsLoading={setIsActionLoading}
