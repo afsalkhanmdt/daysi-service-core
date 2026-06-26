@@ -2,7 +2,6 @@
 import Image from "next/image";
 import { useTranslation } from "react-i18next";
 import lockIcon from "@/app/admin/assets/EventPrivateIcon.jpg";
-import { deserializeDescription } from "@/app/utils/specialEventMetadata";
 
 const EventCardUI = ({
   eventInfo,
@@ -15,8 +14,6 @@ const EventCardUI = ({
   const end: Date = eventInfo.event.end;
 
   const { t } = useTranslation("common");
-
-  const { description, metadata } = deserializeDescription(eventInfo.event.extendedProps.description);
   const isSpecialEvent = eventInfo.event.extendedProps.IsSpecialEvent === 1;
 
   // Format using local timezone (browser locale)
@@ -55,12 +52,12 @@ const EventCardUI = ({
             {eventInfo.event.extendedProps.IsAllDayEvent === 1
               ? `${t("AllDayEvent")}`
               : start && end
-              ? `${formatTime(start)} - ${formatTime(end)}`
-              : start
-              ? formatTime(start)
-              : end
-              ? formatTime(end)
-              : ""}
+                ? `${formatTime(start)} - ${formatTime(end)}`
+                : start
+                  ? formatTime(start)
+                  : end
+                    ? formatTime(end)
+                    : ""}
           </div>
 
           <div className="text-[9px] sm:text-xs text-black break-all ">
@@ -72,7 +69,7 @@ const EventCardUI = ({
             ? `${t("Private")}.....`
             : eventInfo.event.extendedProps.description}
         </div>
-        </div>
+      </div>
 
       <div className="flex flex-wrap justify-between max-w-full gap-1.5 sm:gap-3">
         <div className="flex items-center min-w-0 flex-1">

@@ -3,7 +3,6 @@ import React, { useEffect, useState, useRef } from "react";
 import editAppointmentImage from "@/app/admin/assets/doctor-suitcase-with-a-cross-svgrepo-com 1.png";
 import SpecialEventIcon from "@/app/admin/assets/event-badged-1-svgrepo-com (1) 1.png";
 import { ToggleSwitch } from "./FormComponents/ToggleSwitch";
-import locationIcon from "@/app/admin/assets/location.png";
 import nameIcon from "@/app/admin/assets/name.png";
 import participantsIcon from "@/app/admin/assets/participantsIcon.png";
 import repeatIcon from "@/app/admin/assets/repeatIcon.png";
@@ -36,10 +35,6 @@ import {
 import { EventInput } from "@fullcalendar/core";
 import LocationInput from "./FormComponents/LocationInput";
 import DateTimeRange from "./FormComponents/DateTimeRange";
-import {
-  deserializeDescription,
-  serializeDescription,
-} from "@/app/utils/specialEventMetadata";
 
 // Helper function to check if string contains coordinates
 const isCoordinateString = (str: string): boolean => {
@@ -68,17 +63,8 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
   const modalRef = useRef<HTMLDivElement>(null);
 
   const normalizeInitialData = (data: any): AppointmentUpdateFormUI => {
-    const rawDescription =
-      data?.description ??
-      data?.extendedProps?.description ??
-      data?.Description ??
-      data?.extendedProps?.Description ??
-      "";
-    const { description, metadata } = deserializeDescription(rawDescription);
-
     return {
       ...data,
-      description,
       // Normalize Enums and Booleans
       repeat:
         data?.repeat ??
@@ -122,8 +108,6 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
         data?.extendedProps?.RepeatEndDate ??
         data?.extendedProps?.repeatEndDate ??
         null,
-      specialEventWhatWhom: metadata.whatWhom || "",
-      specialEventDate: metadata.date || "",
       startDateOnly: data?.startDate
         ? parseTimestampToDateOnly(data.startDate as string)
         : "",
@@ -142,6 +126,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
   const [formData, setFormData] = useState<AppointmentUpdateFormUI>(() => {
     return normalizeInitialData(initialData);
   });
+
   const handleLocationChange = (
     location: string,
     lat?: number,
@@ -226,6 +211,18 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate title
+    if (!formData.title || formData.title.trim() === "") {
+      setTitleError("Please enter an appointment name.");
+      return;
+    }
+
+    // Validate participants
+    if (!responsiblePersons.some((p) => p.isSelected)) {
+      setSelectionError("Please select at least one responsible person.");
+      return;
+    }
 
     const firstResource = resources[0];
 
@@ -330,16 +327,10 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
       }
     }
 
-    // Serialize metadata into description
-    const finalDescription = serializeDescription(formData.description || "", {
-      whatWhom: formData.specialEventWhatWhom,
-      date: formData.specialEventDate,
-    });
-
     const payload: UserEventUpdateRequest = {
       id: String(initialData?.id || ""),
       title: formData.title,
-      description: finalDescription,
+      description: formData.description || "",
       location: formData.location,
       startDate: buildTimestamp(formData.startDateOnly, formData.startTimeOnly),
       endDate: buildTimestamp(formData.endDateOnly, formData.endTimeOnly),
@@ -379,6 +370,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
   const handleClose = () => {
     onClose();
     setSelectionError(null); // Clear error on close
+    setTitleError(null);
   };
 
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -488,25 +480,28 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
             {/* Basic Information & Toggles Combined */}
             <div className="bg-blue-50/50 p-3 rounded-xl border border-blue-100">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold flex items-center gap-1.5 text-gray-700 uppercase tracking-wider">
-                    <Image src={nameIcon} alt="icon" width={12} height={12} />{" "}
-                    Name
-                  </label>
-                  <input
-                    type="text"
-                    name="title"
-                    placeholder="Enter appointment title"
-                    value={formData.title || ""}
-                    onChange={handleInputChange}
-                    className={`w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm ${titleError ? "border-red-500" : "border-gray-200"}`}
-                  />
-                  {titleError && (
-                    <p className="text-xs text-red-500 font-medium mt-1">
-                      {titleError}
-                    </p>
-                  )}
-                </div>
+                {/* Name field - hide when special event is active */}
+                {formData.isSpecialEvent === 0 && (
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold flex items-center gap-1.5 text-gray-700 uppercase tracking-wider">
+                      <Image src={nameIcon} alt="icon" width={12} height={12} />{" "}
+                      Name
+                    </label>
+                    <input
+                      type="text"
+                      name="title"
+                      placeholder="Enter appointment title"
+                      value={formData.title || ""}
+                      onChange={handleInputChange}
+                      className={`w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm ${titleError ? "border-red-500" : "border-gray-200"}`}
+                    />
+                    {titleError && (
+                      <p className="text-xs text-red-500 font-medium mt-1">
+                        {titleError}
+                      </p>
+                    )}
+                  </div>
+                )}
                 <div className="space-y-1">
                   <label className="text-xs font-bold flex items-center gap-1.5 text-gray-700 uppercase tracking-wider">
                     Location
@@ -543,6 +538,25 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
                     checked={formData.isSpecialEvent === 1}
                     onChange={(checked) =>
                       handleToggleChange("isSpecialEvent", checked)
+                    }
+                  />
+                </div>
+                <div className="flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-gray-100 shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <Image
+                      src={SpecialEventIcon}
+                      alt="icon"
+                      width={12}
+                      height={12}
+                    />
+                    <span className="text-xs font-semibold text-gray-700">
+                      Private
+                    </span>
+                  </div>
+                  <ToggleSwitch
+                    checked={formData.isPrivateEvent === 1}
+                    onChange={(checked) =>
+                      handleToggleChange("isPrivateEvent", checked)
                     }
                   />
                 </div>
@@ -594,11 +608,23 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
                       <input
                         type="text"
                         name="specialEventWhatWhom"
-                        value={formData.specialEventWhatWhom}
-                        onChange={handleInputChange}
+                        value={formData.title} // Use title field directly
+                        onChange={(e) => {
+                          // Update title directly
+                          setFormData((prev) => ({
+                            ...prev,
+                            title: e.target.value,
+                          }));
+                          setTitleError(null); // Clear error on input
+                        }}
                         placeholder="e.g., John's Birthday"
                         className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-gray-50/30"
                       />
+                      {titleError && (
+                        <p className="text-xs text-red-500 font-medium mt-1">
+                          {titleError}
+                        </p>
+                      )}
                     </div>
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold text-gray-600 uppercase tracking-tight">
@@ -607,36 +633,22 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
                       <input
                         type="date"
                         name="specialEventDate"
-                        value={formData.specialEventDate}
-                        onChange={handleInputChange}
+                        value={formData.startDateOnly} // Use startDateOnly directly
+                        onChange={(e) => {
+                          // Update startDateOnly and optionally endDateOnly
+                          setFormData((prev) => ({
+                            ...prev,
+                            startDateOnly: e.target.value,
+                            // Auto-set end date to same day for special events (optional)
+                            endDateOnly: e.target.value,
+                          }));
+                        }}
                         className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-gray-50/30"
                       />
                     </div>
                   </div>
                 </div>
               )}
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                <div className="flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-gray-100 shadow-sm">
-                  <div className="flex items-center gap-2">
-                    <Image
-                      src={SpecialEventIcon}
-                      alt="icon"
-                      width={12}
-                      height={12}
-                    />
-                    <span className="text-xs font-semibold text-gray-700">
-                      Private
-                    </span>
-                  </div>
-                  <ToggleSwitch
-                    checked={formData.isPrivateEvent === 1}
-                    onChange={(checked) =>
-                      handleToggleChange("isPrivateEvent", checked)
-                    }
-                  />
-                </div>
-              </div>
             </div>
 
             {/* Participants */}
@@ -664,38 +676,40 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
 
             {/* Repeat & Alarm Side-by-Side */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {/* Date & Time */}
-              <div className="space-y-1">
-                <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
-                  <Image
-                    src={participantsIcon}
-                    alt="icon"
-                    width={14}
-                    height={14}
-                  />{" "}
-                  Choose Dates & Time
-                </label>
-                <DateTimeRange
-                  startDate={formData.startDateOnly}
-                  endDate={formData.endDateOnly}
-                  startTime={formData.startTimeOnly}
-                  endTime={formData.endTimeOnly}
-                  onStartDateChange={(v) =>
-                    setFormData((p) => ({ ...p, startDateOnly: v }))
-                  }
-                  onEndDateChange={(v) =>
-                    setFormData((p) => ({ ...p, endDateOnly: v }))
-                  }
-                  onStartTimeChange={(v) =>
-                    setFormData((p) => ({ ...p, startTimeOnly: v }))
-                  }
-                  onEndTimeChange={(v) =>
-                    setFormData((p) => ({ ...p, endTimeOnly: v }))
-                  }
-                  hideHeading={true}
-                  required
-                />
-              </div>
+              {/* Date & Time - Hide when special event is active since we have a dedicated date field */}
+              {formData.isSpecialEvent === 0 && (
+                <div className="space-y-1">
+                  <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
+                    <Image
+                      src={participantsIcon}
+                      alt="icon"
+                      width={14}
+                      height={14}
+                    />{" "}
+                    Choose Dates & Time
+                  </label>
+                  <DateTimeRange
+                    startDate={formData.startDateOnly}
+                    endDate={formData.endDateOnly}
+                    startTime={formData.startTimeOnly}
+                    endTime={formData.endTimeOnly}
+                    onStartDateChange={(v) =>
+                      setFormData((p) => ({ ...p, startDateOnly: v }))
+                    }
+                    onEndDateChange={(v) =>
+                      setFormData((p) => ({ ...p, endDateOnly: v }))
+                    }
+                    onStartTimeChange={(v) =>
+                      setFormData((p) => ({ ...p, startTimeOnly: v }))
+                    }
+                    onEndTimeChange={(v) =>
+                      setFormData((p) => ({ ...p, endTimeOnly: v }))
+                    }
+                    hideHeading={true}
+                    required
+                  />
+                </div>
+              )}
               <div className="space-y-1">
                 <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
                   <Image src={repeatIcon} alt="icon" width={14} height={14} />{" "}
