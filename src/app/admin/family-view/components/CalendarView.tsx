@@ -530,38 +530,6 @@ const CalendarView = ({
     }
   };
 
-  const handleEditTodo = async (todoData: any) => {
-    setIsLoading?.(true);
-    try {
-      const response = await updateToDoTaskCall(todoData);
-      if (response) {
-        await Promise.all([reloadTodo(), dataReload()]);
-        // Shift view to the date the todo was created
-        const shiftDate = todoData.CreatedDate || todoData.createdDate;
-        if (shiftDate) {
-          setCurrentDate(new Date(Number(shiftDate)));
-        }
-      }
-    } finally {
-      setIsLoading?.(false);
-    }
-  };
-
-  const handleEditPocketMoney = async (pocketMoneyData: any) => {
-    setIsLoading?.(true);
-    try {
-      const response = await updatePocketMoneyTaskCall([pocketMoneyData]);
-      if (response) {
-        await Promise.all([reloadPM(), dataReload()]);
-        if (pocketMoneyData.ActivityDate) {
-          setCurrentDate(new Date(pocketMoneyData.ActivityDate));
-        }
-      }
-    } finally {
-      setIsLoading?.(false);
-    }
-  };
-
   useEffect(() => {
     if (data?.Members?.length) {
       setMembers(data.Members);

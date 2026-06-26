@@ -95,7 +95,7 @@ const ToDoAndPMComponent = ({
       const planned = Array.isArray(pm.FamilyMembersPlanned)
         ? pm.FamilyMembersPlanned
         : [];
-      
+
       const isForAll = planned.length === (familyDetails?.Members?.length || 0);
 
       if (isForAll && firstResourceId) {
@@ -158,7 +158,7 @@ const ToDoAndPMComponent = ({
   }, [todosArr, familyDetails?.Members]);
 
   const handleEditTodo = async (todoData: any) => {
-    setIsLoading?.(true);
+    // setIsLoading?.(true);
     try {
       const response = await updateToDoTaskCall(todoData);
       if (response) {
@@ -175,7 +175,7 @@ const ToDoAndPMComponent = ({
   };
 
   const handleEditPocketMoney = async (pocketMoneyData: any) => {
-    setIsLoading?.(true);
+    // setIsLoading?.(true);
     try {
       const response = await updatePocketMoneyTaskCall([pocketMoneyData]);
       if (response) {
@@ -237,6 +237,11 @@ const ToDoAndPMComponent = ({
                   {members.map((member) => {
                     const rid = memberResourceId(member);
                     const pmForThis = pmTasksByMember.get(rid) ?? [];
+                    const sortedPMTasks = [...(pmForThis || [])].sort(
+                      (a, b) =>
+                        new Date(b.CreatedOn).getTime() -
+                        new Date(a.CreatedOn).getTime(),
+                    );
 
                     return (
                       <div
@@ -244,20 +249,20 @@ const ToDoAndPMComponent = ({
                         className="flex-shrink-0 w-full my-auto border-dashed sm:border-l-2 border-gray-400 h-full"
                       >
                         <div className="w-full bg-blue-100 rounded-lg sm:p-3 h-full min-h-[120px] flex items-center justify-center">
-                          {pmForThis.length === 0 ? (
+                          {sortedPMTasks.length === 0 ? (
                             <div className="text-sm text-gray-500 italic text-center w-full">
                               {t("No PM tasks")}
                             </div>
                           ) : (
                             <div className="sm:mt-3 flex sm:flex-col gap-3 flex-1 max-h-44 overflow-auto h-full w-full sm:max-w-[300px]">
-                              {pmForThis.map((pm) => (
+                              {sortedPMTasks.map((pm) => (
                                 <div
                                   key={`${pm.PMTransId}-${rid}`}
                                   className="w-full my-auto sm:my-0"
                                   onClick={() => {
                                     // checkSubscription(() => {
-                                      setSelectedPocketMoney(pm);
-                                      setShowEditPocketMoney(true);
+                                    setSelectedPocketMoney(pm);
+                                    setShowEditPocketMoney(true);
                                     // });
                                   }}
                                 >
@@ -304,6 +309,11 @@ const ToDoAndPMComponent = ({
                   {members.map((member) => {
                     const rid = memberResourceId(member);
                     const todosForThis = todosByMember.get(rid) ?? [];
+                    const sortedTodos = [...(todosForThis || [])].sort(
+                      (a, b) =>
+                        new Date(b.CreatedDate).getTime() -
+                        new Date(a.CreatedDate).getTime(),
+                    );
 
                     return (
                       <div
@@ -311,20 +321,20 @@ const ToDoAndPMComponent = ({
                         className="flex-shrink-0 w-full my-auto border-dashed sm:border-l-2 border-gray-400 h-full"
                       >
                         <div className="w-full bg-blue-100 rounded-lg sm:p-3 h-full min-h-[120px] flex items-center justify-center">
-                          {todosForThis.length === 0 ? (
+                          {sortedTodos.length === 0 ? (
                             <div className="text-sm text-gray-500 italic text-center w-full">
                               {t("No To-dos")}
                             </div>
                           ) : (
                             <div className="sm:mt-3 flex sm:flex-col gap-3 flex-1 max-h-44 overflow-auto h-full w-full sm:max-w-[300px]">
-                              {todosForThis.map((todo) => (
+                              {sortedTodos.map((todo) => (
                                 <div
                                   key={`${todo.ToDoTaskId}-${rid}`}
                                   className="w-full my-auto sm:my-0"
                                   onClick={() => {
                                     // checkSubscription(() => {
-                                      setSelectedTodo(todo);
-                                      setShowEditTodo(true);
+                                    setSelectedTodo(todo);
+                                    setShowEditTodo(true);
                                     // });
                                   }}
                                 >
