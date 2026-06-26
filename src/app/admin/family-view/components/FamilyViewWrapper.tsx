@@ -149,7 +149,7 @@ const FamilyViewWrapper = ({
 
   // Handler functions for creating new items
   const handleCreateTodo = async (todoData: ToDoCreateCommand) => {
-    setIsActionLoading(true);
+    // setIsActionLoading(true);
     const updatedTodoData: ToDoCreateCommand = {
       ...todoData,
       familyId: Number(familyId),
@@ -254,7 +254,7 @@ const FamilyViewWrapper = ({
   const handleCreatePocketMoney = async (
     pocketMoneyData: PMTaskCreateCommand,
   ) => {
-    setIsActionLoading(true);
+    // setIsActionLoading(true);
     const updatedPocketMoneyData = {
       ...pocketMoneyData,
       FamilyId: Number(familyId),

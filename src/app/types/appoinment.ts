@@ -13,8 +13,6 @@ export type AppointmentCreateFormUI = UserEventCreateRequest & {
   startTimeOnly: string;
   endDateOnly: string;
   endTimeOnly: string;
-  specialEventWhatWhom?: string;
-  specialEventDate?: string;
 };
 
 export type AppointmentUpdateFormUI = UserEventUpdateRequest & {
