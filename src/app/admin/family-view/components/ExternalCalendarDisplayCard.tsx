@@ -1,4 +1,5 @@
 "use client";
+import { deleteCalendarFeedCall } from "@/services/api";
 import { useTranslation } from "react-i18next";
 
 type ExternalCalendarProvider = {
@@ -16,6 +17,19 @@ const ExternalCalendarDisplayCard = ({
   calendarDescription: ExternalCalendarProvider;
 }) => {
   const { t } = useTranslation("common");
+  console.log(calendarDescription, "calendarDescription");
+
+  const handleDelete = async () => {
+    try {
+      const response = await deleteCalendarFeedCall(
+        calendarDescription.Id,
+        "",
+        calendarDescription.Language,
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   return (
     <div className="flex justify-between gap-[0.25rem] p-[0.35rem] border rounded-lg border-slate-200 ">
@@ -35,7 +49,10 @@ const ExternalCalendarDisplayCard = ({
       </div>
 
       <div className="flex justify-between items-end">
-        <button className="bg-sky-500 px-2 py-0.5 text-white italic text-[8px] sm:text-sm rounded-2xl">
+        <button
+          onClick={handleDelete}
+          className="bg-sky-500 px-2 py-0.5 text-white italic text-[8px] sm:text-sm rounded-2xl cursor-pointer"
+        >
           Delete
         </button>
       </div>

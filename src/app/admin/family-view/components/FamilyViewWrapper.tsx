@@ -340,6 +340,8 @@ const FamilyViewWrapper = ({
     {},
   );
 
+  console.log(familyDetails, "familyDetails");
+
   return (
     <div className="sm:flex w-screen h-screen sm:py-3 sm:px-3 bg-white dark:bg-gray-800 transition-colors">
       <div className="hidden sm:flex flex-col min-w-[140px] max-w-[300px] w-[30%] bg-white dark:bg-gray-800 border-r dark:border-gray-700 text-gray-800 dark:text-gray-100">
