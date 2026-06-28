@@ -50,7 +50,7 @@ const CreateAppointmentPopup: React.FC<
   appointmentPopupPropsType & {
     onSubmit: (data: UserEventCreateRequest) => void;
   }
-> = ({ isOpen, onClose, onSubmit }) => {
+> = ({ isOpen, onClose, onSubmit, currentDate }) => {
   const { resources } = useResources();
   const [responsiblePersons, setResponsiblePersons] = useState<
     SelectableOption[]
@@ -99,6 +99,78 @@ const CreateAppointmentPopup: React.FC<
           ? (prev.specialEvent ?? SpecialEventEnum.Birthday)
           : prev.specialEvent,
     }));
+
+    // If turning ON special event, set default values
+    if (field === "isSpecialEvent" && checked) {
+      // Select all participants
+      const allOptions = mapResourcesToSelectableOptions(resources);
+      const allParticipants = allOptions.map((option) => ({
+        ParticipantId: option.memberId || "",
+        MemberId: option.memberId || "",
+        localId: option.id,
+        memberId: option.memberId || "",
+        EventId: 0,
+        ParentEventId: "",
+      }));
+
+      setResponsiblePersons(
+        allOptions.slice(1).map((option) => ({
+          ...option,
+          isSelected: true,
+        })),
+      );
+
+      setFormData((prev) => ({
+        ...prev,
+        participants: allParticipants,
+        isForAll: 1,
+        // Set repeat to Every Year (assuming 3 is the ID for "Every Year")
+        repeat: 5,
+        // Set alarm to 1 day before (assuming appropriate ID)
+        alert: 8,
+      }));
+    }
+
+    // If turning OFF special event, reset to default values
+    if (field === "isSpecialEvent" && !checked) {
+      const allOptions = mapResourcesToSelectableOptions(resources);
+      const familyMember = allOptions[0];
+      const otherMembers = allOptions.slice(1);
+
+      setResponsiblePersons(
+        otherMembers.map((option) => ({
+          ...option,
+          isSelected: false,
+        })),
+      );
+
+      setFormData((prev) => ({
+        ...prev,
+        participants: familyMember
+          ? [
+              {
+                ParticipantId: familyMember.memberId || "",
+                MemberId: familyMember.memberId || "",
+                localId: familyMember.id,
+                memberId: familyMember.memberId || "",
+                EventId: 0,
+                ParentEventId: "",
+              },
+            ]
+          : [],
+        isForAll: resources.length === 1 ? 1 : 0,
+        // Reset repeat to default (Never)
+        repeat: 0,
+        // Reset alert to default
+        alert: 0,
+        title: "",
+        location: "",
+        startDateOnly: "",
+        endDateOnly: "",
+        startTimeOnly: "",
+        endTimeOnly: "",
+      }));
+    }
   };
 
   const handleSpecialEventChange = (value: SpecialEventEnum) => {
@@ -351,17 +423,20 @@ const CreateAppointmentPopup: React.FC<
                     )}
                   </div>
                 )}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold flex items-center gap-1.5 text-gray-700 uppercase tracking-wider">
-                    Location
-                  </label>
-                  <LocationInput
-                    value={formData?.location || ""}
-                    onChange={handleLocationChange}
-                    placeholder="Search location..."
-                    required
-                  />
-                </div>
+                {/* Conditionally render Location - hide for Special Events */}
+                {formData.isSpecialEvent === 0 && (
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold flex items-center gap-1.5 text-gray-700 uppercase tracking-wider">
+                      Location
+                    </label>
+                    <LocationInput
+                      value={formData?.location || ""}
+                      onChange={handleLocationChange}
+                      placeholder="Search location..."
+                      required
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="space-y-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -513,7 +588,7 @@ const CreateAppointmentPopup: React.FC<
             <div
               className={`grid ${formData.isSpecialEvent === 0 ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"} gap-3`}
             >
-              {/* Date & Time */}
+              {/* Date & Time - Hide for Special Events since it's handled in the special event section */}
               {formData.isSpecialEvent === 0 && (
                 <div className="space-y-1">
                   <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
@@ -544,6 +619,8 @@ const CreateAppointmentPopup: React.FC<
                     }
                     hideHeading={true}
                     required
+                    autoSyncEndDateTime={true}
+                    defaultDate={currentDate} // Pass the date from parent
                   />
                 </div>
               )}

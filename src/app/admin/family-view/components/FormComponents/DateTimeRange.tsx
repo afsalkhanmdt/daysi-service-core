@@ -16,16 +16,17 @@ interface DateTimeRangeProps {
   required?: boolean;
   className?: string;
   showLabels?: boolean;
-  setDefaultDates?: boolean; // New prop to control default behavior
+  setDefaultDates?: boolean;
   hideHeading?: boolean;
+  autoSyncEndDateTime?: boolean;
+  defaultDate?: Date | null; // Now accepts Date object
 }
 
-// Helper function to get current date in YYYY-MM-DD format
-const getCurrentDate = (): string => {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, "0");
-  const day = String(today.getDate()).padStart(2, "0");
+// Helper function to format Date to YYYY-MM-DD
+const formatDateToYYYYMMDD = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 };
 
@@ -50,6 +51,21 @@ const getCurrentTimePlusOneHour = (): string => {
   return `${hours}:00`;
 };
 
+// Helper function to add 1 hour to a time string
+const addOneHourToTime = (time: string): string => {
+  if (!time) return "00:00";
+
+  const [hours, minutes] = time.split(":").map(Number);
+  const date = new Date();
+  date.setHours(hours, minutes || 0, 0, 0);
+  date.setHours(date.getHours() + 1);
+
+  const newHours = String(date.getHours() % 24).padStart(2, "0");
+  const newMinutes = String(date.getMinutes()).padStart(2, "0");
+
+  return `${newHours}:${newMinutes}`;
+};
+
 const TimePicker: React.FC<{
   value: string;
   onChange: (value: string) => void;
@@ -58,7 +74,7 @@ const TimePicker: React.FC<{
   // Ensure we have a valid HH:MM format
   const timePart = value || "00:00";
   const [h, m] = timePart.split(":");
-  
+
   // Round minute to nearest 15-minute interval for the display
   const normalizeMinute = (minStr: string) => {
     const min = parseInt(minStr) || 0;
@@ -72,7 +88,9 @@ const TimePicker: React.FC<{
   const hour = h.padStart(2, "0");
   const minute = normalizeMinute(m);
 
-  const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
+  const hours = Array.from({ length: 24 }, (_, i) =>
+    String(i).padStart(2, "0"),
+  );
   const minutes = ["00", "15", "30", "45"];
 
   return (
@@ -84,7 +102,9 @@ const TimePicker: React.FC<{
         required={required}
       >
         {hours.map((h) => (
-          <option key={h} value={h}>{h}</option>
+          <option key={h} value={h}>
+            {h}
+          </option>
         ))}
       </select>
       <span className="text-gray-500 font-bold">:</span>
@@ -95,7 +115,9 @@ const TimePicker: React.FC<{
         required={required}
       >
         {minutes.map((m) => (
-          <option key={m} value={m}>{m}</option>
+          <option key={m} value={m}>
+            {m}
+          </option>
         ))}
       </select>
     </div>
@@ -114,24 +136,40 @@ const DateTimeRange: React.FC<DateTimeRangeProps> = ({
   required = false,
   className = "",
   showLabels = true,
-  setDefaultDates = true, // Default to true for backward compatibility
+  setDefaultDates = true,
   hideHeading = false,
+  autoSyncEndDateTime = true,
+  defaultDate, // Now accepts Date object
 }) => {
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Set default dates on component mount
   useEffect(() => {
     if (setDefaultDates && !isInitialized) {
-      const currentDate = getCurrentDate();
+      // Use defaultDate if provided, otherwise fallback to current date
+      let defaultDateValue: string;
+
+      if (
+        defaultDate &&
+        defaultDate instanceof Date &&
+        !isNaN(defaultDate.getTime())
+      ) {
+        defaultDateValue = formatDateToYYYYMMDD(defaultDate);
+      } else {
+        // Fallback to current date
+        const today = new Date();
+        defaultDateValue = formatDateToYYYYMMDD(today);
+      }
+
       const currentTime = getCurrentTime();
       const currentTimePlusOneHour = getCurrentTimePlusOneHour();
 
       // Only set defaults if values are empty
       if (!startDate) {
-        onStartDateChange(currentDate);
+        onStartDateChange(defaultDateValue);
       }
       if (!endDate) {
-        onEndDateChange(currentDate);
+        onEndDateChange(defaultDateValue);
       }
       if (!startTime) {
         onStartTimeChange(currentTime);
@@ -149,11 +187,29 @@ const DateTimeRange: React.FC<DateTimeRangeProps> = ({
     endDate,
     startTime,
     endTime,
+    defaultDate,
     onStartDateChange,
     onEndDateChange,
     onStartTimeChange,
     onEndTimeChange,
   ]);
+
+  // Handler for start date change - auto-update end date to same date
+  const handleStartDateChange = (value: string) => {
+    onStartDateChange(value);
+    if (autoSyncEndDateTime) {
+      onEndDateChange(value); // Set end date to same as start date
+    }
+  };
+
+  // Handler for start time change - auto-update end time to 1 hour later
+  const handleStartTimeChange = (value: string) => {
+    onStartTimeChange(value);
+    if (autoSyncEndDateTime) {
+      const newEndTime = addOneHourToTime(value);
+      onEndTimeChange(newEndTime); // Set end time to 1 hour after start
+    }
+  };
 
   return (
     <div>
@@ -176,20 +232,24 @@ const DateTimeRange: React.FC<DateTimeRangeProps> = ({
         <div className="grid grid-cols-2 gap-3 mb-2">
           <div>
             {showLabels && (
-              <label className="block text-[10px] font-bold text-gray-600 uppercase mb-0.5">from</label>
+              <label className="block text-[10px] font-bold text-gray-600 uppercase mb-0.5">
+                from
+              </label>
             )}
             <input
               placeholder="Select Start date"
               type="date"
               value={startDate}
-              onChange={(e) => onStartDateChange(e.target.value)}
+              onChange={(e) => handleStartDateChange(e.target.value)}
               className="w-full px-2 py-1 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
               required={required}
             />
           </div>
           <div>
             {showLabels && (
-              <label className="block text-[10px] font-bold text-gray-600 uppercase mb-0.5">to</label>
+              <label className="block text-[10px] font-bold text-gray-600 uppercase mb-0.5">
+                to
+              </label>
             )}
             <input
               placeholder="Select End date"
@@ -206,17 +266,21 @@ const DateTimeRange: React.FC<DateTimeRangeProps> = ({
         <div className="grid grid-cols-2 gap-3">
           <div>
             {showLabels && (
-              <label className="block text-[10px] font-bold text-gray-600 uppercase mb-0.5">Start Time</label>
+              <label className="block text-[10px] font-bold text-gray-600 uppercase mb-0.5">
+                Start Time
+              </label>
             )}
             <TimePicker
               value={startTime}
-              onChange={onStartTimeChange}
+              onChange={handleStartTimeChange}
               required={required}
             />
           </div>
           <div>
             {showLabels && (
-              <label className="block text-[10px] font-bold text-gray-600 uppercase mb-0.5">End Time</label>
+              <label className="block text-[10px] font-bold text-gray-600 uppercase mb-0.5">
+                End Time
+              </label>
             )}
             <TimePicker
               value={endTime}
