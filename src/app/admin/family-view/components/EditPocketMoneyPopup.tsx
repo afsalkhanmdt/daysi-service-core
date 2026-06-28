@@ -472,8 +472,8 @@ const EditPocketMoneyPopup: React.FC<
                   Status: {statusInfo.label}
                 </span>
                 <svg
-                  width="16"
-                  height="16"
+                  width="25"
+                  height="25"
                   viewBox="0 0 24 24"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
@@ -481,7 +481,7 @@ const EditPocketMoneyPopup: React.FC<
                   <path
                     d="M20 6L9 17L4 12"
                     stroke={statusInfo.color}
-                    strokeWidth="3"
+                    strokeWidth="5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />
