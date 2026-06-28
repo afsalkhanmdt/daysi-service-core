@@ -21,7 +21,11 @@ import dp from "@/app/admin/assets/try.jpg";
 
 import { useFetch } from "@/app/hooks/useFetch";
 import { FamilyResponse } from "@/app/types/familytypes";
-import { MemberResponse } from "@/app/types/familyMemberTypes";
+import {
+  ExternalCalendar,
+  ExternalCalendarResponse,
+  MemberResponse,
+} from "@/app/types/familyMemberTypes";
 
 import { useTranslation } from "react-i18next";
 import i18next from "i18next";
@@ -33,6 +37,7 @@ import {
   createAppointmentCall,
   createCalendarFeedCall,
   createToDoTaskCall,
+  deleteCalendarFeedCall,
 } from "@/services/api";
 import { createPocketMoneyTaskCall } from "@/services/api";
 import { ToDoCreateCommand, ToDoTaskType } from "@/app/types/todo";
@@ -95,6 +100,74 @@ const FamilyViewWrapper = ({
   const [optimisticUpdates, setOptimisticUpdates] = useState<
     Record<string, any>
   >({});
+  // State declarations
+  const [externalCalendars, setExternalCalendars] = useState<
+    ExternalCalendar[]
+  >([]);
+
+  // Update externalCalendars when apiData changes
+  useEffect(() => {
+    if (apiData?.Members) {
+      const calendars =
+        apiData.Members.flatMap((member) =>
+          member.ExternalCalendars?.map((calendar) => ({
+            ...calendar,
+            memberName: member.MemberName,
+            memberEmail: member.Email,
+            memberLocale: member.Locale || "en",
+          })),
+        ) || [];
+      setExternalCalendars(calendars);
+
+      // Log for debugging
+      console.log("External calendars loaded:", calendars);
+    }
+  }, [apiData]);
+
+  // Also make sure to update when familyDetails changes (if you use it)
+  useEffect(() => {
+    if (familyDetails?.Members) {
+      const calendars =
+        familyDetails.Members.flatMap((member) =>
+          member.ExternalCalendars?.map((calendar) => ({
+            ...calendar,
+            memberName: member.MemberName,
+            memberEmail: member.Email,
+            memberLocale: member.Locale || "en",
+          })),
+        ) || [];
+      setExternalCalendars(calendars);
+    }
+  }, [familyDetails]);
+
+  const handleDeleteCalendar = async (calendarId: number) => {
+    // Find the calendar - use the current state
+    const calendarToDelete = externalCalendars.find(
+      (cal) => cal.CalendarId === calendarId,
+    );
+
+    try {
+      // Call API first
+      if (calendarToDelete) {
+        await deleteCalendarFeedCall(
+          calendarToDelete.CalendarId,
+          calendarToDelete.MembersUpdatedOn || "",
+          calendarToDelete.memberLocale || "en",
+        );
+      }
+
+      // Remove from UI only after successful API call
+      setExternalCalendars((prev) =>
+        prev.filter((cal) => cal.CalendarId !== calendarId),
+      );
+
+      // Also reload the main data to keep everything in sync
+      reload();
+    } catch (error) {
+      console.error("Error deleting calendar:", error);
+      alert("Failed to delete calendar. Please try again.");
+    }
+  };
 
   const { t } = useTranslation("common");
 
@@ -123,6 +196,31 @@ const FamilyViewWrapper = ({
 
   useEffect(() => {
     if (apiData) {
+      // ── DIAGNOSTIC: check raw API data for external calendar events ──
+      console.log("[EXT_CAL_DEBUG] Raw apiData received:", {
+        membersCount: apiData.Members?.length,
+        members: apiData.Members?.map((m: any) => ({
+          Id: m.Id,
+          Name: m.FirstName,
+          MemberId: m.MemberId,
+          eventsCount: m.Events?.length,
+          externalCalendars: m.ExternalCalendars,
+          externalEvents: m.Events?.filter(
+            (e: any) => e.ExternalCalendarId > 0 || e.ExternalCalendarName,
+          )?.map((e: any) => ({
+            Id: e.Id,
+            Title: e.Title,
+            ExternalCalendarName: e.ExternalCalendarName,
+            ExternalCalendarId: e.ExternalCalendarId,
+            Start: e.Start,
+            End: e.End,
+            IsAllDayEvent: e.IsAllDayEvent,
+            IsForAll: e.IsForAll,
+            EventParticipant: e.EventParticipant,
+          })),
+        })),
+      });
+      // ── END DIAGNOSTIC ──
       setFamilyDetails(apiData);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(apiData));
     }
@@ -405,10 +503,11 @@ const FamilyViewWrapper = ({
           </div>
           <div className="flex-1 overflow-y-auto p-3">
             <div className="grid gap-2">
-              {familyDetails.ExternalCalendarTypes.map((calendarDetail, i) => (
+              {externalCalendars.map((calendar) => (
                 <ExternalCalendarDisplayCard
-                  key={i}
-                  calendarDescription={calendarDetail}
+                  key={calendar.CalendarId}
+                  calendar={calendar}
+                  onDelete={handleDeleteCalendar}
                 />
               ))}
             </div>
