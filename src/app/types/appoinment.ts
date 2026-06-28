@@ -5,6 +5,7 @@ export type appointmentPopupPropsType = {
   onClose: () => void;
   onSubmit: (data: any) => void;
   appointment?: EventInput;
+  currentDate?: Date; 
    
 };
 

@@ -136,6 +136,18 @@ export interface ExternalCalendarResponse {
   MembersUpdatedOn: string
 }
 
+export type ExternalCalendar = {
+  CalendarId: number;
+  CalendarName: string;
+  CalendarURL: string;
+  FamilyId: number;
+  MemberId: string;
+  MembersUpdatedOn: string | null;
+  memberName?: string;
+  memberEmail?: string;
+  memberLocale?: string;
+};
+
 export interface ToDoAccessSpecifier {
   MemberId: string
   HasViewAccess: boolean

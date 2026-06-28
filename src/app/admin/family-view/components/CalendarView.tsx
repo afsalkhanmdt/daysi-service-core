@@ -490,27 +490,32 @@ const CalendarView = ({
       noPush: appointmentData.noPush || false,
     };
 
-    const originalEventId = String(appointmentData.id);
-
+    // Create optimistic version
     const optimisticEditedEvents = createOptimisticEvents(
       updatedAppointmentData,
       data?.Members || [],
     );
 
-    setOptimisticUpdates((prev) => {
-      const next = { ...prev };
+    const originalEventId = String(appointmentData.id);
 
-      delete next[originalEventId];
-
-      next[originalEventId] = optimisticEditedEvents;
-
-      return next;
-    });
+    // Replace original event with optimistic event
+    setOptimisticUpdates((prev) => ({
+      ...prev,
+      [originalEventId]: optimisticEditedEvents,
+    }));
 
     try {
       const response = await updateAppointmentCall(updatedAppointmentData);
 
       if (response) {
+        // Remove optimistic event immediately
+        setOptimisticUpdates((prev) => {
+          const next = { ...prev };
+          delete next[originalEventId];
+          return next;
+        });
+
+        // Then fetch actual updated event
         await dataReload();
 
         if (updatedAppointmentData.startDate) {
@@ -518,14 +523,15 @@ const CalendarView = ({
         }
       }
     } catch (error) {
-      console.error(error);
-    } finally {
+      // Rollback optimistic update
       setOptimisticUpdates((prev) => {
         const next = { ...prev };
         delete next[originalEventId];
         return next;
       });
 
+      console.error(error);
+    } finally {
       setIsLoading?.(false);
     }
   };
