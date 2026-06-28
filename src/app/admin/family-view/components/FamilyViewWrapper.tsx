@@ -8,7 +8,7 @@ import CalendarView from "@/app/admin/family-view/components/CalendarView";
 import CelebrationDisplayCard from "@/app/admin/family-view/components/CelebrationDisplayCard";
 import PMDisplayCard from "./PMDisplayCard";
 import ToggleThemeAndLogout from "./ToggleThemeAndLogout";
-import CreateTodoPopup from "./CreateTodoPopup"; // Import your popup components
+import CreateTodoPopup from "./CreateTodoPopup";
 import CreateAppointmentPopup from "./CreateAppointmentPopup";
 import ImportAppointmentsPopup from "./ImportAppointmentsPopup";
 // import CreatePocketMoneyPopup from "./CreatePocketMoneyPopup"; // Import when ready
@@ -88,6 +88,9 @@ const FamilyViewWrapper = ({
   const [familyDetails, setFamilyDetails] = useState<FamilyData | null>(null);
   const [isLangReady, setIsLangReady] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
+
+  // State for sidebar collapse
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const [showCreateTodo, setShowCreateTodo] = useState(false);
   const [showCreateAppointment, setShowCreateAppointment] = useState(false);
@@ -440,101 +443,172 @@ const FamilyViewWrapper = ({
   console.log(familyDetails, "familyDetails");
 
   return (
-    <div className="sm:flex w-screen h-screen sm:py-3 sm:px-3 bg-white dark:bg-gray-800 transition-colors">
-      <div className="hidden sm:flex flex-col min-w-[140px] max-w-[300px] w-[30%] bg-white dark:bg-gray-800 border-r dark:border-gray-700 text-gray-800 dark:text-gray-100">
-        <div className="border-b border-slate-100 dark:border-gray-700 pb-3 grid place-items-center">
-          <Image
-            src={
-              familyDetails?.Members?.find((m) => m.MemberId === userId)
-                ?.Locale === "en"
-                ? enLogo.src
-                : familyDetails?.Members?.find((m) => m.MemberId === userId)
-                      ?.Locale === "sv"
-                  ? swedishLogo.src
-                  : danishAndNorwegianLogo.src
-            }
-            alt="mainIcon"
-            width={1200}
-            height={200}
-            className="w-72 h-10"
-          />
-        </div>
-
-        <div className="flex-1 min-h-0 flex flex-col border-b border-slate-100 dark:border-gray-700">
-          <div className="p-3 text-base font-semibold grid place-content-center border-b dark:border-gray-700">
-            {t("Celebrations")}
+    <div className="sm:flex w-screen h-screen sm:py-3 sm:px-3 bg-white dark:bg-gray-800 transition-colors relative">
+      {/* Sidebar - First div with collapse animation */}
+      <div
+        className={`
+          hidden sm:flex flex-col 
+          bg-white dark:bg-gray-800 border-r dark:border-gray-700 
+          text-gray-800 dark:text-gray-100
+          transition-all duration-300 ease-in-out relative
+          flex-shrink-0
+          ${isSidebarCollapsed ? "w-0 min-w-0 max-w-0 overflow-hidden border-r-0 opacity-0 p-0" : "w-[30%] min-w-[140px] max-w-[300px] opacity-100 p-0"}
+        `}
+      >
+        {/* Content wrapper that shows/hides with sidebar */}
+        <div
+          className={`flex flex-col h-full w-full ${isSidebarCollapsed ? "hidden" : "flex"}`}
+        >
+          {/* Toggle Button - Inside sidebar at top-right */}
+          <div className="flex justify-end p-2">
+            <button
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              className="
+                bg-blue-500 hover:bg-blue-600 text-white 
+                rounded-full w-6 h-6 flex items-center justify-center
+                shadow-lg transition-all duration-300
+              "
+              aria-label="Collapse sidebar"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M11 19l-7-7 7-7M19 19l-7-7 7-7"
+                />
+              </svg>
+            </button>
           </div>
-          {selectedDaysEvents.length > 0 ? (
+
+          <div className="border-b border-slate-100 dark:border-gray-700 pb-3 grid place-items-center">
+            <Image
+              src={
+                familyDetails?.Members?.find((m) => m.MemberId === userId)
+                  ?.Locale === "en"
+                  ? enLogo.src
+                  : familyDetails?.Members?.find((m) => m.MemberId === userId)
+                        ?.Locale === "sv"
+                    ? swedishLogo.src
+                    : danishAndNorwegianLogo.src
+              }
+              alt="mainIcon"
+              width={1200}
+              height={200}
+              className="w-72 h-10"
+            />
+          </div>
+
+          <div className="flex-1 min-h-0 flex flex-col border-b border-slate-100 dark:border-gray-700">
+            <div className="p-3 text-base font-semibold grid place-content-center border-b dark:border-gray-700">
+              {t("Celebrations")}
+            </div>
+            {selectedDaysEvents.length > 0 ? (
+              <div className="flex-1 overflow-y-auto p-3">
+                <div className="grid gap-2">
+                  {selectedDaysEvents.map((event, i) => (
+                    <CelebrationDisplayCard
+                      key={i}
+                      mainEvent={event}
+                      imageUrl={imageUrls[event.EventPerson]}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="p-2 border-t-4 rounded-xl m-2 border-gray-300 bg-white shadow-sm flex items-center justify-center h-20 text-gray-500 italic">
+                {t("NoSpecialEvents")}
+              </div>
+            )}
+          </div>
+          <div className="flex-1 min-h-0 flex flex-col">
+            <div className="p-3 text-base font-semibold grid place-content-center border-b dark:border-gray-700">
+              {t("PocketMoney")}
+            </div>
             <div className="flex-1 overflow-y-auto p-3">
               <div className="grid gap-2">
-                {selectedDaysEvents.map((event, i) => (
-                  <CelebrationDisplayCard
-                    key={i}
-                    mainEvent={event}
-                    imageUrl={imageUrls[event.EventPerson]}
+                {familyDetails.Members.filter((m) => m.PocketMoneyUser)
+                  .sort((a, b) => b.AmountEarned - a.AmountEarned)
+                  .map((member, i) => (
+                    <PMDisplayCard key={i} memberDetails={member} />
+                  ))}
+              </div>
+            </div>
+          </div>
+          <div className="flex-1 min-h-0 flex flex-col">
+            <div className="p-3 text-base font-semibold grid place-content-center border-b dark:border-gray-700">
+              {t("ExternalCalendars")}
+            </div>
+            <div className="flex-1 overflow-y-auto p-3">
+              <div className="grid gap-2">
+                {externalCalendars.map((calendar) => (
+                  <ExternalCalendarDisplayCard
+                    key={calendar.CalendarId}
+                    calendar={calendar}
+                    onDelete={handleDeleteCalendar}
                   />
                 ))}
               </div>
             </div>
-          ) : (
-            <div className="p-2 border-t-4 rounded-xl m-2 border-gray-300 bg-white shadow-sm flex items-center justify-center h-20 text-gray-500 italic">
-              {t("NoSpecialEvents")}
-            </div>
-          )}
-        </div>
-        <div className="flex-1 min-h-0 flex flex-col">
-          <div className="p-3 text-base font-semibold grid place-content-center border-b dark:border-gray-700">
-            {t("PocketMoney")}
           </div>
-          <div className="flex-1 overflow-y-auto p-3">
-            <div className="grid gap-2">
-              {familyDetails.Members.filter((m) => m.PocketMoneyUser)
-                .sort((a, b) => b.AmountEarned - a.AmountEarned)
-                .map((member, i) => (
-                  <PMDisplayCard key={i} memberDetails={member} />
-                ))}
-            </div>
-          </div>
-        </div>
-        <div className="flex-1 min-h-0 flex flex-col">
-          <div className="p-3 text-base font-semibold grid place-content-center border-b dark:border-gray-700">
-            {t("ExternalCalendars")}
-          </div>
-          <div className="flex-1 overflow-y-auto p-3">
-            <div className="grid gap-2">
-              {externalCalendars.map((calendar) => (
-                <ExternalCalendarDisplayCard
-                  key={calendar.CalendarId}
-                  calendar={calendar}
-                  onDelete={handleDeleteCalendar}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
 
-        {/* Updated ToggleThemeAndLogout with create functionality */}
-        <ToggleThemeAndLogout
-          reload={reload}
-          onNewAppointment={() =>
-            // checkSubscription(() => setShowCreateAppointment(true))
-            setShowCreateAppointment(true)
-          }
-          onNewToDo={() =>
-            // checkSubscription(() => setShowCreateTodo(true))
-            setShowCreateTodo(true)
-          }
-          onNewPocketMoney={() =>
-            // checkSubscription(() => setShowCreatePocketMoney(true))
-            setShowCreatePocketMoney(true)
-          }
-          onImportAppointments={() =>
-            // checkSubscription(() => setShowImportAppointments(true))
-            setShowImportAppointments(true)
-          }
-        />
+          {/* Updated ToggleThemeAndLogout with create functionality */}
+          <ToggleThemeAndLogout
+            reload={reload}
+            onNewAppointment={() =>
+              // checkSubscription(() => setShowCreateAppointment(true))
+              setShowCreateAppointment(true)
+            }
+            onNewToDo={() =>
+              // checkSubscription(() => setShowCreateTodo(true))
+              setShowCreateTodo(true)
+            }
+            onNewPocketMoney={() =>
+              // checkSubscription(() => setShowCreatePocketMoney(true))
+              setShowCreatePocketMoney(true)
+            }
+            onImportAppointments={() =>
+              // checkSubscription(() => setShowImportAppointments(true))
+              setShowImportAppointments(true)
+            }
+          />
+        </div>
       </div>
 
+      {/* Expand button - appears when sidebar is collapsed */}
+      {isSidebarCollapsed && (
+        <button
+          onClick={() => setIsSidebarCollapsed(false)}
+          className="hidden sm:flex absolute top-4 left-4 z-50
+            bg-blue-500 hover:bg-blue-600 text-white 
+            rounded-full w-6 h-6 items-center justify-center
+            shadow-lg transition-all duration-300"
+          aria-label="Expand sidebar"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M13 5l7 7-7 7M5 5l7 7-7 7"
+            />
+          </svg>
+        </button>
+      )}
+
+      {/* Mobile sidebar toggle (visible on small screens) */}
       <div className="sm:hidden w-full flex justify-between p-2">
         <div className="grid place-items-center">
           <Image
@@ -567,6 +641,7 @@ const FamilyViewWrapper = ({
         />
       </div>
 
+      {/* Main content - Third div (expands to fill remaining space) */}
       <div className="flex-1 min-w-0 sm:h-full">
         <CalendarView
           data={familyDetails}

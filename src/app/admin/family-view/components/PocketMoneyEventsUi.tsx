@@ -17,21 +17,68 @@ const PocketMoneyEventUi = ({
 
   const plannedMembers = PMEventData.FamilyMembersPlanned || [];
   const participants = (familyDetails.Members || []).filter((m) =>
-    plannedMembers.some((pm) => String(pm.MemberId) === String(m.MemberId))
+    plannedMembers.some((pm) => String(pm.MemberId) === String(m.MemberId)),
   );
 
+  // Get status and corresponding tick mark color
+  // Status: 0=OPEN (Grey), 1=FINISHED (Yellow), 2=APPROVED (Green)
+  const getStatusTickColor = (status: number) => {
+    switch (status) {
+      case 0: // OPEN
+        return "#9CA3AF"; // Grey
+      case 1: // FINISHED
+        return "#EAB308"; // Yellow
+      case 2: // APPROVED
+        return "#22C55E"; // Green
+      default:
+        return "#9CA3AF"; // Grey
+    }
+  };
+
+  const getStatusLabel = (status: number) => {
+    switch (status) {
+      case 0:
+        return "Open";
+      case 1:
+        return "Finished";
+      case 2:
+        return "Approved";
+      default:
+        return "Open";
+    }
+  };
+
+  const tickColor = getStatusTickColor(PMEventData.Status || 0);
+  const statusLabel = getStatusLabel(PMEventData.Status || 0);
+
   return (
-    <div className="min-w-52 sm:min-w-0 h-24 sm:h-20 border-t-2  sm:border-t-4 shadow-gray-300 rounded-xl border-sky-800 bg-white shadow-md flex flex-col justify-between gap-1 p-1">
+    <div className="min-w-52 sm:min-w-0 h-24 sm:h-20 border-t-2 sm:border-t-4 shadow-gray-300 rounded-xl border-sky-800 bg-white shadow-md flex flex-col justify-between gap-1 p-1 relative">
       <div>
         <div className="flex justify-between items-center">
           <div className="text-center py-0.5 px-1.5 bg-slate-200 text-sky-800 w-fit text-[7px] rounded-2xl">
             {t("Pocket Money Tasks")}
           </div>
-          <input
-            type="checkbox"
-            className="w-3 h-3 accent-sky-500 rounded mr-2"
-            readOnly
-          />
+          {/* Status Tick Mark - Inline SVG */}
+          <div
+            className="mr-2 flex items-center"
+            title={`Status: ${statusLabel}`}
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M20 6L9 17L4 12"
+                stroke={tickColor}
+                strokeWidth="5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
         </div>
         <div className="font-semibold text-[13px] text-black max-w-40 truncate">
           {PMEventData.PMDescription || "No Description"}
@@ -55,7 +102,7 @@ const PocketMoneyEventUi = ({
                   alt={participant.MemberName || "Member"}
                   width={32}
                   height={32}
-                  className="w-8 h-8 rounded-full border border-gray-200 bg-white shadow-sm shadow-gray-200  hover:scale-110 transition-transform object-cover"
+                  className="w-8 h-8 rounded-full border border-gray-200 bg-white shadow-sm shadow-gray-200 hover:scale-110 transition-transform object-cover"
                 />
               </div>
             ))}
@@ -79,4 +126,5 @@ const PocketMoneyEventUi = ({
     </div>
   );
 };
+
 export default PocketMoneyEventUi;

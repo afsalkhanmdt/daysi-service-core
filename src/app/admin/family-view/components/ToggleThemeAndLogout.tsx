@@ -71,7 +71,7 @@ export default function ToggleThemeAndLogout({
           isDark ? `shadow-gray-900` : `shadow-gray-300`
         } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors dark:bg-blue-900 bg-blue-500`}
       >
-        <div className="sm:block hidden text-center  font-semibold text-sm dark:text-stone-200 text-stone-800">
+        <div className="sm:block hidden text-center font-semibold text-sm dark:text-stone-200 text-stone-800">
           {t("Create Appointment Task")}
         </div>
         <svg
@@ -152,12 +152,13 @@ export default function ToggleThemeAndLogout({
           />
         </svg>
       </button>
+
       {/* Import Appointments Button */}
       <button
         onClick={onImportAppointments}
         className={`sm:flex sm:justify-between sm:shadow-md ${
           isDark ? `shadow-gray-900` : `shadow-gray-300`
-        } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors dark:bg-indigo-900 bg-indigo-600`}
+        } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors dark:bg-blue-900 bg-blue-500`}
       >
         <div className="sm:block hidden text-center font-semibold text-sm dark:text-stone-200 text-stone-800">
           {t("Import Appointments")}
@@ -178,19 +179,21 @@ export default function ToggleThemeAndLogout({
           />
         </svg>
       </button>
+
       {/* Refresh Button */}
       <button
         onClick={handleRefresh}
-        className={`sm:flex sm:justify-between sm:shadow-md sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full transform transition-all duration-150 active:scale-95 ${
+        className={`sm:flex sm:justify-between sm:shadow-md ${
+          isDark ? `shadow-gray-900` : `shadow-gray-300`
+        } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors dark:bg-blue-900 bg-blue-500 transform transition-all duration-150 active:scale-95 ${
           refreshing ? "scale-90" : "scale-100"
-        } ${isDark ? `shadow-gray-900` : `shadow-gray-300`}`}
+        }`}
       >
-        <div className="sm:block hidden text-center font-semibold text-sm text-stone-500">
+        <div className="sm:block hidden text-center font-semibold text-sm dark:text-stone-200 text-stone-800">
           {t("Refresh")}
         </div>
-
         <div
-          className={`w-4 h-4 rounded-full bg-green-600 transition-transform duration-500 ${
+          className={`w-4 h-4 rounded-full bg-green-600  transition-transform duration-500 ${
             refreshing ? "animate-spin" : ""
           }`}
         ></div>
@@ -200,12 +203,11 @@ export default function ToggleThemeAndLogout({
       <div
         className={`sm:flex sm:justify-between sm:shadow-md ${
           isDark ? `shadow-gray-900` : `shadow-gray-300`
-        } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full`}
+        } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors dark:bg-blue-900 bg-blue-500`}
       >
-        <div className="sm:block hidden text-center font-semibold text-sm text-stone-500">
+        <div className="sm:block hidden text-center font-semibold text-sm dark:text-stone-200 text-stone-800">
           {t("DarkMode")}
         </div>
-
         <button
           onClick={toggleTheme}
           className="relative flex items-center gap-1 rounded-full px-1.5 py-0.5 border border-slate-200 bg-slate-300 shadow-inner shadow-black dark:bg-gray-800 transition-colors duration-300"
@@ -248,11 +250,11 @@ export default function ToggleThemeAndLogout({
       {/* Logout */}
       <button
         onClick={handleLogout}
-        className={`sm:flex sm:justify-between shadow-md ${
+        className={`sm:flex sm:justify-between sm:shadow-md ${
           isDark ? `shadow-gray-900` : `shadow-gray-300`
-        } px-1.5 sm:px-3 py-1.5 grid place-items-center sm:items-center gap-1.5 sm:w-full rounded-lg sm:rounded-full`}
+        } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors dark:bg-blue-900 bg-blue-500`}
       >
-        <div className="sm:block hidden text-center font-semibold text-sm text-stone-500">
+        <div className="sm:block hidden text-center font-semibold text-sm dark:text-stone-200 text-stone-800">
           {t("Logout")}
         </div>
         <svg
@@ -264,13 +266,13 @@ export default function ToggleThemeAndLogout({
         >
           <path
             d="M11.0023 8.16659C11.0164 5.62905 11.1289 4.25482 12.0254 3.35838C13.0505 2.33325 14.7004 2.33325 18.0002 2.33325H19.1669C22.4667 2.33325 24.1167 2.33325 25.1418 3.35838C26.1669 4.38351 26.1669 6.03342 26.1669 9.33325V18.6666C26.1669 21.9664 26.1669 23.6163 25.1418 24.6414C24.1167 25.6666 22.4667 25.6666 19.1669 25.6666H18.0002C14.7004 25.6666 13.0505 25.6666 12.0254 24.6414C11.1289 23.745 11.0164 22.3708 11.0023 19.8333"
-            stroke={`${isDark ? `white` : `#228FE5`}`}
+            stroke={`${isDark ? `white` : `#27272a`}`}
             strokeWidth="1.5"
             strokeLinecap="round"
           />
           <path
             d="M18 14H2.83334M2.83334 14L6.91668 10.5M2.83334 14L6.91668 17.5"
-            stroke={`${isDark ? `white` : `#228FE5`}`}
+            stroke={`${isDark ? `white` : `#27272a`}`}
             strokeWidth="1.5"
             strokeLinecap="round"
             strokeLinejoin="round"
