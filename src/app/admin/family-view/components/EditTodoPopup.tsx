@@ -351,9 +351,14 @@ const EditTodoPopup: React.FC<todoPopupPropsType & { isLoading?: boolean }> = ({
             <div className="flex items-center gap-3">
               {/* Status Badge */}
               <div className="flex items-center gap-1.5 bg-gray-100 px-2.5 py-1 rounded-full">
+                <span
+                  className={`text-xs font-bold ${isClosed ? "text-green-600" : "text-gray-500"}`}
+                >
+                  Status: {statusText}
+                </span>
                 <svg
-                  width="14"
-                  height="14"
+                  width="25"
+                  height="25"
                   viewBox="0 0 24 24"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
@@ -361,16 +366,11 @@ const EditTodoPopup: React.FC<todoPopupPropsType & { isLoading?: boolean }> = ({
                   <path
                     d="M20 6L9 17L4 12"
                     stroke={tickColor}
-                    strokeWidth="3"
+                    strokeWidth="5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />
                 </svg>
-                <span
-                  className={`text-xs font-bold ${isClosed ? "text-green-600" : "text-gray-500"}`}
-                >
-                  Status: {statusText}
-                </span>
               </div>
               <button
                 onClick={handleClosePopup}
