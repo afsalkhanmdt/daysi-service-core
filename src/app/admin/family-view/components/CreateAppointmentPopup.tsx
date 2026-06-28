@@ -50,7 +50,7 @@ const CreateAppointmentPopup: React.FC<
   appointmentPopupPropsType & {
     onSubmit: (data: UserEventCreateRequest) => void;
   }
-> = ({ isOpen, onClose, onSubmit }) => {
+> = ({ isOpen, onClose, onSubmit, currentDate }) => {
   const { resources } = useResources();
   const [responsiblePersons, setResponsiblePersons] = useState<
     SelectableOption[]
@@ -619,6 +619,8 @@ const CreateAppointmentPopup: React.FC<
                     }
                     hideHeading={true}
                     required
+                    autoSyncEndDateTime={true}
+                    defaultDate={currentDate} // Pass the date from parent
                   />
                 </div>
               )}

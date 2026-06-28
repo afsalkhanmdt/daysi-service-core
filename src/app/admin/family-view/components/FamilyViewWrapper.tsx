@@ -597,6 +597,7 @@ const FamilyViewWrapper = ({
         isOpen={showCreateAppointment}
         onClose={() => setShowCreateAppointment(false)}
         onSubmit={handleCreateAppointment}
+        currentDate={currentDate}
       />
 
       <ImportAppointmentsPopup
