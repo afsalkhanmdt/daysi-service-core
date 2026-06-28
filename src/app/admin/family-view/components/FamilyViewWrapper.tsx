@@ -332,11 +332,10 @@ const FamilyViewWrapper = ({
       ]);
 
       if (response) {
-        await reload();
-
         setOptimisticEvents((prev) =>
           prev.filter((e) => !optimisticIds.includes(e.id)),
         );
+        await reload();
       }
     } catch (error) {
       setOptimisticEvents((prev) =>
