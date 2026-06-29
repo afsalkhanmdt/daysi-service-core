@@ -860,6 +860,7 @@ const CalendarView = ({
               setCurrentDate={setCurrentDate}
               setIsLoading={setIsLoading}
               isLoading={isLoading}
+              resourceOrder={formattedResources}
             />
           </div>
         )}
@@ -879,6 +880,7 @@ const CalendarView = ({
             setCurrentDate={setCurrentDate}
             setIsLoading={setIsLoading}
             isLoading={isLoading}
+            resourceOrder={formattedResources}
           />
         </div>
       )}
