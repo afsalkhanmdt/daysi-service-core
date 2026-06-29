@@ -11,14 +11,13 @@ import closeIcon from "@/app/admin/assets/close-428.png";
 import { ToggleSwitch } from "./FormComponents/ToggleSwitch";
 import additionalNoteIcon from "@/app/admin/assets/name.png";
 import participantsIcon from "@/app/admin/assets/participantsIcon.png";
+import DescriptionIcon from "@/app/admin/assets/descriptionIcon.png";
 import repeatIcon from "@/app/admin/assets/repeatIcon.png";
 import nameIcon from "@/app/admin/assets/name.png";
-import alarmIcon from "@/app/admin/assets/alarmIcon.png";
 import SingleSelector from "./FormComponents/SingleSelector";
 import ResponsiblePersonSelector from "./FormComponents/ResponsiblePersonSelector";
-import MultipleSelector from "./FormComponents/MultipleSelector";
 import { SelectableOption } from "./FormComponents/MultipleSelector";
-import { REPEAT_OPTIONS, ALERT_OPTIONS } from "@/app/constants/appointmentForm";
+import { REPEAT_OPTIONS } from "@/app/constants/appointmentForm";
 import { mapResourcesToSelectableOptions } from "@/app/utils/resourceAdapters";
 import { useResources } from "@/app/context/ResourceContext";
 import { initialFormDataForPMTaskApi } from "@/app/constants/pocketMoneyForm";
@@ -55,8 +54,10 @@ const CreatePocketMoneyPopup: React.FC<
     useState<SelectableOption[]>(standardTaskOptions);
   const [repeatSequence, setRepeatSequence] =
     useState<SelectableOption[]>(REPEAT_OPTIONS);
+  const [isCustomDescription, setIsCustomDescription] = useState(false);
 
-  const { validate, errors, clearAllErrors } = usePocketMoneyValidation();
+  const { validate, errors, clearError, clearAllErrors } =
+    usePocketMoneyValidation();
 
   // ===== HANDLER FUNCTIONS =====
 
@@ -80,6 +81,9 @@ const CreatePocketMoneyPopup: React.FC<
   };
 
   const handleStandardTaskChange = (selectedTasks: SelectableOption[]) => {
+    // Don't allow selection if custom description is being typed
+    if (isCustomDescription) return;
+
     setStandardTasks((prev) =>
       prev.map((task) => ({
         ...task,
@@ -92,11 +96,59 @@ const CreatePocketMoneyPopup: React.FC<
         ...prev,
         PMDescription: selectedTasks[0].label,
       }));
+      clearError("PMDescription");
+      setIsCustomDescription(false);
     } else {
       setFormData((prev) => ({
         ...prev,
         PMDescription: "",
       }));
+    }
+  };
+
+  const handleDescriptionChange = (
+    e: React.ChangeEvent<HTMLTextAreaElement>,
+  ) => {
+    const value = e.target.value;
+    setFormData((prev) => ({
+      ...prev,
+      PMDescription: value,
+    }));
+    clearError("PMDescription");
+
+    // Check if the typed description matches any standard task
+    const isStandardTask = standardTaskOptions.some(
+      (task) => task.label === value,
+    );
+
+    if (isStandardTask) {
+      // If it matches a standard task, select it
+      setIsCustomDescription(false);
+      setStandardTasks((prev) =>
+        prev.map((task) => ({
+          ...task,
+          isSelected: task.label === value,
+        })),
+      );
+    } else if (value.trim() !== "") {
+      // If it's custom text (not matching any standard task)
+      setIsCustomDescription(true);
+      // Deselect all standard tasks
+      setStandardTasks((prev) =>
+        prev.map((task) => ({
+          ...task,
+          isSelected: false,
+        })),
+      );
+    } else {
+      // If empty, reset
+      setIsCustomDescription(false);
+      setStandardTasks((prev) =>
+        prev.map((task) => ({
+          ...task,
+          isSelected: false,
+        })),
+      );
     }
   };
 
@@ -119,6 +171,16 @@ const CreatePocketMoneyPopup: React.FC<
         ...selectedPersons.map((person) => person.memberId!),
       ].filter((id) => id),
     }));
+    clearError("participants");
+  };
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = parseFloat(e.target.value) || 0;
+    setFormData((prev) => ({
+      ...prev,
+      PMAmount: val,
+    }));
+    if (val > 0) clearError("PMAmount");
   };
 
   const handleFirstComeFirstServeToggle = (checked: boolean) => {
@@ -128,16 +190,11 @@ const CreatePocketMoneyPopup: React.FC<
     }));
   };
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setFormData((prev) => ({
+      ...prev,
+      Note: e.target.value,
+    }));
   };
 
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -190,6 +247,7 @@ const CreatePocketMoneyPopup: React.FC<
       standardTaskOptions.map((t) => ({ ...t, isSelected: false })),
     );
     setRepeatSequence(REPEAT_OPTIONS);
+    setIsCustomDescription(false);
     clearAllErrors();
   };
 
@@ -219,7 +277,7 @@ const CreatePocketMoneyPopup: React.FC<
     >
       <div
         ref={modalRef}
-        className="bg-white rounded-xl w-full max-w-5xl max-h-[98vh] flex flex-col shadow-2xl relative"
+        className="bg-white rounded-xl w-full max-w-2xl max-h-[98vh] flex flex-col shadow-2xl relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Compact Header */}
@@ -248,45 +306,106 @@ const CreatePocketMoneyPopup: React.FC<
         {/* Scrollable Form Content */}
         <div className="overflow-y-auto flex-1 p-3 lg:p-4">
           <form onSubmit={handleSubmit} className="space-y-3">
-            {/* Standard Task Selection */}
+            {/* Standard Task Selection - Display on two lines */}
             <div className="space-y-1">
               <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
                 <Image src={nameIcon} alt="icon" width={12} height={12} />{" "}
-                Choose Standard Task
+                Choose Standard Task Description
               </label>
-              <SingleSelector
-                options={standardTasks}
-                onSelectionChange={(s) => handleStandardTaskChange([s])}
-                mainHeading="Select a task from the list"
-                selectedBorderColor="blue"
-                selectedBadgeColor="blue"
-              />
+              <div className="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100">
+                <div className="grid grid-cols-2 gap-1">
+                  {standardTasks.map((task) => (
+                    <button
+                      key={task.id}
+                      type="button"
+                      onClick={() => {
+                        // Don't allow selection if custom description is being typed
+                        if (isCustomDescription) return;
+
+                        const isSelected = !task.isSelected;
+                        const updatedTasks = standardTasks.map((t) => ({
+                          ...t,
+                          isSelected: t.id === task.id ? isSelected : false,
+                        }));
+                        setStandardTasks(updatedTasks);
+                        if (isSelected) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            PMDescription: task.label,
+                          }));
+                          clearError("PMDescription");
+                          setIsCustomDescription(false);
+                        } else {
+                          setFormData((prev) => ({
+                            ...prev,
+                            PMDescription: "",
+                          }));
+                        }
+                      }}
+                      className={`px-2 py-1 text-xs rounded-lg border transition-all text-left ${
+                        isCustomDescription
+                          ? "opacity-50 cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200"
+                          : task.isSelected
+                            ? "bg-blue-500 text-white border-blue-500"
+                            : "bg-white text-gray-700 border-gray-200 hover:border-blue-300"
+                      }`}
+                      disabled={isCustomDescription}
+                    >
+                      {task.label}
+                    </button>
+                  ))}
+                </div>
+                {isCustomDescription && (
+                  <p className="text-xs text-yellow-600 font-medium mt-1">
+                    Custom description is being typed. Standard tasks are
+                    disabled.
+                  </p>
+                )}
+              </div>
+              {errors.PMDescription && (
+                <p className="text-xs text-red-500 font-medium mt-1">
+                  {errors.PMDescription}
+                </p>
+              )}
             </div>
 
-            {/* Task Description */}
+            {/* Task Description - Made more narrow */}
             <div className="space-y-1">
               <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
                 <Image
-                  src={participantsIcon}
+                  src={DescriptionIcon}
                   alt="icon"
                   width={14}
                   height={14}
                 />{" "}
-                Task Description
+                Custom Task Description
               </label>
-              <div className="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100">
+              <div
+                className={`bg-blue-50/50 p-2 rounded-xl border flex flex-col ${
+                  errors.PMDescription ? "border-red-500" : "border-blue-100"
+                }`}
+              >
                 <textarea
-                  name="PMDescription"
                   placeholder="Detailed description of the task..."
                   value={formData.PMDescription}
-                  onChange={handleInputChange}
-                  rows={2}
-                  className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm min-h-[50px]"
+                  onChange={handleDescriptionChange}
+                  rows={1}
+                  className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm min-h-[38px]"
                 />
+                {errors.PMDescription && (
+                  <p className="text-xs text-red-500 font-medium mt-1">
+                    {errors.PMDescription}
+                  </p>
+                )}
+                {isCustomDescription && (
+                  <p className="text-xs text-blue-500 font-medium mt-1">
+                    Custom description mode - standard tasks are disabled.
+                  </p>
+                )}
               </div>
             </div>
 
-            {/* Payment Details */}
+            {/* Payment Details - Made more narrow */}
             <div className="space-y-1">
               <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
                 <Image
@@ -297,29 +416,23 @@ const CreatePocketMoneyPopup: React.FC<
                 />{" "}
                 Payment Details
               </label>
-              <div className="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100 flex gap-3">
-                <div className="flex-1">
-                  <input
-                    name="PMAmount"
-                    type="number"
-                    placeholder="Enter amount"
-                    value={formData.PMAmount || ""}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-                  />
-                </div>
-                <div className="w-24">
-                  <select
-                    name="CurrencyCode"
-                    value={formData.CurrencyCode || "RAY"}
-                    onChange={handleSelectChange}
-                    className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white"
-                  >
-                    <option value="RAY">RAY</option>
-                    <option value="USD">USD</option>
-                    <option value="EUR">EUR</option>
-                  </select>
-                </div>
+              <div
+                className={`bg-blue-50/50 p-2 rounded-xl border flex flex-col ${
+                  errors.PMAmount ? "border-red-500" : "border-blue-100"
+                }`}
+              >
+                <input
+                  type="number"
+                  placeholder="Enter amount"
+                  value={formData.PMAmount || ""}
+                  onChange={handleAmountChange}
+                  className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-all"
+                />
+                {errors.PMAmount && (
+                  <p className="text-xs text-red-500 font-medium mt-1">
+                    {errors.PMAmount}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -350,9 +463,14 @@ const CreatePocketMoneyPopup: React.FC<
                 onSelectionChange={handleResponsiblePersonsChange}
                 subHeading="Select who can do this task"
               />
+              {errors.participants && (
+                <p className="text-xs text-red-500 font-medium mt-1">
+                  {errors.participants}
+                </p>
+              )}
             </div>
 
-            {/* Recurring - Moved to its own row */}
+            {/* Recurring */}
             <div className="space-y-1">
               <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
                 <Image src={repeatIcon} alt="icon" width={14} height={14} />{" "}
@@ -366,7 +484,7 @@ const CreatePocketMoneyPopup: React.FC<
               />
             </div>
 
-            {/* Notes - Moved to its own row */}
+            {/* Additional Notes */}
             <div className="space-y-1">
               <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
                 <Image
@@ -377,13 +495,12 @@ const CreatePocketMoneyPopup: React.FC<
                 />{" "}
                 Additional Notes
               </label>
-              <div className="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100">
+              <div className="bg-blue-50/50 p-2 rounded-xl border border-blue-100">
                 <textarea
-                  name="Note"
-                  placeholder="Any special instructions..."
+                  placeholder="Any additional information..."
                   rows={2}
                   value={formData.Note}
-                  onChange={handleInputChange}
+                  onChange={handleNotesChange}
                   className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm min-h-[60px]"
                 />
               </div>
