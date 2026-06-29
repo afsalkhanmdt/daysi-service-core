@@ -448,7 +448,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
     >
       <div
         ref={modalRef}
-        className="bg-white rounded-xl w-full max-w-5xl max-h-[98vh] flex flex-col shadow-2xl relative"
+        className="bg-white rounded-xl w-full max-w-4xl max-h-[98vh] flex flex-col shadow-2xl relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Compact Header */}
