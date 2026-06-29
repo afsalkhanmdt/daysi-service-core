@@ -560,6 +560,8 @@ const FamilyViewWrapper = ({
 
           {/* Updated ToggleThemeAndLogout with create functionality */}
           <ToggleThemeAndLogout
+            reloadPM={reloadPM}
+            reloadTodo={reloadTodo}
             reload={reload}
             onNewAppointment={() =>
               // checkSubscription(() => setShowCreateAppointment(true))
@@ -621,6 +623,8 @@ const FamilyViewWrapper = ({
         </div>
         {/* Mobile version with create functionality */}
         <ToggleThemeAndLogout
+          reloadPM={reloadPM}
+          reloadTodo={reloadTodo}
           reload={reload}
           onNewAppointment={() =>
             // checkSubscription(() => setShowCreateAppointment(true))

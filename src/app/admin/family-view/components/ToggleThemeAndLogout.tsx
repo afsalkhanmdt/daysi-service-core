@@ -7,6 +7,8 @@ import { useTranslation } from "react-i18next";
 
 interface ToggleThemeAndLogoutProps {
   reload: () => void;
+  reloadTodo: () => void;
+  reloadPM: () => void;
   onNewAppointment: () => void;
   onNewToDo: () => void;
   onNewPocketMoney: () => void;
@@ -15,6 +17,8 @@ interface ToggleThemeAndLogoutProps {
 
 export default function ToggleThemeAndLogout({
   reload,
+  reloadTodo,
+  reloadPM,
   onNewAppointment,
   onNewToDo,
   onNewPocketMoney,
@@ -58,8 +62,14 @@ export default function ToggleThemeAndLogout({
 
   const handleRefresh = () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 600);
     reload();
+    reloadPM();
+    reloadTodo();
+    const timer = setTimeout(() => {
+      setRefreshing(false);
+    }, 600);
+
+    return () => clearTimeout(timer);
   };
 
   return (
@@ -69,9 +79,9 @@ export default function ToggleThemeAndLogout({
         onClick={onNewAppointment}
         className={`sm:flex sm:justify-between sm:shadow-md ${
           isDark ? `shadow-gray-900` : `shadow-gray-300`
-        } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors dark:bg-blue-900 bg-blue-500`}
+        } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full transition-colors dark:bg-blue-900 bg-blue-500 hover:bg-stone-500 dark:hover:bg-stone-600`}
       >
-        <div className="sm:block hidden text-center font-semibold text-sm dark:text-stone-200 text-stone-800">
+        <div className="sm:block hidden text-center font-semibold text-sm text-white dark:text-stone-200">
           {t("Create Appointment Task")}
         </div>
         <svg
@@ -83,7 +93,7 @@ export default function ToggleThemeAndLogout({
         >
           <path
             d="M8 2V5M16 2V5M3.5 9.09H20.5M21 8.5V17C21 20 19.5 22 16 22H8C4.5 22 3 20 3 17V8.5C3 5.5 4.5 3.5 8 3.5H16C19.5 3.5 21 5.5 21 8.5Z"
-            stroke={`${isDark ? `white` : `#27272a`}`}
+            stroke={"#e5e7eb"}
             strokeWidth="1.5"
             strokeMiterlimit="10"
             strokeLinecap="round"
@@ -91,7 +101,7 @@ export default function ToggleThemeAndLogout({
           />
           <path
             d="M15.6947 13.7H15.7037M15.6947 16.7H15.7037M11.9955 13.7H12.0045M11.9955 16.7H12.0045M8.29431 13.7H8.30329M8.29431 16.7H8.30329"
-            stroke={`${isDark ? `white` : `#27272a`}`}
+            stroke={"#e5e7eb"}
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -104,9 +114,9 @@ export default function ToggleThemeAndLogout({
         onClick={onNewToDo}
         className={`sm:flex sm:justify-between sm:shadow-md ${
           isDark ? `shadow-gray-900` : `shadow-gray-300`
-        } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors dark:bg-blue-900 bg-blue-500`}
+        } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full transition-colors dark:bg-blue-900 bg-blue-500 hover:bg-stone-500 dark:hover:bg-stone-600`}
       >
-        <div className="sm:block hidden text-center font-semibold text-sm dark:text-stone-200 text-stone-800">
+        <div className="sm:block hidden text-center font-semibold text-sm text-white dark:text-stone-200">
           {t("Create ToDo Task")}
         </div>
         <svg
@@ -118,7 +128,7 @@ export default function ToggleThemeAndLogout({
         >
           <path
             d="M8 12H16M8 16H16M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z"
-            stroke={`${isDark ? `white` : `#27272a`}`}
+            stroke={"#e5e7eb"}
             strokeWidth="1.5"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -131,9 +141,9 @@ export default function ToggleThemeAndLogout({
         onClick={onNewPocketMoney}
         className={`sm:flex sm:justify-between sm:shadow-md ${
           isDark ? `shadow-gray-900` : `shadow-gray-300`
-        } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors dark:bg-blue-900 bg-blue-500`}
+        } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full transition-colors dark:bg-blue-900 bg-blue-500 hover:bg-stone-500 dark:hover:bg-stone-600`}
       >
-        <div className="sm:block hidden text-center font-semibold text-sm dark:text-stone-200 text-stone-800">
+        <div className="sm:block hidden text-center font-semibold text-sm text-white dark:text-stone-200">
           {t("Create PocketMoney Task")}
         </div>
         <svg
@@ -145,7 +155,7 @@ export default function ToggleThemeAndLogout({
         >
           <path
             d="M8 14C8 14 9.5 16 12 16C14.5 16 16 14 16 14M12 8.5V8M12 8C12.5523 8 13 8.44772 13 9C13 9.55228 12.5523 10 12 10C11.4477 10 11 9.55228 11 9C11 8.44772 11.4477 8 12 8ZM22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z"
-            stroke={`${isDark ? `white` : `#27272a`}`}
+            stroke={"#e5e7eb"}
             strokeWidth="1.5"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -158,9 +168,9 @@ export default function ToggleThemeAndLogout({
         onClick={onImportAppointments}
         className={`sm:flex sm:justify-between sm:shadow-md ${
           isDark ? `shadow-gray-900` : `shadow-gray-300`
-        } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors dark:bg-blue-900 bg-blue-500`}
+        } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full transition-colors dark:bg-blue-900 bg-blue-500 hover:bg-stone-500 dark:hover:bg-stone-600`}
       >
-        <div className="sm:block hidden text-center font-semibold text-sm dark:text-stone-200 text-stone-800">
+        <div className="sm:block hidden text-center font-semibold text-sm text-white dark:text-stone-200">
           {t("Import Appointments")}
         </div>
         <svg
@@ -172,7 +182,7 @@ export default function ToggleThemeAndLogout({
         >
           <path
             d="M12 12V19M12 19L15 16M12 19L9 16M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
-            stroke={`${isDark ? `white` : `#27272a`}`}
+            stroke={"#e5e7eb"}
             strokeWidth="1.5"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -185,15 +195,15 @@ export default function ToggleThemeAndLogout({
         onClick={handleRefresh}
         className={`sm:flex sm:justify-between sm:shadow-md ${
           isDark ? `shadow-gray-900` : `shadow-gray-300`
-        } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors dark:bg-blue-900 bg-blue-500 transform transition-all duration-150 active:scale-95 ${
+        } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full transition-colors dark:bg-blue-900 bg-blue-500 hover:bg-stone-500 dark:hover:bg-stone-600 transform duration-150 active:scale-95 ${
           refreshing ? "scale-90" : "scale-100"
         }`}
       >
-        <div className="sm:block hidden text-center font-semibold text-sm dark:text-stone-200 text-stone-800">
+        <div className="sm:block hidden text-center font-semibold text-sm text-white dark:text-stone-200">
           {t("Refresh")}
         </div>
         <div
-          className={`w-4 h-4 rounded-full bg-green-600  transition-transform duration-500 ${
+          className={`w-4 h-4 rounded-full bg-green-600 transition-transform duration-500 ${
             refreshing ? "animate-spin" : ""
           }`}
         ></div>
@@ -201,17 +211,15 @@ export default function ToggleThemeAndLogout({
 
       {/* Dark Mode Toggle */}
       <div
+        onClick={toggleTheme}
         className={`sm:flex sm:justify-between sm:shadow-md ${
           isDark ? `shadow-gray-900` : `shadow-gray-300`
-        } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors dark:bg-blue-900 bg-blue-500`}
+        } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full transition-colors dark:bg-blue-900 bg-blue-500 hover:bg-stone-500 dark:hover:bg-stone-600 cursor-pointer`}
       >
-        <div className="sm:block hidden text-center font-semibold text-sm dark:text-stone-200 text-stone-800">
+        <div className="sm:block hidden text-center font-semibold text-sm text-white dark:text-stone-200">
           {t("DarkMode")}
         </div>
-        <button
-          onClick={toggleTheme}
-          className="relative flex items-center gap-1 rounded-full px-1.5 py-0.5 border border-slate-200 bg-slate-300 shadow-inner shadow-black dark:bg-gray-800 transition-colors duration-300"
-        >
+        <button className="relative flex items-center gap-1 rounded-full px-1.5 py-0.5 border border-slate-200 bg-slate-300 shadow-inner shadow-black dark:bg-gray-800 transition-colors duration-300">
           {/* Sun */}
           <div
             className={`p-0.5 rounded-full transition-colors duration-300 ${
@@ -252,9 +260,9 @@ export default function ToggleThemeAndLogout({
         onClick={handleLogout}
         className={`sm:flex sm:justify-between sm:shadow-md ${
           isDark ? `shadow-gray-900` : `shadow-gray-300`
-        } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors dark:bg-blue-900 bg-blue-500`}
+        } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full transition-colors dark:bg-blue-900 bg-blue-500 hover:bg-stone-500 dark:hover:bg-stone-600`}
       >
-        <div className="sm:block hidden text-center font-semibold text-sm dark:text-stone-200 text-stone-800">
+        <div className="sm:block hidden text-center font-semibold text-sm text-white dark:text-stone-200">
           {t("Logout")}
         </div>
         <svg
@@ -266,13 +274,13 @@ export default function ToggleThemeAndLogout({
         >
           <path
             d="M11.0023 8.16659C11.0164 5.62905 11.1289 4.25482 12.0254 3.35838C13.0505 2.33325 14.7004 2.33325 18.0002 2.33325H19.1669C22.4667 2.33325 24.1167 2.33325 25.1418 3.35838C26.1669 4.38351 26.1669 6.03342 26.1669 9.33325V18.6666C26.1669 21.9664 26.1669 23.6163 25.1418 24.6414C24.1167 25.6666 22.4667 25.6666 19.1669 25.6666H18.0002C14.7004 25.6666 13.0505 25.6666 12.0254 24.6414C11.1289 23.745 11.0164 22.3708 11.0023 19.8333"
-            stroke={`${isDark ? `white` : `#27272a`}`}
+            stroke={"#e5e7eb"}
             strokeWidth="1.5"
             strokeLinecap="round"
           />
           <path
             d="M18 14H2.83334M2.83334 14L6.91668 10.5M2.83334 14L6.91668 17.5"
-            stroke={`${isDark ? `white` : `#27272a`}`}
+            stroke={"#e5e7eb"}
             strokeWidth="1.5"
             strokeLinecap="round"
             strokeLinejoin="round"
