@@ -10,9 +10,6 @@ import Image from "next/image";
 import createTodoImage from "@/app/admin/assets/doctor-suitcase-with-a-cross-svgrepo-com 1.png";
 import closeIcon from "@/app/admin/assets/close-428.png";
 import { ToggleSwitch } from "./FormComponents/ToggleSwitch";
-import MultipleSelector, {
-  SelectableOption,
-} from "./FormComponents/MultipleSelector";
 import SingleSelector from "./FormComponents/SingleSelector";
 import SingleResponsiblePersonSelector from "./FormComponents/SingleResponsiblePersonSelector";
 import participantsIcon from "@/app/admin/assets/participantsIcon.png";
@@ -23,6 +20,7 @@ import { useResources } from "@/app/context/ResourceContext";
 import { mapResourcesToSelectableOptions } from "@/app/utils/resourceAdapters";
 import { initialToDoCreateBody, statusOptions } from "@/app/constants/toDoForm";
 import { useTodoValidation } from "@/app/hooks/useTodoValidation";
+import { SelectableOption } from "./FormComponents/MultipleSelector";
 
 const CreateTodoPopup: React.FC<
   todoPopupPropsType & { isLoading?: boolean }
@@ -213,7 +211,7 @@ const CreateTodoPopup: React.FC<
     >
       <div
         ref={modalRef}
-        className="bg-white rounded-xl w-full max-w-5xl max-h-[98vh] flex flex-col shadow-2xl relative"
+        className="bg-white rounded-xl w-full max-w-2xl max-h-[98vh] flex flex-col shadow-2xl relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Compact Header */}
@@ -262,7 +260,8 @@ const CreateTodoPopup: React.FC<
                 </div>
               </div>
 
-              <div className="bg-blue-50/50 p-3 rounded-xl border border-blue-100 grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="bg-blue-50/50 p-3 rounded-xl border border-blue-100 space-y-3">
+                {/* Description */}
                 <div className="space-y-1">
                   <label className="text-xs font-bold flex items-center gap-1.5 text-gray-700 uppercase tracking-wider">
                     <Image
@@ -289,6 +288,8 @@ const CreateTodoPopup: React.FC<
                     </p>
                   )}
                 </div>
+
+                {/* Group */}
                 <div className="space-y-1">
                   <label className="text-xs font-bold flex items-center gap-1.5 text-gray-700 uppercase tracking-wider">
                     <Image src={groupIcon} alt="icon" width={12} height={12} />{" "}
@@ -318,7 +319,7 @@ const CreateTodoPopup: React.FC<
               </div>
             </div>
 
-            {/* Responsible Persons */}
+            {/* Responsible Person */}
             <div className="space-y-1">
               <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
                 <Image
@@ -332,7 +333,7 @@ const CreateTodoPopup: React.FC<
               <SingleResponsiblePersonSelector
                 options={responsiblePersons}
                 onSelectionChange={handleResponsiblePersonsChange}
-                subHeading="Select who can do this task"
+                subHeading="Select who should complete this task"
               />
               {errors.assignedTo && (
                 <p className="text-xs text-red-500 font-medium mt-1">
@@ -341,7 +342,7 @@ const CreateTodoPopup: React.FC<
               )}
             </div>
 
-            {/* Status - Moved to its own row */}
+            {/* Status */}
             <div className="space-y-1">
               <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
                 <Image
@@ -361,7 +362,7 @@ const CreateTodoPopup: React.FC<
               />
             </div>
 
-            {/* Notes - Moved to its own row */}
+            {/* Additional Notes */}
             <div className="space-y-1">
               <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
                 <Image
