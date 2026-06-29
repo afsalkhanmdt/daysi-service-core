@@ -24,6 +24,7 @@ const ToDoAndPMComponent = ({
   setCurrentDate,
   setIsLoading,
   isLoading,
+  resourceOrder,
 }: {
   todoDetails: ToDoTaskType[];
   familyDetails: FamilyData;
@@ -36,6 +37,10 @@ const ToDoAndPMComponent = ({
   setCurrentDate: (date: Date) => void;
   setIsLoading?: (loading: boolean) => void;
   isLoading?: boolean;
+  resourceOrder: {
+    id: string;
+    title?: string;
+  }[];
 }) => {
   const { t } = useTranslation("common");
   const [isTasksOpen, setIsTasksOpen] = useState(false);
@@ -69,12 +74,19 @@ const ToDoAndPMComponent = ({
 
   const members = useMemo(() => {
     if (!familyDetails?.Members) return [];
+
+    const orderedMembers = resourceOrder
+      .map((resource) =>
+        familyDetails.Members.find(
+          (member) => String(member.Id) === String(resource.id),
+        ),
+      )
+      .filter(Boolean);
+
     return selectedMember
-      ? familyDetails.Members.filter(
-          (m) => Number(m.Id) === Number(selectedMember),
-        )
-      : familyDetails.Members;
-  }, [familyDetails?.Members, selectedMember]);
+      ? orderedMembers.filter((m) => Number(m!.Id) === Number(selectedMember))
+      : orderedMembers;
+  }, [familyDetails?.Members, resourceOrder, selectedMember]);
 
   const todosArr: ToDoTaskType[] = todoDetails
     ? Array.isArray(todoDetails)
@@ -82,14 +94,14 @@ const ToDoAndPMComponent = ({
       : [todoDetails]
     : [];
 
-  const pmTasksArr: PMTask[] = PMTaskDetails?.PMTasks ?? [];
+  const pmTasksArr: PMTask[] = useMemo(() => {
+    return (PMTaskDetails?.PMTasks ?? []).filter((pm) => pm.Status !== 1);
+  }, [PMTaskDetails?.PMTasks]);
 
   const pmTasksByMember = useMemo(() => {
     const map = new Map<string, PMTask[]>();
     const firstResourceId =
-      familyDetails?.Members && familyDetails.Members.length > 0
-        ? normalizeId(familyDetails.Members[0].MemberId)
-        : null;
+      members.length > 0 ? normalizeId(members[0]?.MemberId) : null;
 
     for (const pm of pmTasksArr) {
       const planned = Array.isArray(pm.FamilyMembersPlanned)
@@ -115,9 +127,7 @@ const ToDoAndPMComponent = ({
   const todosByMember = useMemo(() => {
     const map = new Map<string, ToDoTaskType[]>();
     const firstResourceId =
-      familyDetails?.Members && familyDetails.Members.length > 0
-        ? normalizeId(familyDetails.Members[0].MemberId)
-        : null;
+      members.length > 0 ? normalizeId(members[0]?.MemberId) : null;
 
     for (const t of todosArr) {
       if (t.IsForAll && firstResourceId) {
