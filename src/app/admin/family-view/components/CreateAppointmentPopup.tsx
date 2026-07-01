@@ -441,7 +441,7 @@ const CreateAppointmentPopup: React.FC<
                 )}
               </div>
 
-              <div className="space-y-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="space-y-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <div className="flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-gray-100 shadow-sm">
                   <div className="flex items-center gap-2">
                     <Image
@@ -477,6 +477,25 @@ const CreateAppointmentPopup: React.FC<
                     checked={formData.isPrivateEvent === 1}
                     onChange={(checked) =>
                       handleToggleChange("isPrivateEvent", checked)
+                    }
+                  />
+                </div>
+                <div className="flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-gray-100 shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <Image
+                      src={SpecialEventIcon}
+                      alt="icon"
+                      width={12}
+                      height={12}
+                    />
+                    <span className="text-xs font-semibold text-gray-700">
+                      All Day
+                    </span>
+                  </div>
+                  <ToggleSwitch
+                    checked={formData.isAllDayEvent === 1}
+                    onChange={(checked) =>
+                      handleToggleChange("isAllDayEvent", checked)
                     }
                   />
                 </div>
@@ -623,6 +642,7 @@ const CreateAppointmentPopup: React.FC<
                     required
                     autoSyncEndDateTime={true}
                     defaultDate={currentDate} // Pass the date from parent
+                    disableTime={formData.isAllDayEvent === 1}
                   />
                 </div>
               )}
@@ -631,17 +651,46 @@ const CreateAppointmentPopup: React.FC<
                   <Image src={repeatIcon} alt="icon" width={14} height={14} />{" "}
                   Repeat
                 </label>
-                <SingleSelector
-                  options={REPEAT_OPTIONS.map((o) => ({
-                    ...o,
-                    isSelected: o.id === formData.repeat,
-                  }))}
-                  onSelectionChange={(s) =>
-                    handleSingleSelectChange("repeat", [s])
-                  }
-                  selectedBorderColor="blue"
-                  selectedBadgeColor="blue"
-                />
+                <div className="flex flex-col gap-2">
+                  <SingleSelector
+                    options={REPEAT_OPTIONS.map((o) => ({
+                      ...o,
+                      isSelected: o.id === formData.repeat,
+                    }))}
+                    onSelectionChange={(s) =>
+                      handleSingleSelectChange("repeat", [s])
+                    }
+                    selectedBorderColor="blue"
+                    selectedBadgeColor="blue"
+                  />
+                  {formData.repeat !== 0 && (
+                    <div className="flex items-center gap-2 bg-blue-50/50 p-2 rounded-lg border border-blue-100">
+                      <span className="text-xs font-bold text-gray-700">Interval:</span>
+                      <input
+                        type="number"
+                        min="1"
+                        value={formData.recurrenceRule?.interval || 1}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value) || 1;
+                          setFormData((prev) => ({
+                            ...prev,
+                            recurrenceRule: {
+                              frequency: prev.recurrenceRule?.frequency || 0,
+                              interval: val,
+                            },
+                          }));
+                        }}
+                        className="w-16 px-2 py-1 border border-gray-200 rounded-md text-xs focus:ring-2 focus:ring-blue-500 outline-none"
+                      />
+                      <span className="text-xs text-gray-500">
+                        {formData.repeat === 1 ? 'day(s)' :
+                         formData.repeat === 2 ? 'week(s)' :
+                         formData.repeat === 3 ? '2 week(s)' :
+                         formData.repeat === 4 ? 'month(s)' : 'year(s)'}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
