@@ -1,4 +1,4 @@
-import { FrequencyEnum, UserEventCreateRequest, RepeatEnum, AlertEnum } from "@/app/types/appoinment";
+import { FrequencyEnum, UserEventCreateRequest, RepeatEnum, AlertEnum, AppointmentUpdateFormUI } from "@/app/types/appoinment";
 import { SelectableOption } from "../admin/family-view/components/FormComponents/MultipleSelector";
 
 export const initialFormDataForAppointmentApi: UserEventCreateRequest = {
@@ -133,3 +133,64 @@ export const buildTimestamp = (date: string, time: string) => {
   if (isNaN(d.getTime())) return "";
   return d.toISOString();
 };
+
+export const normalizeInitialData = (data: any): AppointmentUpdateFormUI => {
+    return {
+      ...data,
+      // Normalize Enums and Booleans
+      repeat:
+        data?.repeat ??
+        data?.Repeat ??
+        data?.extendedProps?.Repeat ??
+        data?.extendedProps?.repeat ??
+        0,
+      alert:
+        data?.alert ??
+        data?.Alert ??
+        data?.extendedProps?.Alert ??
+        data?.extendedProps?.alert ??
+        0,
+      isForAll:
+        data?.isForAll ?? data?.IsForAll ?? data?.extendedProps?.IsForAll ?? 0,
+      isAllDayEvent:
+        data?.isAllDayEvent ??
+        data?.IsAllDayEvent ??
+        data?.extendedProps?.IsAllDayEvent ??
+        0,
+      isSpecialEvent:
+        data?.isSpecialEvent ??
+        data?.IsSpecialEvent ??
+        data?.extendedProps?.IsSpecialEvent ??
+        0,
+      isPrivateEvent:
+        data?.isPrivateEvent ??
+        data?.IsPrivateEvent ??
+        data?.extendedProps?.IsPrivateEvent ??
+        0,
+      specialEvent:
+        data?.specialEvent ??
+        data?.SpecialEvent ??
+        data?.extendedProps?.SpecialEvent ??
+        undefined,
+
+      // Normalize Metadata and End Dates
+      repeatEndDate:
+        data?.repeatEndDate ??
+        data?.RepeatEndDate ??
+        data?.extendedProps?.RepeatEndDate ??
+        data?.extendedProps?.repeatEndDate ??
+        null,
+      startDateOnly: data?.startDate
+        ? parseTimestampToDateOnly(data.startDate as string)
+        : "",
+      startTimeOnly: data?.startDate
+        ? parseTimestampToTimeOnly(data.startDate as string)
+        : "",
+      endDateOnly: data?.endDate
+        ? parseTimestampToDateOnly(data.endDate as string)
+        : "",
+      endTimeOnly: data?.endDate
+        ? parseTimestampToTimeOnly(data.endDate as string)
+        : "",
+    } as AppointmentUpdateFormUI;
+  }

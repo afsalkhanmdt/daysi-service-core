@@ -121,9 +121,6 @@ const FamilyViewWrapper = ({
           })),
         ) || [];
       setExternalCalendars(calendars);
-
-      // Log for debugging
-      console.log("External calendars loaded:", calendars);
     }
   }, [apiData]);
 
@@ -183,10 +180,6 @@ const FamilyViewWrapper = ({
   };
 
   useEffect(() => {
-    console.log("optimisticEvents changed", optimisticEvents);
-  }, [optimisticEvents]);
-
-  useEffect(() => {
     const cached = localStorage.getItem(STORAGE_KEY);
     if (cached) {
       try {
@@ -199,31 +192,6 @@ const FamilyViewWrapper = ({
 
   useEffect(() => {
     if (apiData) {
-      // ── DIAGNOSTIC: check raw API data for external calendar events ──
-      console.log("[EXT_CAL_DEBUG] Raw apiData received:", {
-        membersCount: apiData.Members?.length,
-        members: apiData.Members?.map((m: any) => ({
-          Id: m.Id,
-          Name: m.FirstName,
-          MemberId: m.MemberId,
-          eventsCount: m.Events?.length,
-          externalCalendars: m.ExternalCalendars,
-          externalEvents: m.Events?.filter(
-            (e: any) => e.ExternalCalendarId > 0 || e.ExternalCalendarName,
-          )?.map((e: any) => ({
-            Id: e.Id,
-            Title: e.Title,
-            ExternalCalendarName: e.ExternalCalendarName,
-            ExternalCalendarId: e.ExternalCalendarId,
-            Start: e.Start,
-            End: e.End,
-            IsAllDayEvent: e.IsAllDayEvent,
-            IsForAll: e.IsForAll,
-            EventParticipant: e.EventParticipant,
-          })),
-        })),
-      });
-      // ── END DIAGNOSTIC ──
       setFamilyDetails(apiData);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(apiData));
     }
@@ -250,7 +218,7 @@ const FamilyViewWrapper = ({
 
   // Handler functions for creating new items
   const handleCreateTodo = async (todoData: ToDoCreateCommand) => {
-    // setIsActionLoading(true);
+    setIsActionLoading(true);
     const updatedTodoData: ToDoCreateCommand = {
       ...todoData,
       familyId: Number(familyId),
@@ -274,7 +242,7 @@ const FamilyViewWrapper = ({
   const handleCreateAppointment = async (
     appointmentData: UserEventCreateRequest,
   ) => {
-    // setIsActionLoading(true);
+    setIsActionLoading(true);
 
     const now = new Date().toISOString();
 
@@ -354,7 +322,7 @@ const FamilyViewWrapper = ({
   const handleCreatePocketMoney = async (
     pocketMoneyData: PMTaskCreateCommand,
   ) => {
-    // setIsActionLoading(true);
+    setIsActionLoading(true);
     const updatedPocketMoneyData = {
       ...pocketMoneyData,
       FamilyId: Number(familyId),
@@ -439,8 +407,6 @@ const FamilyViewWrapper = ({
     },
     {},
   );
-
-  console.log(familyDetails, "familyDetails");
 
   return (
     <div className="sm:flex w-screen h-screen sm:py-3 sm:px-3 bg-white dark:bg-gray-800 transition-colors relative">
@@ -547,9 +513,9 @@ const FamilyViewWrapper = ({
             </div>
             <div className="flex-1 overflow-y-auto p-3">
               <div className="grid gap-2">
-                {externalCalendars.map((calendar) => (
+                {externalCalendars.map((calendar, index) => (
                   <ExternalCalendarDisplayCard
-                    key={calendar.CalendarId}
+                    key={`${calendar.CalendarId}-${index}`}
                     calendar={calendar}
                     onDelete={handleDeleteCalendar}
                   />

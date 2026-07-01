@@ -5,12 +5,14 @@ type ResponsiblePersonSelectorProps = {
   options: SelectableOption[];
   onSelectionChange: (selectedOptions: SelectableOption[]) => void;
   subHeading?: string;
+  disabled?: boolean;
 };
 
 export default function ResponsiblePersonSelector({
   options,
   onSelectionChange,
   subHeading = "Select Responsible Persons",
+  disabled = false,
 }: ResponsiblePersonSelectorProps) {
   return (
     <MultipleSelector

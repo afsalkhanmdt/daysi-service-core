@@ -123,9 +123,9 @@ const MobileEventAndScrollBar = ({
           </div>
         ) : selectedDaysEvents.length > 0 ? (
           <div className="grid gap-2 bg-blue-100 m-2">
-            {selectedDaysEvents.map((event) => (
+            {selectedDaysEvents.map((event, index) => (
               <div
-                key={event.Id}
+                key={`${event.Id}-${index}`}
                 className="border-t-4 rounded-xl border-sky-500 bg-white shadow-sm overflow-auto"
               >
                 <div className="flex flex-col p-3 h-full w-full">
