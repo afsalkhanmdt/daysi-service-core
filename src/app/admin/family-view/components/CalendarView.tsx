@@ -41,11 +41,13 @@ import {
 import { PMData } from "@/app/types/pocketMoney";
 import { ToDoTaskType } from "@/app/types/todo";
 import {
+  createAppointmentCall,
   updateAppointmentCall,
   updatePocketMoneyTaskCall,
   updateToDoTaskCall,
 } from "@/services/api";
 import { createOptimisticEvents } from "@/app/utils/createOptimisticEvents";
+import RecurringOptionsOverlay from "./RecurringOptionsOverlay";
 
 const memberOrder: Record<number, number> = {
   1: 0,
@@ -109,6 +111,14 @@ const CalendarView = ({
     useState<EventApi | null>(null);
   const [selectedRawEvent, setSelectedRawEvent] = useState<any>(null);
 
+  const [showRecurringOptions, setShowRecurringOptions] = useState(false);
+  const [pendingAppointment, setPendingAppointment] = useState<EventApi | null>(
+    null,
+  );
+  const [pendingRawEvent, setPendingRawEvent] = useState<any>(null);
+
+  const [editType, setEditType] = useState<"single" | "series" | null>(null);
+
   const checkSubscription = (callback: () => void) => {
     if (data?.Family.SubscriptionType !== "Premium") {
       onFreemium();
@@ -134,8 +144,30 @@ const CalendarView = ({
   const handleRawEventClick = useCallback(
     (event: any) => {
       // checkSubscription(() => {
-      setSelectedRawEvent(event);
-      setShowEditAppointment(true);
+      const rawRepeat =
+        event.extendedProps?.repeat ??
+        event.extendedProps?.Repeat ??
+        event.repeat ??
+        event.Repeat;
+      const repeatStr = String(rawRepeat ?? "0")
+        .toLowerCase()
+        .trim();
+      const isRecurring =
+        repeatStr !== "0" &&
+        repeatStr !== "never" &&
+        repeatStr !== "none" &&
+        repeatStr !== "null" &&
+        repeatStr !== "undefined" &&
+        repeatStr !== "";
+
+      if (isRecurring) {
+        setPendingRawEvent(event);
+        setPendingAppointment(null);
+        setShowRecurringOptions(true);
+      } else {
+        setSelectedRawEvent(event);
+        setShowEditAppointment(true);
+      }
       // });
     },
     [data?.Family.SubscriptionType, onFreemium],
@@ -398,15 +430,20 @@ const CalendarView = ({
     if (!calendarRef.current?.getApi) return;
     const api = calendarRef.current.getApi();
 
-    // 1. Navigate to the correct date
-    api.gotoDate(currentDate);
+    // 1. Navigate to the correct date asynchronously to avoid React 18 flushSync warnings
+    const navTimeout = setTimeout(() => {
+      api.gotoDate(currentDate);
+    }, 0);
 
     // 2. Trigger scroll with a slight delay to allow rendering
     const scrollTimeout = setTimeout(() => {
       executeScroll();
     }, 250); // Increased delay slightly for better reliability after reload
 
-    return () => clearTimeout(scrollTimeout);
+    return () => {
+      clearTimeout(navTimeout);
+      clearTimeout(scrollTimeout);
+    };
   }, [currentDate, executeScroll, data]); // Added data dependency to re-scroll after reload
 
   // Debug effect to log slot information
@@ -458,7 +495,7 @@ const CalendarView = ({
   const handleEditAppointment = async (
     appointmentData: UserEventUpdateRequest,
   ) => {
-    // setIsLoading?.(true);
+    setIsLoading?.(true);
 
     const now = new Date().toISOString();
 
@@ -543,6 +580,78 @@ const CalendarView = ({
   }, [data.Members, setMembers]);
 
   const combinedLoading = isLoading;
+
+  // Handle creating a new recurring series (used when splitting a recurring event)
+  const handleCreateSeries = async (seriesData: UserEventCreateRequest) => {
+    try {
+      const now = new Date().toISOString();
+      const enrichedSeriesData = {
+        ...seriesData,
+        addedBy: data?.LoggedInUserId,
+        familyUserId: data.Family.MemberId,
+        familyId: Number(familyId),
+        locale:
+          data?.Members?.find((m) => m.MemberId === data.Family.MemberId)
+            ?.Locale || "en",
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        offSet: dayjs().format("Z"),
+        eventsUpdatedOn: now,
+        participants: seriesData.participants || [],
+        isForAll: seriesData.isForAll || 0,
+        isAllDayEvent: seriesData.isAllDayEvent || 0,
+        isSpecialEvent: seriesData.isSpecialEvent || 0,
+        isPrivateEvent: seriesData.isPrivateEvent || 0,
+        // Normalize recurrenceRule to camelCase — the API may return it in
+        // PascalCase ({ Frequency, Interval }) but the create endpoint requires
+        // camelCase. Sending PascalCase causes INVALID_MODEL_STATE.
+        recurrenceRule: (() => {
+          const rule = seriesData.recurrenceRule;
+          if (!rule) return { frequency: 0, interval: 1 };
+          return {
+            frequency: (rule as any).frequency ?? (rule as any).Frequency ?? 0,
+            interval: (rule as any).interval ?? (rule as any).Interval ?? 1,
+          };
+        })(),
+        alarms: seriesData.alarms || [],
+        latitude: seriesData.latitude || "",
+        longitude: seriesData.longitude || "",
+        eventGuID: seriesData.eventGuID || crypto.randomUUID(),
+        externalCalendarId: seriesData.externalCalendarId || 0,
+        noPush: seriesData.noPush || false,
+      };
+
+      // Sending as an array of UserEventCreateCommand for CreateV1
+      const response = await createAppointmentCall([enrichedSeriesData]);
+      return response;
+    } catch (error) {
+      console.error("Error creating series:", error);
+      throw error;
+    }
+  };
+
+  // Add this function to handle the recurring split
+  const handleRecurringSplit = async (splitData: {
+    beforeSeries: UserEventCreateRequest | null;
+    editedEvent: UserEventUpdateRequest;
+    afterSeries: UserEventCreateRequest | null;
+  }) => {
+    try {
+      // Reload all data after the split
+      await dataReload();
+      await reloadTodo();
+      await reloadPM();
+
+      // Navigate to the edited event date
+      if (splitData.editedEvent.startDate) {
+        setCurrentDate(new Date(splitData.editedEvent.startDate));
+      }
+    } catch (error) {
+      console.error("Error handling recurring split:", error);
+      throw error;
+    } finally {
+      setIsLoading?.(false);
+    }
+  };
 
   return (
     <div className="sm:p-2.5 bg-slate-100 flex flex-col sm:h-full sm:rounded-xl relative">
@@ -663,19 +772,40 @@ const CalendarView = ({
               })
               .filter((img): img is string => Boolean(img));
 
+            // Safely evaluate repeat to ensure we catch 0, "0", "Never", etc.
+            const rawRepeat =
+              eventInfo.event.extendedProps?.repeat ??
+              eventInfo.event.extendedProps?.Repeat;
+            const repeatStr = String(rawRepeat ?? "0")
+              .toLowerCase()
+              .trim();
+            const isRecurring =
+              repeatStr !== "0" &&
+              repeatStr !== "never" &&
+              repeatStr !== "none" &&
+              repeatStr !== "null" &&
+              repeatStr !== "undefined" &&
+              repeatStr !== "";
+
             return (
               <div
                 onClick={() => {
-                  // checkSubscription(() => {
-                  setSelectedAppointment(eventInfo.event);
-                  setShowEditAppointment(true);
-                  // });
+                  if (isRecurring) {
+                    // Show the recurring options overlay first
+                    setPendingAppointment(eventInfo.event);
+                    setPendingRawEvent(null);
+                    setShowRecurringOptions(true);
+                  } else {
+                    // Directly open edit popup for non-recurring events
+                    setSelectedAppointment(eventInfo.event);
+                    setShowEditAppointment(true);
+                  }
                 }}
                 className={`h-full border-t-4 rounded-xl border-sky-500 ${
                   eventInfo.event.extendedProps.ExternalCalendarName
                     ? "bg-slate-200"
                     : "bg-white"
-                }  shadow-sm overflow-auto min-h-32 w-full max-w-96`}
+                } shadow-sm overflow-auto min-h-32 w-full max-w-96 cursor-pointer hover:shadow-md transition-shadow`}
               >
                 <EventCardUI
                   eventInfo={eventInfo}
@@ -686,6 +816,41 @@ const CalendarView = ({
           }}
         />
 
+        {showRecurringOptions && (pendingAppointment || pendingRawEvent) && (
+          <RecurringOptionsOverlay
+            isOpen={showRecurringOptions}
+            onClose={() => {
+              setShowRecurringOptions(false);
+              setPendingAppointment(null);
+              setPendingRawEvent(null);
+            }}
+            onSelect={(option) => {
+              setShowRecurringOptions(false);
+              setEditType(option);
+
+              if (option === "single") {
+                // Open edit popup with repeat set to 0
+                const eventToEdit = pendingAppointment || pendingRawEvent;
+                if (eventToEdit) {
+                  setSelectedAppointment(eventToEdit);
+                  setShowEditAppointment(true);
+                }
+              } else {
+                // Open edit popup for series edit
+                const eventToEdit = pendingAppointment || pendingRawEvent;
+                if (eventToEdit) {
+                  setSelectedAppointment(eventToEdit);
+                  setShowEditAppointment(true);
+                }
+              }
+
+              setPendingAppointment(null);
+              setPendingRawEvent(null);
+            }}
+            eventData={pendingAppointment || pendingRawEvent}
+          />
+        )}
+
         {showEditAppointment && (selectedAppointment || selectedRawEvent) && (
           <EditAppointmentPopup
             isOpen={showEditAppointment}
@@ -693,8 +858,12 @@ const CalendarView = ({
               setShowEditAppointment(false);
               setSelectedAppointment(null);
               setSelectedRawEvent(null);
+              setEditType(null); // Reset edit type
             }}
             onSubmit={handleEditAppointment}
+            onCreateSeries={handleCreateSeries}
+            onRecurringSplit={handleRecurringSplit}
+            editType={editType}
             initialData={
               selectedRawEvent
                 ? {
@@ -775,6 +944,12 @@ const CalendarView = ({
                       selectedRawEvent.extendedProps?.localEndDate ||
                       selectedRawEvent.LocalEndDate ||
                       selectedRawEvent.localEndDate,
+                    parentEventId:
+                      selectedRawEvent.ParentEventId ||
+                      selectedRawEvent.parentEventId ||
+                      selectedRawEvent.extendedProps?.parentEventId ||
+                      null,
+                    extendedProps: selectedRawEvent.extendedProps || {},
                   }
                 : selectedAppointment
                   ? {
@@ -840,6 +1015,10 @@ const CalendarView = ({
                       localEndDate:
                         selectedAppointment.extendedProps?.LocalEndDate ||
                         selectedAppointment.extendedProps?.localEndDate,
+                      parentEventId:
+                        selectedAppointment.extendedProps?.parentEventId ||
+                        null,
+                      extendedProps: selectedAppointment.extendedProps || {},
                     }
                   : undefined
             }

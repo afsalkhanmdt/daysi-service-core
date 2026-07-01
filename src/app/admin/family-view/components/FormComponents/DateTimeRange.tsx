@@ -20,6 +20,7 @@ interface DateTimeRangeProps {
   hideHeading?: boolean;
   autoSyncEndDateTime?: boolean;
   defaultDate?: Date | null; // Now accepts Date object
+  disabled?: boolean;
 }
 
 // Helper function to format Date to YYYY-MM-DD

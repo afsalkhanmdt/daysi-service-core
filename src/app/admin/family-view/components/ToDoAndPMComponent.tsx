@@ -168,7 +168,7 @@ const ToDoAndPMComponent = ({
   }, [todosArr, familyDetails?.Members]);
 
   const handleEditTodo = async (todoData: any) => {
-    // setIsLoading?.(true);
+    setIsLoading?.(true);
     try {
       const response = await updateToDoTaskCall(todoData);
       if (response) {
@@ -185,7 +185,7 @@ const ToDoAndPMComponent = ({
   };
 
   const handleEditPocketMoney = async (pocketMoneyData: any) => {
-    // setIsLoading?.(true);
+    setIsLoading?.(true);
     try {
       const response = await updatePocketMoneyTaskCall([pocketMoneyData]);
       if (response) {
