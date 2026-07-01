@@ -484,6 +484,8 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
 
       const date = new Date(timestamp as any);
       if (!isNaN(date.getTime())) {
+        // Force the repeat end date to be the end of the selected day
+        date.setHours(23, 59, 59, 999);
         repeatEndDate = date.toISOString();
       }
     }

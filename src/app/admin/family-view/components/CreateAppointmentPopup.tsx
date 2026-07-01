@@ -257,6 +257,8 @@ const CreateAppointmentPopup: React.FC<
     if (formData.repeatEndDate) {
       const date = new Date(formData.repeatEndDate);
       if (!isNaN(date.getTime())) {
+        // Force the repeat end date to be the end of the selected day
+        date.setHours(23, 59, 59, 999);
         repeatEndDate = date.toISOString();
       }
     }
