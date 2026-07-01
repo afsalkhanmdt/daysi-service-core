@@ -13,6 +13,7 @@ interface LocationInputProps {
   showGetCurrentLocation?: boolean;
   showSuggestions?: boolean;
   debounceMs?: number;
+  disabled?: boolean;
 }
 
 interface LocationSuggestion {
@@ -125,7 +126,12 @@ const LocationInput: React.FC<LocationInputProps> = ({
 
   // Debounced location search
   useEffect(() => {
-    if (!showSuggestions || !displayValue || displayValue.length < 3 || !shouldSearch) {
+    if (
+      !showSuggestions ||
+      !displayValue ||
+      displayValue.length < 3 ||
+      !shouldSearch
+    ) {
       if (!shouldSearch) {
         setSuggestions([]);
         setShowSuggestionsDropdown(false);
@@ -269,9 +275,7 @@ const LocationInput: React.FC<LocationInputProps> = ({
       {/* Loading indicator for search */}
       {isSearching && (
         <div className="absolute right-8 top-1/2 -translate-y-1/2">
-          <span className="text-[10px] text-gray-400 animate-pulse">
-            ...
-          </span>
+          <span className="text-[10px] text-gray-400 animate-pulse">...</span>
         </div>
       )}
 
