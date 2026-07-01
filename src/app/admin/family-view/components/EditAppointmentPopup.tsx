@@ -1366,6 +1366,27 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
                     disabled={isProcessing}
                     disableTime={formData.isAllDayEvent === 1}
                   />
+                  {(formData.repeat ?? 0) !== 0 && (
+                    <div className="space-y-1 grid grid-cols-1">
+                      <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
+                        Repeat End Date
+                      </label>
+                      <div className="bg-blue-100/50 p-2 rounded-lg">
+                        <input
+                          type="date"
+                          name="repeatEndDate"
+                          value={parseDateToForm(formData.repeatEndDate)}
+                          onChange={handleInputChange}
+                          className="w-full px-2 py-1 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                          disabled={
+                            isProcessing ||
+                            isRepeatDisabled ||
+                            (formData.repeat ?? 0) === 0
+                          }
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
               <div className="space-y-1">
@@ -1388,7 +1409,9 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
                   />
                   {formData.repeat !== 0 && (
                     <div className="flex items-center gap-2 bg-blue-50/50 p-2 rounded-lg border border-blue-100">
-                      <span className="text-xs font-bold text-gray-700">Interval:</span>
+                      <span className="text-xs font-bold text-gray-700">
+                        Interval:
+                      </span>
                       <input
                         type="number"
                         min="1"
@@ -1407,10 +1430,15 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
                         className="w-16 px-2 py-1 border border-gray-200 rounded-md text-xs focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50"
                       />
                       <span className="text-xs text-gray-500">
-                        {formData.repeat === 1 ? 'day(s)' :
-                         formData.repeat === 2 ? 'week(s)' :
-                         formData.repeat === 3 ? '2 week(s)' :
-                         formData.repeat === 4 ? 'month(s)' : 'year(s)'}
+                        {formData.repeat === 1
+                          ? "day(s)"
+                          : formData.repeat === 2
+                            ? "week(s)"
+                            : formData.repeat === 3
+                              ? "2 week(s)"
+                              : formData.repeat === 4
+                                ? "month(s)"
+                                : "year(s)"}
                       </span>
                     </div>
                   )}
@@ -1456,27 +1484,6 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
             </div>
 
             {/* Repeat End Date - Only show if repeat is not Never */}
-            {(formData.repeat ?? 0) !== 0 && (
-              <div className="space-y-1">
-                <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
-                  Repeat End Date
-                </label>
-                <div className="bg-blue-100/50 p-2 rounded-lg">
-                  <input
-                    type="date"
-                    name="repeatEndDate"
-                    value={parseDateToForm(formData.repeatEndDate)}
-                    onChange={handleInputChange}
-                    className="w-full px-2 py-1 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                    disabled={
-                      isProcessing ||
-                      isRepeatDisabled ||
-                      (formData.repeat ?? 0) === 0
-                    }
-                  />
-                </div>
-              </div>
-            )}
 
             {/* Notes */}
             <div className="space-y-1">

@@ -644,6 +644,32 @@ const CreateAppointmentPopup: React.FC<
                     defaultDate={currentDate} // Pass the date from parent
                     disableTime={formData.isAllDayEvent === 1}
                   />
+                  {/* Repeat End Date - Only show if repeat is not Never */}
+                  {formData.repeat !== 0 && (
+                    <div className="space-y-1 grid grid-cols-1 ">
+                      <div>
+                        <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
+                          Repeat End Date
+                        </label>
+                        <div className="bg-blue-100/50 p-2 rounded-lg">
+                          <div className="grid grid-cols-1">
+                            <div>
+                              <label className="block text-[10px] font-bold text-gray-600 uppercase mb-0.5">
+                                Ends On
+                              </label>
+                              <input
+                                type="date"
+                                name="repeatEndDate"
+                                value={parseDateToForm(formData.repeatEndDate)}
+                                onChange={handleInputChange}
+                                className="w-full px-2 py-1 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
               <div className="space-y-1">
@@ -665,7 +691,9 @@ const CreateAppointmentPopup: React.FC<
                   />
                   {formData.repeat !== 0 && (
                     <div className="flex items-center gap-2 bg-blue-50/50 p-2 rounded-lg border border-blue-100">
-                      <span className="text-xs font-bold text-gray-700">Interval:</span>
+                      <span className="text-xs font-bold text-gray-700">
+                        Interval:
+                      </span>
                       <input
                         type="number"
                         min="1"
@@ -683,10 +711,15 @@ const CreateAppointmentPopup: React.FC<
                         className="w-16 px-2 py-1 border border-gray-200 rounded-md text-xs focus:ring-2 focus:ring-blue-500 outline-none"
                       />
                       <span className="text-xs text-gray-500">
-                        {formData.repeat === 1 ? 'day(s)' :
-                         formData.repeat === 2 ? 'week(s)' :
-                         formData.repeat === 3 ? '2 week(s)' :
-                         formData.repeat === 4 ? 'month(s)' : 'year(s)'}
+                        {formData.repeat === 1
+                          ? "day(s)"
+                          : formData.repeat === 2
+                            ? "week(s)"
+                            : formData.repeat === 3
+                              ? "2 week(s)"
+                              : formData.repeat === 4
+                                ? "month(s)"
+                                : "year(s)"}
                       </span>
                     </div>
                   )}
@@ -711,31 +744,6 @@ const CreateAppointmentPopup: React.FC<
                 selectedBadgeColor="blue"
               />
             </div>
-
-            {/* Repeat End Date - Only show if repeat is not Never */}
-            {formData.repeat !== 0 && (
-              <div className="space-y-1">
-                <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
-                  Repeat End Date
-                </label>
-                <div className="bg-blue-100/50 p-2 rounded-lg">
-                  <div className="grid grid-cols-1">
-                    <div>
-                      <label className="block text-[10px] font-bold text-gray-600 uppercase mb-0.5">
-                        Ends On
-                      </label>
-                      <input
-                        type="date"
-                        name="repeatEndDate"
-                        value={parseDateToForm(formData.repeatEndDate)}
-                        onChange={handleInputChange}
-                        className="w-full px-2 py-1 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Notes - Moved to its own row */}
             <div className="space-y-1">
