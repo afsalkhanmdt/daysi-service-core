@@ -130,6 +130,8 @@ const ToDoAndPMComponent = ({
       members.length > 0 ? normalizeId(members[0]?.MemberId) : null;
 
     for (const t of todosArr) {
+      if (t.Status === 2) continue; // Skip closed tasks
+
       if (t.IsForAll && firstResourceId) {
         if (!map.has(firstResourceId)) map.set(firstResourceId, []);
         map.get(firstResourceId)!.push(t);
