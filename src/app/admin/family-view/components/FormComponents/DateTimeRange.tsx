@@ -21,6 +21,7 @@ interface DateTimeRangeProps {
   autoSyncEndDateTime?: boolean;
   defaultDate?: Date | null; // Now accepts Date object
   disabled?: boolean;
+  disableTime?: boolean;
 }
 
 // Helper function to format Date to YYYY-MM-DD
@@ -140,7 +141,9 @@ const DateTimeRange: React.FC<DateTimeRangeProps> = ({
   setDefaultDates = true,
   hideHeading = false,
   autoSyncEndDateTime = true,
-  defaultDate, // Now accepts Date object
+  defaultDate,
+  disabled,
+  disableTime,
 }) => {
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -264,7 +267,8 @@ const DateTimeRange: React.FC<DateTimeRangeProps> = ({
         </div>
 
         {/* Time inputs */}
-        <div className="grid grid-cols-2 gap-3">
+        {!disableTime && (
+          <div className="grid grid-cols-2 gap-3">
           <div>
             {showLabels && (
               <label className="block text-[10px] font-bold text-gray-600 uppercase mb-0.5">
@@ -290,6 +294,7 @@ const DateTimeRange: React.FC<DateTimeRangeProps> = ({
             />
           </div>
         </div>
+        )}
       </div>
     </div>
   );

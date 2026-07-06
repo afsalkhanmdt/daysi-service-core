@@ -172,6 +172,12 @@ export const normalizeInitialData = (data: any): AppointmentUpdateFormUI => {
         data?.SpecialEvent ??
         data?.extendedProps?.SpecialEvent ??
         undefined,
+      recurrenceRule:
+        data?.recurrenceRule ??
+        data?.RecurrenceRule ??
+        data?.extendedProps?.RecurrenceRule ??
+        data?.extendedProps?.recurrenceRule ??
+        { frequency: 0, interval: 1 },
 
       // Normalize Metadata and End Dates
       repeatEndDate:
