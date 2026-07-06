@@ -72,6 +72,7 @@ const CalendarView = ({
   optimisticEvents,
   isLoading,
   setIsLoading,
+  isTasksLoading,
   optimisticUpdates,
   setOptimisticUpdates,
 }: {
@@ -88,6 +89,7 @@ const CalendarView = ({
   onImportAppointments?: () => void;
   isLoading?: boolean;
   setIsLoading?: (loading: boolean) => void;
+  isTasksLoading?: boolean;
   optimisticUpdates: Record<string, any[]>;
   setOptimisticUpdates: Dispatch<SetStateAction<Record<string, any[]>>>;
 }) => {

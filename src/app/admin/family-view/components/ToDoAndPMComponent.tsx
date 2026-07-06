@@ -24,6 +24,7 @@ const ToDoAndPMComponent = ({
   setCurrentDate,
   setIsLoading,
   isLoading,
+  isTasksLoading,
   resourceOrder,
 }: {
   todoDetails: ToDoTaskType[];
@@ -37,6 +38,7 @@ const ToDoAndPMComponent = ({
   setCurrentDate: (date: Date) => void;
   setIsLoading?: (loading: boolean) => void;
   isLoading?: boolean;
+  isTasksLoading?: boolean;
   resourceOrder: {
     id: string;
     title?: string;
@@ -130,6 +132,8 @@ const ToDoAndPMComponent = ({
       members.length > 0 ? normalizeId(members[0]?.MemberId) : null;
 
     for (const t of todosArr) {
+      if (t.Status === 2) continue; // Skip closed tasks
+
       if (t.IsForAll && firstResourceId) {
         if (!map.has(firstResourceId)) map.set(firstResourceId, []);
         map.get(firstResourceId)!.push(t);
@@ -167,8 +171,10 @@ const ToDoAndPMComponent = ({
     return map;
   }, [todosArr, familyDetails?.Members]);
 
+  const [isComponentLoading, setIsComponentLoading] = useState(false);
+
   const handleEditTodo = async (todoData: any) => {
-    setIsLoading?.(true);
+    setIsComponentLoading(true);
     try {
       const response = await updateToDoTaskCall(todoData);
       if (response) {
@@ -180,12 +186,12 @@ const ToDoAndPMComponent = ({
         }
       }
     } finally {
-      setIsLoading?.(false);
+      setIsComponentLoading(false);
     }
   };
 
   const handleEditPocketMoney = async (pocketMoneyData: any) => {
-    setIsLoading?.(true);
+    setIsComponentLoading(true);
     try {
       const response = await updatePocketMoneyTaskCall([pocketMoneyData]);
       if (response) {
@@ -195,12 +201,17 @@ const ToDoAndPMComponent = ({
         }
       }
     } finally {
-      setIsLoading?.(false);
+      setIsComponentLoading(false);
     }
   };
 
   return (
-    <div className="relative ">
+    <div className="relative">
+      {(isComponentLoading || isTasksLoading) && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/70 backdrop-blur-[1px] rounded-b-xl">
+          <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin"></div>
+        </div>
+      )}
       {!isSmallScreen && (
         <div className="sticky top-0 left-0 z-10 flex justify-center bg-transparent">
           <button
@@ -376,7 +387,7 @@ const ToDoAndPMComponent = ({
             setSelectedTodo(null);
           }}
           onSubmit={handleEditTodo}
-          isLoading={isLoading}
+          isLoading={isComponentLoading}
         />
       )}
 
@@ -388,7 +399,7 @@ const ToDoAndPMComponent = ({
           setSelectedPocketMoney(null);
         }}
         onSubmit={handleEditPocketMoney}
-        isLoading={isLoading}
+        isLoading={isComponentLoading}
       />
     </div>
   );

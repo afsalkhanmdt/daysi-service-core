@@ -216,9 +216,11 @@ const FamilyViewWrapper = ({
     return () => clearInterval(interval);
   }, [reload]);
 
+  const [isTasksLoading, setIsTasksLoading] = useState(false);
+
   // Handler functions for creating new items
   const handleCreateTodo = async (todoData: ToDoCreateCommand) => {
-    setIsActionLoading(true);
+    setIsTasksLoading(true);
     const updatedTodoData: ToDoCreateCommand = {
       ...todoData,
       familyId: Number(familyId),
@@ -236,7 +238,7 @@ const FamilyViewWrapper = ({
     if (response) {
       await Promise.all([reload(), reloadTodo()]);
     }
-    setIsActionLoading(false);
+    setIsTasksLoading(false);
   };
 
   const handleCreateAppointment = async (
@@ -322,7 +324,7 @@ const FamilyViewWrapper = ({
   const handleCreatePocketMoney = async (
     pocketMoneyData: PMTaskCreateCommand,
   ) => {
-    setIsActionLoading(true);
+    setIsTasksLoading(true);
     const updatedPocketMoneyData = {
       ...pocketMoneyData,
       FamilyId: Number(familyId),
@@ -347,7 +349,7 @@ const FamilyViewWrapper = ({
         setCurrentDate(new Date(updatedPocketMoneyData.ActivityDate));
       }
     }
-    setIsActionLoading(false);
+    setIsTasksLoading(false);
   };
 
   const handleImportAppointments = async (importData: any) => {
@@ -529,6 +531,7 @@ const FamilyViewWrapper = ({
             reloadPM={reloadPM}
             reloadTodo={reloadTodo}
             reload={reload}
+            setIsLoading={setIsActionLoading}
             onNewAppointment={() =>
               // checkSubscription(() => setShowCreateAppointment(true))
               setShowCreateAppointment(true)
@@ -592,6 +595,7 @@ const FamilyViewWrapper = ({
           reloadPM={reloadPM}
           reloadTodo={reloadTodo}
           reload={reload}
+          setIsLoading={setIsActionLoading}
           onNewAppointment={() =>
             // checkSubscription(() => setShowCreateAppointment(true))
             setShowCreateAppointment(true)
@@ -626,6 +630,7 @@ const FamilyViewWrapper = ({
           onFreemium={() => setShowFreemiumModal(true)}
           isLoading={isActionLoading}
           setIsLoading={setIsActionLoading}
+          isTasksLoading={isTasksLoading}
           onImportAppointments={() =>
             // checkSubscription(() => setShowImportAppointments(true))
             setShowCreateAppointment(true)
@@ -661,14 +666,14 @@ const FamilyViewWrapper = ({
         onClose={() => setShowCreateTodo(false)}
         onSubmit={handleCreateTodo}
         ToDoFamilyGroup={apiData?.Family.ToDoFamilyGroups}
-        isLoading={isActionLoading}
+        isLoading={isTasksLoading}
       />
 
       <CreatePocketMoneyPopup
         isOpen={showCreatePocketMoney}
         onClose={() => setShowCreatePocketMoney(false)}
         onSubmit={handleCreatePocketMoney}
-        isLoading={isActionLoading}
+        isLoading={isTasksLoading}
       />
 
       <FreemiumModal
