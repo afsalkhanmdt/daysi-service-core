@@ -99,7 +99,7 @@ const CreateTodoPopup: React.FC<
     if (selectedOption) {
       setFormData((prev: ToDoCreateCommand) => ({
         ...prev,
-        statusId: selectedOption.id,
+        status: selectedOption.id,
       }));
     }
   };

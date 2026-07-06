@@ -13,6 +13,7 @@ interface ToggleThemeAndLogoutProps {
   onNewToDo: () => void;
   onNewPocketMoney: () => void;
   onImportAppointments?: () => void;
+  setIsLoading?: (loading: boolean) => void;
 }
 
 export default function ToggleThemeAndLogout({
@@ -23,6 +24,7 @@ export default function ToggleThemeAndLogout({
   onNewToDo,
   onNewPocketMoney,
   onImportAppointments,
+  setIsLoading,
 }: ToggleThemeAndLogoutProps) {
   const { t } = useTranslation("common");
   const router = useRouter();
@@ -62,11 +64,13 @@ export default function ToggleThemeAndLogout({
 
   const handleRefresh = () => {
     setRefreshing(true);
+    setIsLoading?.(true);
     reload();
     reloadPM();
     reloadTodo();
     const timer = setTimeout(() => {
       setRefreshing(false);
+      setIsLoading?.(false);
     }, 600);
 
     return () => clearTimeout(timer);
