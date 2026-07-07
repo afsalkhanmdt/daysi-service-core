@@ -97,7 +97,8 @@ const ToDoAndPMComponent = ({
     : [];
 
   const pmTasksArr: PMTask[] = useMemo(() => {
-    return (PMTaskDetails?.PMTasks ?? []).filter((pm) => pm.Status !== 1);
+    // Only show Open (0) tasks. Finished (1), Approved (2), and Deleted (3) should be hidden.
+    return (PMTaskDetails?.PMTasks ?? []).filter((pm) => pm.Status === 0);
   }, [PMTaskDetails?.PMTasks]);
 
   const pmTasksByMember = useMemo(() => {

@@ -120,25 +120,15 @@ const FamilyViewWrapper = ({
             memberLocale: member.Locale || "en",
           })),
         ) || [];
-      setExternalCalendars(calendars);
+        
+      // Deduplicate by CalendarId to prevent the same calendar from appearing multiple times
+      const uniqueCalendars = Array.from(
+        new Map(calendars.map((c) => [c.CalendarId, c])).values()
+      );
+      
+      setExternalCalendars(uniqueCalendars);
     }
   }, [apiData]);
-
-  // Also make sure to update when familyDetails changes (if you use it)
-  useEffect(() => {
-    if (familyDetails?.Members) {
-      const calendars =
-        familyDetails.Members.flatMap((member) =>
-          member.ExternalCalendars?.map((calendar) => ({
-            ...calendar,
-            memberName: member.MemberName,
-            memberEmail: member.Email,
-            memberLocale: member.Locale || "en",
-          })),
-        ) || [];
-      setExternalCalendars(calendars);
-    }
-  }, [familyDetails]);
 
   const handleDeleteCalendar = async (calendarId: number) => {
     // Find the calendar - use the current state
