@@ -2,22 +2,14 @@
 
 import React from "react";
 import ScheduleCard from "./ScheduleCard";
+import dayjs from "dayjs";
 
 interface WorkScheduleViewProps {
   scheduleData: Record<string, any[]>;
-  selectedWorkWeek?: number;
-  setSelectedWorkWeek?: (week: number) => void;
+  dateRange: string[];
 }
 
-const dayMapping = [
-  { key: "monday", label: "Monday" },
-  { key: "tuesday", label: "Tuesday" },
-  { key: "wednesday", label: "Wednesday" },
-  { key: "thursday", label: "Thursday" },
-  { key: "friday", label: "Friday" },
-] as const;
-
-export default function WorkScheduleView({ scheduleData }: WorkScheduleViewProps) {
+export default function WorkScheduleView({ scheduleData, dateRange }: WorkScheduleViewProps) {
   // Helper to determine pastel color based on title or default for work
   const getCardColor = (title: string) => {
     const lowerTitle = (title || "").toString().toLowerCase();
@@ -31,19 +23,26 @@ export default function WorkScheduleView({ scheduleData }: WorkScheduleViewProps
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full overflow-y-auto">
       {/* Main schedule layout */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 lg:gap-6">
-        {dayMapping.map((day) => {
-          const tasks = scheduleData[day.key] || [];
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-6">
+        {dateRange.map((dateStr) => {
+          const tasks = scheduleData[dateStr] || [];
+          const dateObj = dayjs(dateStr);
+          const dayLabel = dateObj.format("dddd");
+          const dateLabel = dateObj.format("MMM D, YYYY");
+
           return (
             <div
-              key={day.key}
+              key={dateStr}
               className="flex flex-col bg-gray-50/50 rounded-2xl p-4 border border-gray-100/80 min-h-[350px]"
             >
-              <h3 className="text-xs sm:text-sm font-bold text-gray-600 uppercase tracking-wider mb-4 border-b border-gray-200/50 pb-2 text-center">
-                {day.label}
-              </h3>
+              <div className="text-center mb-4 border-b border-gray-200/50 pb-2">
+                <h3 className="text-xs sm:text-sm font-bold text-gray-600 uppercase tracking-wider">
+                  {dayLabel}
+                </h3>
+                <p className="text-xs text-gray-400 mt-1">{dateLabel}</p>
+              </div>
               <div className="flex flex-col gap-3 flex-grow justify-start">
                 {tasks.length > 0 ? (
                   tasks.map((task) => (
