@@ -21,8 +21,10 @@ export default function ScheduleView({
   const { t } = useTranslation();
   const familyId = data?.Family?.FamilyId;
 
-  const [activeSchedule, setActiveSchedule] = useState<"school" | "work">("school");
-  
+  const [activeSchedule, setActiveSchedule] = useState<"school" | "work">(
+    "school",
+  );
+
   const members = data?.Members || [];
   const [selectedMemberId, setSelectedMemberId] = useState<string>("");
 
@@ -33,15 +35,21 @@ export default function ScheduleView({
         const id = m.MemberId;
         let hasSchedules = false;
         if (Array.isArray(scheduleDataResponse)) {
-          hasSchedules = scheduleDataResponse.some((t: any) => t.memberId === id || t.familyMemberId === id);
+          hasSchedules = scheduleDataResponse.some(
+            (t: any) => t.memberId === id || t.familyMemberId === id,
+          );
         } else if (typeof scheduleDataResponse === "object") {
           const mData = scheduleDataResponse[id];
           if (mData) {
-             if (Array.isArray(mData)) {
-                if (mData.length > 0) hasSchedules = true;
-             } else if (mData.schedules?.length > 0 || mData.transactions?.length > 0 || mData.SHTrans?.length > 0) {
-                hasSchedules = true;
-             }
+            if (Array.isArray(mData)) {
+              if (mData.length > 0) hasSchedules = true;
+            } else if (
+              mData.schedules?.length > 0 ||
+              mData.transactions?.length > 0 ||
+              mData.SHTrans?.length > 0
+            ) {
+              hasSchedules = true;
+            }
           }
         }
         if (hasSchedules) {
@@ -63,15 +71,18 @@ export default function ScheduleView({
     start.setHours(0, 0, 0, 0);
     return start;
   });
-  
+
   const [hasInitializedDate, setHasInitializedDate] = useState(false);
 
   React.useEffect(() => {
     if (scheduleDataResponse && activeUserId && !hasInitializedDate) {
       let memberData: any = null;
       let membersArray: any[] = [];
-      
-      if (scheduleDataResponse.MemberSchedules && Array.isArray(scheduleDataResponse.MemberSchedules)) {
+
+      if (
+        scheduleDataResponse.MemberSchedules &&
+        Array.isArray(scheduleDataResponse.MemberSchedules)
+      ) {
         membersArray = scheduleDataResponse.MemberSchedules;
       } else if (Array.isArray(scheduleDataResponse)) {
         membersArray = scheduleDataResponse;
@@ -79,18 +90,36 @@ export default function ScheduleView({
         membersArray = Object.values(scheduleDataResponse);
       }
 
-      memberData = membersArray.find((m: any) => m.memberId === activeUserId || m.familyMemberId === activeUserId || m.FamilyMemberId === activeUserId);
+      memberData = membersArray.find(
+        (m: any) =>
+          m.memberId === activeUserId ||
+          m.familyMemberId === activeUserId ||
+          m.FamilyMemberId === activeUserId,
+      );
       if (!memberData) {
-        memberData = membersArray.filter((t: any) => t.memberId === activeUserId || t.familyMemberId === activeUserId || t.FamilyMemberId === activeUserId);
+        memberData = membersArray.filter(
+          (t: any) =>
+            t.memberId === activeUserId ||
+            t.familyMemberId === activeUserId ||
+            t.FamilyMemberId === activeUserId,
+        );
       }
 
       let startDate: Date | null = null;
       if (memberData && !Array.isArray(memberData)) {
-        if (memberData.scheduleStartDate || memberData.createStartDate || memberData.ScheduleStartDate) {
-          startDate = new Date(memberData.scheduleStartDate || memberData.createStartDate || memberData.ScheduleStartDate);
+        if (
+          memberData.scheduleStartDate ||
+          memberData.createStartDate ||
+          memberData.ScheduleStartDate
+        ) {
+          startDate = new Date(
+            memberData.scheduleStartDate ||
+              memberData.createStartDate ||
+              memberData.ScheduleStartDate,
+          );
         }
       }
-      
+
       // If we couldn't find a start date, look at transactions
       if (!startDate || isNaN(startDate.getTime())) {
         startDate = null;
@@ -98,16 +127,27 @@ export default function ScheduleView({
         if (Array.isArray(memberData)) allT = memberData;
         else if (memberData && typeof memberData === "object") {
           if (Array.isArray(memberData.Schedules)) allT = memberData.Schedules;
-          else if (Array.isArray(memberData.schedules)) allT = memberData.schedules;
-          else if (Array.isArray(memberData.Transactions)) allT = memberData.Transactions;
-          else if (Array.isArray(memberData.transactions)) allT = memberData.transactions;
+          else if (Array.isArray(memberData.schedules))
+            allT = memberData.schedules;
+          else if (Array.isArray(memberData.Transactions))
+            allT = memberData.Transactions;
+          else if (Array.isArray(memberData.transactions))
+            allT = memberData.transactions;
           else if (Array.isArray(memberData.SHTrans)) allT = memberData.SHTrans;
         } else if (!memberData && membersArray.length > 0) {
           allT = membersArray;
         }
-        
+
         if (allT.length > 0) {
-          const dates = allT.map((t) => (t.Date ? new Date(t.Date).getTime() : t.date ? new Date(t.date).getTime() : NaN)).filter((t) => !isNaN(t));
+          const dates = allT
+            .map((t) =>
+              t.Date
+                ? new Date(t.Date).getTime()
+                : t.date
+                  ? new Date(t.date).getTime()
+                  : NaN,
+            )
+            .filter((t) => !isNaN(t));
           if (dates.length > 0) {
             startDate = new Date(Math.min(...dates));
           }
@@ -180,9 +220,12 @@ export default function ScheduleView({
   if (scheduleDataResponse && activeUserId) {
     let memberData: any = null;
     let membersArray: any[] = [];
-    
+
     // 1. Extract member data
-    if (scheduleDataResponse.MemberSchedules && Array.isArray(scheduleDataResponse.MemberSchedules)) {
+    if (
+      scheduleDataResponse.MemberSchedules &&
+      Array.isArray(scheduleDataResponse.MemberSchedules)
+    ) {
       membersArray = scheduleDataResponse.MemberSchedules;
     } else if (Array.isArray(scheduleDataResponse)) {
       membersArray = scheduleDataResponse;
@@ -190,9 +233,19 @@ export default function ScheduleView({
       membersArray = Object.values(scheduleDataResponse);
     }
 
-    memberData = membersArray.find((m: any) => m.memberId === activeUserId || m.familyMemberId === activeUserId || m.FamilyMemberId === activeUserId);
+    memberData = membersArray.find(
+      (m: any) =>
+        m.memberId === activeUserId ||
+        m.familyMemberId === activeUserId ||
+        m.FamilyMemberId === activeUserId,
+    );
     if (!memberData) {
-      memberData = membersArray.filter((t: any) => t.memberId === activeUserId || t.familyMemberId === activeUserId || t.FamilyMemberId === activeUserId);
+      memberData = membersArray.filter(
+        (t: any) =>
+          t.memberId === activeUserId ||
+          t.familyMemberId === activeUserId ||
+          t.FamilyMemberId === activeUserId,
+      );
     }
 
     // 2. Extract transactions
@@ -201,42 +254,67 @@ export default function ScheduleView({
       allTrans = memberData;
     } else if (memberData && typeof memberData === "object") {
       if (Array.isArray(memberData.Schedules)) allTrans = memberData.Schedules;
-      else if (Array.isArray(memberData.schedules)) allTrans = memberData.schedules;
-      else if (Array.isArray(memberData.Transactions)) allTrans = memberData.Transactions;
-      else if (Array.isArray(memberData.transactions)) allTrans = memberData.transactions;
+      else if (Array.isArray(memberData.schedules))
+        allTrans = memberData.schedules;
+      else if (Array.isArray(memberData.Transactions))
+        allTrans = memberData.Transactions;
+      else if (Array.isArray(memberData.transactions))
+        allTrans = memberData.transactions;
       else if (Array.isArray(memberData.SHTrans)) allTrans = memberData.SHTrans;
-      else allTrans = [memberData]; 
+      else allTrans = [memberData];
     } else if (!memberData && Array.isArray(scheduleDataResponse)) {
       allTrans = scheduleDataResponse;
     }
 
     // 3. Generate the 7 days of the currently selected week
-    let curr = dayjs(currentDateStart).startOf('day');
+    let curr = dayjs(currentDateStart).startOf("day");
     for (let i = 0; i < 7; i++) {
       const dStr = curr.format("YYYY-MM-DD");
       dateRange.push(dStr);
       parsedSchoolScheduleData[dStr] = [];
       parsedWorkScheduleData[dStr] = [];
-      curr = curr.add(1, 'day');
+      curr = curr.add(1, "day");
     }
 
     // 4. Group transactions by date
     allTrans.forEach((trans: any) => {
       const transDate = trans.Date || trans.date;
       if (!transDate) return;
-      
-      const dStr = typeof transDate === "string" ? transDate.substring(0, 10) : dayjs(transDate).format("YYYY-MM-DD");
-      
+
+      const dStr =
+        typeof transDate === "string"
+          ? transDate.substring(0, 10)
+          : dayjs(transDate).format("YYYY-MM-DD");
+
       if (parsedSchoolScheduleData[dStr] === undefined) {
         return;
       }
 
-      const transId = trans.ShTransId || trans.shTransId || trans.Id || trans.id || Math.random();
-      const transTitle = trans.Description || trans.description || trans.Title || trans.title || trans.Note || trans.note || "Scheduled Event";
+      const transId =
+        trans.ShTransId ||
+        trans.shTransId ||
+        trans.Id ||
+        trans.id ||
+        Math.random();
+      const transTitle =
+        trans.Description ||
+        trans.description ||
+        trans.Title ||
+        trans.title ||
+        trans.Note ||
+        trans.note ||
+        "Scheduled Event";
       const transStartTime = trans.StartTime || trans.startTime || "";
       const transEndTime = trans.EndTime || trans.endTime || "";
-      const transScheduleType = trans.ScheduleType !== undefined ? trans.ScheduleType : trans.scheduleType !== undefined ? trans.scheduleType : memberData?.ScheduleType !== undefined ? memberData.ScheduleType : memberData?.scheduleType;
-      
+      const transScheduleType =
+        trans.ScheduleType !== undefined
+          ? trans.ScheduleType
+          : trans.scheduleType !== undefined
+            ? trans.scheduleType
+            : memberData?.ScheduleType !== undefined
+              ? memberData.ScheduleType
+              : memberData?.scheduleType;
+
       const eventCard = {
         id: transId,
         title: transTitle,
@@ -253,10 +331,14 @@ export default function ScheduleView({
 
     // 5. Sort by StartTime ascending
     Object.keys(parsedSchoolScheduleData).forEach((dStr) => {
-      parsedSchoolScheduleData[dStr].sort((a, b) => a.startTime.localeCompare(b.startTime));
+      parsedSchoolScheduleData[dStr].sort((a, b) =>
+        a.startTime.localeCompare(b.startTime),
+      );
     });
     Object.keys(parsedWorkScheduleData).forEach((dStr) => {
-      parsedWorkScheduleData[dStr].sort((a, b) => a.startTime.localeCompare(b.startTime));
+      parsedWorkScheduleData[dStr].sort((a, b) =>
+        a.startTime.localeCompare(b.startTime),
+      );
     });
   }
 
@@ -266,10 +348,11 @@ export default function ScheduleView({
 
   // Setup active values based on toggle state
   const isSchool = activeSchedule === "school";
-  
+
   // Format the overall date range for display
   const displayStartDate = dateRange.length > 0 ? dateRange[0] : "";
-  const displayEndDate = dateRange.length > 0 ? dateRange[dateRange.length - 1] : "";
+  const displayEndDate =
+    dateRange.length > 0 ? dateRange[dateRange.length - 1] : "";
 
   return (
     <div className="flex flex-col h-full p-4 sm:p-6 md:p-8 rounded-3xl min-h-[650px]">
@@ -312,11 +395,21 @@ export default function ScheduleView({
                     : "bg-white text-gray-600 border-gray-200 border hover:bg-gray-50 hover:border-gray-300 shadow-sm"
                 }`}
               >
-                <div className={`w-8 h-8 rounded-full overflow-hidden flex items-center justify-center shrink-0 ${isActive ? "bg-gray-700" : "bg-gray-100"} ring-2 ${isActive ? "ring-gray-800" : "ring-white"}`}>
+                <div
+                  className={`w-8 h-8 rounded-full overflow-hidden flex items-center justify-center shrink-0 ${isActive ? "bg-gray-700" : "bg-gray-100"} ring-2 ${isActive ? "ring-gray-800" : "ring-white"}`}
+                >
                   {member.ResourceUrl ? (
-                    <img src={member.ResourceUrl} alt={member.MemberName} className="w-full h-full object-cover rounded-full" />
+                    <img
+                      src={member.ResourceUrl}
+                      alt={member.MemberName}
+                      className="w-full h-full object-cover rounded-full"
+                    />
                   ) : (
-                    <span className={`text-xs font-bold ${isActive ? "text-white" : "text-gray-500"}`}>{member.MemberName?.charAt(0) || "U"}</span>
+                    <span
+                      className={`text-xs font-bold ${isActive ? "text-white" : "text-gray-500"}`}
+                    >
+                      {member.MemberName?.charAt(0) || "U"}
+                    </span>
                   )}
                 </div>
                 <span className="text-sm font-semibold pr-2 tracking-wide">
@@ -335,7 +428,10 @@ export default function ScheduleView({
             {t("Family Schedule", "Family Schedule")}
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 font-medium mt-0.5">
-            {t("Switch between school classes and work rotations", "Switch between school classes and work rotations")}
+            {t(
+              "Switch between school classes and work rotations",
+              "Switch between school classes and work rotations",
+            )}
           </p>
         </div>
 
@@ -399,12 +495,14 @@ export default function ScheduleView({
       </div>
 
       {/* Main Content Card with Layout Headers */}
-      <div className="flex-1 bg-white rounded-lg p-5 sm:p-6 md:p-8 shadow-sm flex flex-col justify-start min-h-0">
+      <div className="flex-1 bg-white rounded-lg p-5 sm:p-6 md:p-8 shadow-sm flex flex-col justify-start ">
         {/* Dynamic Inner Layout Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between pb-6 mb-6 border-b border-gray-100 gap-4 shrink-0">
           <div className="flex items-center gap-3">
             <h2 className="text-xl sm:text-2xl font-bold text-gray-800 tracking-tight">
-              {isSchool ? t("Work School Schedule", "Work School Schedule") : t("Hybrid Work Schedule", "Hybrid Work Schedule")}
+              {isSchool
+                ? t("Work School Schedule", "Work School Schedule")
+                : t("Hybrid Work Schedule", "Hybrid Work Schedule")}
             </h2>
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
               {t("Active Range", "Active Range")}
@@ -420,19 +518,39 @@ export default function ScheduleView({
                 className="p-2 rounded-lg transition-all duration-200 text-gray-500 hover:text-gray-900 hover:bg-white hover:shadow-sm"
                 title={t("Previous Month", "Previous Month")}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M18.75 19.5l-7.5-7.5 7.5-7.5m-6 15L5.25 12l7.5-7.5" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  strokeWidth="2.5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M18.75 19.5l-7.5-7.5 7.5-7.5m-6 15L5.25 12l7.5-7.5"
+                  />
                 </svg>
               </button>
-              
+
               {/* Previous Week */}
               <button
                 onClick={prevWeek}
                 className="p-2 rounded-lg transition-all duration-200 text-gray-700 hover:bg-white hover:shadow-sm"
                 title={t("Previous Week", "Previous Week")}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  strokeWidth="2.5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15.75 19.5L8.25 12l7.5-7.5"
+                  />
                 </svg>
               </button>
 
@@ -450,8 +568,18 @@ export default function ScheduleView({
                 className="p-2 rounded-lg transition-all duration-200 text-gray-700 hover:bg-white hover:shadow-sm"
                 title={t("Next Week", "Next Week")}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  strokeWidth="2.5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M8.25 4.5l7.5 7.5-7.5 7.5"
+                  />
                 </svg>
               </button>
 
@@ -461,8 +589,18 @@ export default function ScheduleView({
                 className="p-2 rounded-lg transition-all duration-200 text-gray-500 hover:text-gray-900 hover:bg-white hover:shadow-sm"
                 title={t("Next Month", "Next Month")}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 4.5l7.5 7.5-7.5 7.5m6-15l-7.5 7.5 7.5 7.5" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  strokeWidth="2.5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M5.25 4.5l7.5 7.5-7.5 7.5m6-15l-7.5 7.5 7.5 7.5"
+                  />
                 </svg>
               </button>
             </div>
@@ -473,7 +611,9 @@ export default function ScheduleView({
                 {displayStartDate} - {displayEndDate}
               </span>
               <span className="text-[10px] sm:text-xs font-semibold text-gray-400 uppercase tracking-wider mt-0.5">
-                {isSchool ? t("School Term", "School Term") : t("Work Rotation", "Work Rotation")}
+                {isSchool
+                  ? t("School Term", "School Term")
+                  : t("Work Rotation", "Work Rotation")}
               </span>
             </div>
           </div>
@@ -482,10 +622,13 @@ export default function ScheduleView({
         {/* Content Container with Animation Key */}
         <div
           key={isSchool ? "school" : "work"}
-          className="animate-week-change flex-grow"
+          className="animate-week-change flex-1 flex flex-col min-h-0"
         >
           {isSchool ? (
-            <SchoolScheduleView scheduleData={schoolScheduleData} dateRange={dateRange} />
+            <SchoolScheduleView
+              scheduleData={schoolScheduleData}
+              dateRange={dateRange}
+            />
           ) : (
             <WorkScheduleView
               scheduleData={workScheduleData}
