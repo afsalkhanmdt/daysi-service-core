@@ -218,26 +218,30 @@ export default function ScheduleView({
       curr = curr.add(1, 'day');
     }
 
+    // 3a. Determine member start/end dates for template bounds
+    let memStart = "";
+    let memEnd = "";
+    if (memberData && !Array.isArray(memberData)) {
+      memStart = memberData.ScheduleStartDate || memberData.scheduleStartDate || "";
+      memEnd = memberData.ScheduleEndDate || memberData.scheduleEndDate || "";
+    }
+    const isInfinite = memStart === "1990-01-01" || memStart === "0001-01-01" || memStart === "";
+
     // 4. Group transactions by date
     allTrans.forEach((trans: any) => {
       const transDate = trans.Date || trans.date;
       if (!transDate) return;
       
-      // Ensure we don't suffer from timezone shifts if backend sends ISO strings
       const dStr = typeof transDate === "string" ? transDate.substring(0, 10) : dayjs(transDate).format("YYYY-MM-DD");
-
-      // Only push if it falls in our current viewing week, OR if you want to allow them out of range
-      // We will only render what's in dateRange, but we can safely populate the object
-      if (parsedSchoolScheduleData[dStr] === undefined) {
-        // If it's outside the week, we can just ignore it for rendering efficiency
-        return; 
-      }
-
+      
       const transId = trans.ShTransId || trans.shTransId || trans.Id || trans.id || Math.random();
       const transTitle = trans.Description || trans.description || trans.Title || trans.title || trans.Note || trans.note || "Scheduled Event";
       const transStartTime = trans.StartTime || trans.startTime || "";
       const transEndTime = trans.EndTime || trans.endTime || "";
       const transScheduleType = trans.ScheduleType !== undefined ? trans.ScheduleType : trans.scheduleType !== undefined ? trans.scheduleType : memberData?.ScheduleType !== undefined ? memberData.ScheduleType : memberData?.scheduleType;
+      
+      const transWeekday = trans.Weekday !== undefined ? trans.Weekday : trans.weekday;
+      const isTransTemplate = dStr === "1990-01-01" || dStr === "0001-01-01" || isInfinite || Boolean(memStart && memEnd);
 
       const eventCard = {
         id: transId,
@@ -246,11 +250,38 @@ export default function ScheduleView({
         startTime: transStartTime,
       };
 
-      if (String(transScheduleType) === "0") {
-        parsedSchoolScheduleData[dStr].push(eventCard);
-      } else if (String(transScheduleType) === "1") {
-        parsedWorkScheduleData[dStr].push(eventCard);
-      }
+      // Check if it belongs in any of our 7 displayed days
+      dateRange.forEach((dayStr) => {
+        const dayObj = dayjs(dayStr);
+        let matchesDay = false;
+        
+        if (dStr === dayStr) {
+          matchesDay = true;
+        } else if (isTransTemplate && transWeekday !== undefined) {
+          // Map JS day() (0=Sun, 1=Mon) to API Weekday (0=Mon, 6=Sun) based on the provided payload 2026-07-06 (Mon) = 0
+          const apiWeekdayMap = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 0: 6 };
+          const currentApiWeekday = apiWeekdayMap[dayObj.day() as keyof typeof apiWeekdayMap];
+          
+          if (currentApiWeekday === transWeekday) {
+             const memStartDayjs = memStart ? dayjs(memStart) : null;
+             const memEndDayjs = memEnd ? dayjs(memEnd) : null;
+             
+             // Check if the current calendar day falls inside the member's allowed template date bounds
+             if (!memStartDayjs || !memStartDayjs.isValid() || memStart === "1990-01-01" || memStart === "0001-01-01" || !dayObj.isBefore(memStartDayjs, 'day')) {
+               if (!memEndDayjs || !memEndDayjs.isValid() || memEnd === "1990-01-01" || memEnd === "0001-01-01" || !dayObj.isAfter(memEndDayjs, 'day')) {
+                 matchesDay = true;
+               }
+             }
+          }
+        }
+        
+        if (matchesDay) {
+          const targetArray = String(transScheduleType) === "0" ? parsedSchoolScheduleData[dayStr] : parsedWorkScheduleData[dayStr];
+          if (targetArray && !targetArray.find(c => c.title === eventCard.title && c.startTime === eventCard.startTime)) {
+            targetArray.push(eventCard);
+          }
+        }
+      });
     });
 
     // 5. Sort by StartTime ascending
@@ -275,20 +306,27 @@ export default function ScheduleView({
 
   return (
     <div className="flex flex-col h-full p-4 sm:p-6 md:p-8 rounded-3xl min-h-[650px]">
-      {/* Inline styles for smooth custom fade/slide transition */}
+      {/* Inline styles for smooth custom fade/slide transition and scrollbars */}
       <style>{`
         @keyframes fadeInSlide {
-          0% {
-            opacity: 0;
-            transform: translateY(8px);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          0% { opacity: 0; transform: translateY(8px); }
+          100% { opacity: 1; transform: translateY(0); }
         }
         .animate-week-change {
           animation: fadeInSlide 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background-color: rgba(156, 163, 175, 0.3);
+          border-radius: 20px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background-color: rgba(156, 163, 175, 0.6);
         }
       `}</style>
 
