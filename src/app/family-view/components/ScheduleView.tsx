@@ -37,12 +37,11 @@ export default function ScheduleView({
   const parsedSchoolScheduleData: Record<string, any[]> = {
     monday: [], tuesday: [], wednesday: [], thursday: [], friday: [], saturday: [], sunday: []
   };
-  const parsedWorkScheduleData: Record<string, string> = {
-    Monday: "OFF", Tuesday: "OFF", Wednesday: "OFF", Thursday: "OFF", Friday: "OFF", Saturday: "OFF", Sunday: "OFF"
+  const parsedWorkScheduleData: Record<string, any[]> = {
+    monday: [], tuesday: [], wednesday: [], thursday: [], friday: [], saturday: [], sunday: []
   };
 
   const dayMap = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-  const capDayMap = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
   if (scheduleDataResponse) {
     // Determine the structure of scheduleDataResponse (array vs object mapping)
@@ -59,22 +58,17 @@ export default function ScheduleView({
     allTrans.forEach((trans: any) => {
        const dayIndex = trans.weekday !== undefined ? trans.weekday : new Date(trans.date).getDay();
        const dayStr = dayMap[dayIndex] || "monday";
-       const capDayStr = capDayMap[dayIndex] || "Monday";
        
-       // Naive split between school and work based on activeSchedule toggle or keywords
-       if (activeSchedule === "school") {
-         parsedSchoolScheduleData[dayStr].push({
-           id: trans.shTransId || trans.id || Math.random(),
-           title: trans.description || trans.title || trans.note || "Scheduled Event",
-           time: `${trans.startTime || ""} - ${trans.endTime || ""}`,
-         });
-       } else {
-         // Work view expects a simple string "Onsite" | "Work from home" | "OFF"
-         let status = "Onsite";
-         if (trans.description?.toLowerCase().includes("home") || trans.note?.toLowerCase().includes("home")) {
-           status = "Work from home";
-         }
-         parsedWorkScheduleData[capDayStr] = status;
+       const eventCard = {
+         id: trans.shTransId || trans.id || Math.random(),
+         title: trans.description || trans.title || trans.note || "Scheduled Event",
+         time: `${trans.startTime || ""} - ${trans.endTime || ""}`,
+       };
+
+       if (trans.scheduleType === 0) {
+         parsedSchoolScheduleData[dayStr].push(eventCard);
+       } else if (trans.scheduleType === 1) {
+         parsedWorkScheduleData[dayStr].push(eventCard);
        }
     });
   }
