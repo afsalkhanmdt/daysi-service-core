@@ -495,7 +495,7 @@ export default function ScheduleView({
       </div>
 
       {/* Main Content Card with Layout Headers */}
-      <div className="flex-1 bg-white rounded-lg p-5 sm:p-6 md:p-8 shadow-sm flex flex-col justify-start ">
+      <div className="flex-1 bg-white rounded-lg p-5 sm:p-6 md:p-8 shadow-sm flex flex-col justify-start overflow-y-auto custom-scrollbar min-h-0">
         {/* Dynamic Inner Layout Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between pb-6 mb-6 border-b border-gray-100 gap-4 shrink-0">
           <div className="flex items-center gap-3">
@@ -622,7 +622,7 @@ export default function ScheduleView({
         {/* Content Container with Animation Key */}
         <div
           key={isSchool ? "school" : "work"}
-          className="animate-week-change flex-1 flex flex-col min-h-0"
+          className="animate-week-change"
         >
           {isSchool ? (
             <SchoolScheduleView

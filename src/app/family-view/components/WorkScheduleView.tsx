@@ -26,9 +26,9 @@ export default function WorkScheduleView({ scheduleData, dateRange }: WorkSchedu
   };
 
   return (
-    <div className="flex flex-col h-full w-full min-h-0">
+    <div className="w-full">
       {/* 7-column grid layout that scrolls vertically instead of horizontally */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3 lg:gap-2 flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1 pb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3 lg:gap-2 pb-4">
         {dateRange.map((dateStr) => {
           const tasks = scheduleData[dateStr] || [];
           const dateObj = dayjs(dateStr);
@@ -46,7 +46,7 @@ export default function WorkScheduleView({ scheduleData, dateRange }: WorkSchedu
                 </h3>
                 <p className="text-[9px] sm:text-[10px] text-gray-400 mt-1">{dateLabel}</p>
               </div>
-              <div className="flex flex-col gap-2 flex-1 justify-start overflow-y-auto min-h-0 pr-1 custom-scrollbar">
+              <div className="flex flex-col gap-2 flex-1 justify-start">
                 {tasks.length > 0 ? (
                   tasks.map((task) => (
                     <ScheduleCard
