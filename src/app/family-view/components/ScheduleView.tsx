@@ -67,36 +67,45 @@ export default function ScheduleView({
   React.useEffect(() => {
     if (scheduleDataResponse && activeUserId && !hasInitializedDate) {
       let memberData: any = null;
-      if (typeof scheduleDataResponse === "object" && !Array.isArray(scheduleDataResponse)) {
-        memberData = scheduleDataResponse[activeUserId];
+      let membersArray: any[] = [];
+      
+      if (scheduleDataResponse.MemberSchedules && Array.isArray(scheduleDataResponse.MemberSchedules)) {
+        membersArray = scheduleDataResponse.MemberSchedules;
       } else if (Array.isArray(scheduleDataResponse)) {
-        memberData = scheduleDataResponse.find((m: any) => m.memberId === activeUserId || m.familyMemberId === activeUserId);
-        if (!memberData) {
-          memberData = scheduleDataResponse.filter((t: any) => t.memberId === activeUserId || t.familyMemberId === activeUserId);
-        }
+        membersArray = scheduleDataResponse;
+      } else if (typeof scheduleDataResponse === "object") {
+        membersArray = Object.values(scheduleDataResponse);
+      }
+
+      memberData = membersArray.find((m: any) => m.memberId === activeUserId || m.familyMemberId === activeUserId || m.FamilyMemberId === activeUserId);
+      if (!memberData) {
+        memberData = membersArray.filter((t: any) => t.memberId === activeUserId || t.familyMemberId === activeUserId || t.FamilyMemberId === activeUserId);
       }
 
       let startDate: Date | null = null;
       if (memberData && !Array.isArray(memberData)) {
-        if (memberData.scheduleStartDate || memberData.createStartDate) {
-          startDate = new Date(memberData.scheduleStartDate || memberData.createStartDate);
+        if (memberData.scheduleStartDate || memberData.createStartDate || memberData.ScheduleStartDate) {
+          startDate = new Date(memberData.scheduleStartDate || memberData.createStartDate || memberData.ScheduleStartDate);
         }
       }
       
       // If we couldn't find a start date, look at transactions
-      if (!startDate) {
+      if (!startDate || isNaN(startDate.getTime())) {
+        startDate = null;
         let allT: any[] = [];
         if (Array.isArray(memberData)) allT = memberData;
         else if (memberData && typeof memberData === "object") {
-          if (Array.isArray(memberData.schedules)) allT = memberData.schedules;
+          if (Array.isArray(memberData.Schedules)) allT = memberData.Schedules;
+          else if (Array.isArray(memberData.schedules)) allT = memberData.schedules;
+          else if (Array.isArray(memberData.Transactions)) allT = memberData.Transactions;
           else if (Array.isArray(memberData.transactions)) allT = memberData.transactions;
           else if (Array.isArray(memberData.SHTrans)) allT = memberData.SHTrans;
-        } else if (!memberData && Array.isArray(scheduleDataResponse)) {
-          allT = scheduleDataResponse;
+        } else if (!memberData && membersArray.length > 0) {
+          allT = membersArray;
         }
         
         if (allT.length > 0) {
-          const dates = allT.map((t) => (t.date ? new Date(t.date).getTime() : NaN)).filter((t) => !isNaN(t));
+          const dates = allT.map((t) => (t.Date ? new Date(t.Date).getTime() : t.date ? new Date(t.date).getTime() : NaN)).filter((t) => !isNaN(t));
           if (dates.length > 0) {
             startDate = new Date(Math.min(...dates));
           }
@@ -118,6 +127,28 @@ export default function ScheduleView({
     setCurrentDateStart((prev) => {
       const newDate = new Date(prev);
       newDate.setDate(newDate.getDate() - 7);
+      return newDate;
+    });
+  };
+
+  const prevMonth = () => {
+    setCurrentDateStart((prev) => {
+      const newDate = new Date(prev);
+      newDate.setMonth(newDate.getMonth() - 1);
+      const day = newDate.getDay();
+      const diff = newDate.getDate() - day + (day === 0 ? -6 : 1);
+      newDate.setDate(diff);
+      return newDate;
+    });
+  };
+
+  const nextMonth = () => {
+    setCurrentDateStart((prev) => {
+      const newDate = new Date(prev);
+      newDate.setMonth(newDate.getMonth() + 1);
+      const day = newDate.getDay();
+      const diff = newDate.getDate() - day + (day === 0 ? -6 : 1);
+      newDate.setDate(diff);
       return newDate;
     });
   };
@@ -146,15 +177,20 @@ export default function ScheduleView({
 
   if (scheduleDataResponse && activeUserId) {
     let memberData: any = null;
+    let membersArray: any[] = [];
     
     // 1. Extract member data
-    if (typeof scheduleDataResponse === "object" && !Array.isArray(scheduleDataResponse)) {
-      memberData = scheduleDataResponse[activeUserId];
+    if (scheduleDataResponse.MemberSchedules && Array.isArray(scheduleDataResponse.MemberSchedules)) {
+      membersArray = scheduleDataResponse.MemberSchedules;
     } else if (Array.isArray(scheduleDataResponse)) {
-      memberData = scheduleDataResponse.find((m: any) => m.memberId === activeUserId || m.familyMemberId === activeUserId);
-      if (!memberData) {
-        memberData = scheduleDataResponse.filter((t: any) => t.memberId === activeUserId || t.familyMemberId === activeUserId);
-      }
+      membersArray = scheduleDataResponse;
+    } else if (typeof scheduleDataResponse === "object") {
+      membersArray = Object.values(scheduleDataResponse);
+    }
+
+    memberData = membersArray.find((m: any) => m.memberId === activeUserId || m.familyMemberId === activeUserId || m.FamilyMemberId === activeUserId);
+    if (!memberData) {
+      memberData = membersArray.filter((t: any) => t.memberId === activeUserId || t.familyMemberId === activeUserId || t.FamilyMemberId === activeUserId);
     }
 
     // 2. Extract transactions
@@ -162,7 +198,9 @@ export default function ScheduleView({
     if (Array.isArray(memberData)) {
       allTrans = memberData;
     } else if (memberData && typeof memberData === "object") {
-      if (Array.isArray(memberData.schedules)) allTrans = memberData.schedules;
+      if (Array.isArray(memberData.Schedules)) allTrans = memberData.Schedules;
+      else if (Array.isArray(memberData.schedules)) allTrans = memberData.schedules;
+      else if (Array.isArray(memberData.Transactions)) allTrans = memberData.Transactions;
       else if (Array.isArray(memberData.transactions)) allTrans = memberData.transactions;
       else if (Array.isArray(memberData.SHTrans)) allTrans = memberData.SHTrans;
       else allTrans = [memberData]; 
@@ -182,10 +220,11 @@ export default function ScheduleView({
 
     // 4. Group transactions by date
     allTrans.forEach((trans: any) => {
-      if (!trans.date) return;
+      const transDate = trans.Date || trans.date;
+      if (!transDate) return;
       
       // Ensure we don't suffer from timezone shifts if backend sends ISO strings
-      const dStr = typeof trans.date === "string" ? trans.date.substring(0, 10) : dayjs(trans.date).format("YYYY-MM-DD");
+      const dStr = typeof transDate === "string" ? transDate.substring(0, 10) : dayjs(transDate).format("YYYY-MM-DD");
 
       // Only push if it falls in our current viewing week, OR if you want to allow them out of range
       // We will only render what's in dateRange, but we can safely populate the object
@@ -194,16 +233,22 @@ export default function ScheduleView({
         return; 
       }
 
+      const transId = trans.ShTransId || trans.shTransId || trans.Id || trans.id || Math.random();
+      const transTitle = trans.Description || trans.description || trans.Title || trans.title || trans.Note || trans.note || "Scheduled Event";
+      const transStartTime = trans.StartTime || trans.startTime || "";
+      const transEndTime = trans.EndTime || trans.endTime || "";
+      const transScheduleType = trans.ScheduleType !== undefined ? trans.ScheduleType : trans.scheduleType !== undefined ? trans.scheduleType : memberData?.ScheduleType !== undefined ? memberData.ScheduleType : memberData?.scheduleType;
+
       const eventCard = {
-        id: trans.shTransId || trans.id || Math.random(),
-        title: trans.description || trans.title || trans.note || "Scheduled Event",
-        time: `${trans.startTime || ""} - ${trans.endTime || ""}`,
-        startTime: trans.startTime || "",
+        id: transId,
+        title: transTitle,
+        time: `${transStartTime} - ${transEndTime}`,
+        startTime: transStartTime,
       };
 
-      if (String(trans.scheduleType) === "0") {
+      if (String(transScheduleType) === "0") {
         parsedSchoolScheduleData[dStr].push(eventCard);
-      } else if (String(trans.scheduleType) === "1") {
+      } else if (String(transScheduleType) === "1") {
         parsedWorkScheduleData[dStr].push(eventCard);
       }
     });
@@ -364,31 +409,55 @@ export default function ScheduleView({
           {/* Navigation Controls */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex items-center bg-gray-100/70 border border-gray-200/40 rounded-xl p-1 w-fit">
-              {/* Previous Button */}
+              {/* Previous Month */}
+              <button
+                onClick={prevMonth}
+                className="p-2 rounded-lg transition-all duration-200 text-gray-500 hover:text-gray-900 hover:bg-white hover:shadow-sm"
+                title="Previous Month"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M18.75 19.5l-7.5-7.5 7.5-7.5m-6 15L5.25 12l7.5-7.5" />
+                </svg>
+              </button>
+              
+              {/* Previous Week */}
               <button
                 onClick={prevWeek}
                 className="p-2 rounded-lg transition-all duration-200 text-gray-700 hover:bg-white hover:shadow-sm"
+                title="Previous Week"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
                 </svg>
               </button>
 
-              {/* Jump to Today Button */}
+              {/* Jump to Current Week */}
               <button
                 onClick={jumpToToday}
-                className="px-4 text-xs sm:text-sm font-bold text-gray-800 hover:text-purple-600 transition-colors select-none min-w-[70px] text-center"
+                className="px-3 sm:px-4 text-xs sm:text-sm font-bold text-gray-800 hover:text-purple-600 transition-colors select-none min-w-[90px] text-center"
               >
-                Today
+                Current Week
               </button>
 
-              {/* Next Button */}
+              {/* Next Week */}
               <button
                 onClick={nextWeek}
                 className="p-2 rounded-lg transition-all duration-200 text-gray-700 hover:bg-white hover:shadow-sm"
+                title="Next Week"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                </svg>
+              </button>
+
+              {/* Next Month */}
+              <button
+                onClick={nextMonth}
+                className="p-2 rounded-lg transition-all duration-200 text-gray-500 hover:text-gray-900 hover:bg-white hover:shadow-sm"
+                title="Next Month"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 4.5l7.5 7.5-7.5 7.5m6-15l-7.5 7.5 7.5 7.5" />
                 </svg>
               </button>
             </div>
