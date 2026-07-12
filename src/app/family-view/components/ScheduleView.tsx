@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import SchoolScheduleView from "./SchoolScheduleView";
 import WorkScheduleView from "./WorkScheduleView";
+import dayjs from "dayjs";
 import { useFetch } from "@/app/hooks/useFetch";
 
 interface ScheduleViewProps {
@@ -52,6 +53,92 @@ export default function ScheduleView({
 
   const activeUserId = selectedMemberId || currentUserId;
 
+  const [currentDateStart, setCurrentDateStart] = useState<Date>(() => {
+    const now = new Date();
+    const day = now.getDay();
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+    const start = new Date(now.setDate(diff));
+    start.setHours(0, 0, 0, 0);
+    return start;
+  });
+  
+  const [hasInitializedDate, setHasInitializedDate] = useState(false);
+
+  React.useEffect(() => {
+    if (scheduleDataResponse && activeUserId && !hasInitializedDate) {
+      let memberData: any = null;
+      if (typeof scheduleDataResponse === "object" && !Array.isArray(scheduleDataResponse)) {
+        memberData = scheduleDataResponse[activeUserId];
+      } else if (Array.isArray(scheduleDataResponse)) {
+        memberData = scheduleDataResponse.find((m: any) => m.memberId === activeUserId || m.familyMemberId === activeUserId);
+        if (!memberData) {
+          memberData = scheduleDataResponse.filter((t: any) => t.memberId === activeUserId || t.familyMemberId === activeUserId);
+        }
+      }
+
+      let startDate: Date | null = null;
+      if (memberData && !Array.isArray(memberData)) {
+        if (memberData.scheduleStartDate || memberData.createStartDate) {
+          startDate = new Date(memberData.scheduleStartDate || memberData.createStartDate);
+        }
+      }
+      
+      // If we couldn't find a start date, look at transactions
+      if (!startDate) {
+        let allT: any[] = [];
+        if (Array.isArray(memberData)) allT = memberData;
+        else if (memberData && typeof memberData === "object") {
+          if (Array.isArray(memberData.schedules)) allT = memberData.schedules;
+          else if (Array.isArray(memberData.transactions)) allT = memberData.transactions;
+          else if (Array.isArray(memberData.SHTrans)) allT = memberData.SHTrans;
+        } else if (!memberData && Array.isArray(scheduleDataResponse)) {
+          allT = scheduleDataResponse;
+        }
+        
+        if (allT.length > 0) {
+          const dates = allT.map((t) => (t.date ? new Date(t.date).getTime() : NaN)).filter((t) => !isNaN(t));
+          if (dates.length > 0) {
+            startDate = new Date(Math.min(...dates));
+          }
+        }
+      }
+
+      if (startDate) {
+        const day = startDate.getDay();
+        const diff = startDate.getDate() - day + (day === 0 ? -6 : 1);
+        const weekStart = new Date(startDate.setDate(diff));
+        weekStart.setHours(0, 0, 0, 0);
+        setCurrentDateStart(weekStart);
+      }
+      setHasInitializedDate(true);
+    }
+  }, [scheduleDataResponse, activeUserId, hasInitializedDate]);
+
+  const prevWeek = () => {
+    setCurrentDateStart((prev) => {
+      const newDate = new Date(prev);
+      newDate.setDate(newDate.getDate() - 7);
+      return newDate;
+    });
+  };
+
+  const nextWeek = () => {
+    setCurrentDateStart((prev) => {
+      const newDate = new Date(prev);
+      newDate.setDate(newDate.getDate() + 7);
+      return newDate;
+    });
+  };
+
+  const jumpToToday = () => {
+    const now = new Date();
+    const day = now.getDay();
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+    const start = new Date(now.setDate(diff));
+    start.setHours(0, 0, 0, 0);
+    setCurrentDateStart(start);
+  };
+
   // Parse scheduleDataResponse for School and Work schedules
   const parsedSchoolScheduleData: Record<string, any[]> = {};
   const parsedWorkScheduleData: Record<string, any[]> = {};
@@ -70,75 +157,41 @@ export default function ScheduleView({
       }
     }
 
-    // 2. Extract transactions and dates
+    // 2. Extract transactions
     let allTrans: any[] = [];
-    let scheduleStartDate: Date | null = null;
-    let scheduleEndDate: Date | null = null;
-
     if (Array.isArray(memberData)) {
       allTrans = memberData;
     } else if (memberData && typeof memberData === "object") {
       if (Array.isArray(memberData.schedules)) allTrans = memberData.schedules;
       else if (Array.isArray(memberData.transactions)) allTrans = memberData.transactions;
       else if (Array.isArray(memberData.SHTrans)) allTrans = memberData.SHTrans;
-      else allTrans = [memberData]; // fallback
-      
-      if (memberData.scheduleStartDate || memberData.createStartDate) {
-        scheduleStartDate = new Date(memberData.scheduleStartDate || memberData.createStartDate);
-      }
-      if (memberData.scheduleEndDate || memberData.createEndDate) {
-        scheduleEndDate = new Date(memberData.scheduleEndDate || memberData.createEndDate);
-      }
+      else allTrans = [memberData]; 
     } else if (!memberData && Array.isArray(scheduleDataResponse)) {
-      allTrans = scheduleDataResponse; // fallback to everything if we couldn't filter
+      allTrans = scheduleDataResponse;
     }
 
-    // 3. Compute dates if missing
-    if (!scheduleStartDate || !scheduleEndDate) {
-      if (allTrans.length > 0) {
-        const dates = allTrans
-          .map((t) => (t.date ? new Date(t.date).getTime() : NaN))
-          .filter((t) => !isNaN(t));
-        if (dates.length > 0) {
-          scheduleStartDate = new Date(Math.min(...dates));
-          scheduleEndDate = new Date(Math.max(...dates));
-        }
-      }
-    }
-
-    if (!scheduleStartDate) scheduleStartDate = new Date();
-    if (!scheduleEndDate) {
-      scheduleEndDate = new Date(scheduleStartDate);
-      scheduleEndDate.setDate(scheduleEndDate.getDate() + 6);
-    }
-
-    // 4. Generate all dates in range
-    let curr = new Date(scheduleStartDate);
-    curr.setHours(0, 0, 0, 0);
-    const end = new Date(scheduleEndDate);
-    end.setHours(0, 0, 0, 0);
-
-    while (curr <= end) {
-      const dStr = curr.toISOString().split("T")[0]; // YYYY-MM-DD
+    // 3. Generate the 7 days of the currently selected week
+    let curr = dayjs(currentDateStart).startOf('day');
+    for (let i = 0; i < 7; i++) {
+      const dStr = curr.format("YYYY-MM-DD");
       dateRange.push(dStr);
       parsedSchoolScheduleData[dStr] = [];
       parsedWorkScheduleData[dStr] = [];
-      curr.setDate(curr.getDate() + 1);
+      curr = curr.add(1, 'day');
     }
 
-    // 5. Group transactions by date
+    // 4. Group transactions by date
     allTrans.forEach((trans: any) => {
-      const dateObj = trans.date ? new Date(trans.date) : null;
-      if (!dateObj || isNaN(dateObj.getTime())) return;
-      const dStr = dateObj.toISOString().split("T")[0];
+      if (!trans.date) return;
+      
+      // Ensure we don't suffer from timezone shifts if backend sends ISO strings
+      const dStr = typeof trans.date === "string" ? trans.date.substring(0, 10) : dayjs(trans.date).format("YYYY-MM-DD");
 
-      if (!parsedSchoolScheduleData[dStr]) {
-        parsedSchoolScheduleData[dStr] = [];
-        parsedWorkScheduleData[dStr] = [];
-        if (!dateRange.includes(dStr)) {
-           dateRange.push(dStr);
-           dateRange.sort();
-        }
+      // Only push if it falls in our current viewing week, OR if you want to allow them out of range
+      // We will only render what's in dateRange, but we can safely populate the object
+      if (parsedSchoolScheduleData[dStr] === undefined) {
+        // If it's outside the week, we can just ignore it for rendering efficiency
+        return; 
       }
 
       const eventCard = {
@@ -148,14 +201,14 @@ export default function ScheduleView({
         startTime: trans.startTime || "",
       };
 
-      if (trans.scheduleType === 0) {
+      if (String(trans.scheduleType) === "0") {
         parsedSchoolScheduleData[dStr].push(eventCard);
-      } else if (trans.scheduleType === 1) {
+      } else if (String(trans.scheduleType) === "1") {
         parsedWorkScheduleData[dStr].push(eventCard);
       }
     });
 
-    // 6. Sort by StartTime ascending
+    // 5. Sort by StartTime ascending
     Object.keys(parsedSchoolScheduleData).forEach((dStr) => {
       parsedSchoolScheduleData[dStr].sort((a, b) => a.startTime.localeCompare(b.startTime));
     });
@@ -196,29 +249,32 @@ export default function ScheduleView({
 
       {/* Member Switcher */}
       {members.length > 0 && (
-        <div className="flex overflow-x-auto gap-4 py-4 mb-4 border-b border-gray-100 hide-scrollbar">
-          {members.map((member: any) => (
-            <button
-              key={member.MemberId}
-              onClick={() => setSelectedMemberId(member.MemberId)}
-              className={`flex items-center gap-2 p-2 rounded-full transition-all border ${
-                activeUserId === member.MemberId
-                  ? "bg-purple-50 border-purple-200 ring-2 ring-purple-300"
-                  : "bg-white border-gray-200 hover:bg-gray-50"
-              }`}
-            >
-              <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center shrink-0">
-                {member.ResourceUrl ? (
-                  <img src={member.ResourceUrl} alt={member.MemberName} className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-sm font-bold text-gray-500">{member.MemberName?.charAt(0) || "U"}</span>
-                )}
-              </div>
-              <span className={`text-sm font-semibold pr-2 whitespace-nowrap ${activeUserId === member.MemberId ? "text-purple-900" : "text-gray-600"}`}>
-                {member.MemberName}
-              </span>
-            </button>
-          ))}
+        <div className="flex flex-nowrap overflow-x-auto gap-3 py-3 mb-4 hide-scrollbar items-center border-b border-gray-100">
+          {members.map((member: any) => {
+            const isActive = activeUserId === member.MemberId;
+            return (
+              <button
+                key={member.MemberId}
+                onClick={() => setSelectedMemberId(member.MemberId)}
+                className={`relative flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-200 shrink-0 ${
+                  isActive
+                    ? "bg-gray-900 text-white shadow-md border-transparent"
+                    : "bg-white text-gray-600 border-gray-200 border hover:bg-gray-50 hover:border-gray-300 shadow-sm"
+                }`}
+              >
+                <div className={`w-7 h-7 rounded-full overflow-hidden flex items-center justify-center shrink-0 ${isActive ? "bg-gray-700" : "bg-gray-100"} ring-2 ${isActive ? "ring-gray-800" : "ring-white"}`}>
+                  {member.ResourceUrl ? (
+                    <img src={member.ResourceUrl} alt={member.MemberName} className="w-full h-full object-cover rounded-full" />
+                  ) : (
+                    <span className={`text-xs font-bold ${isActive ? "text-white" : "text-gray-500"}`}>{member.MemberName?.charAt(0) || "U"}</span>
+                  )}
+                </div>
+                <span className="text-sm font-semibold pr-1">
+                  {member.MemberName}
+                </span>
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -307,6 +363,36 @@ export default function ScheduleView({
 
           {/* Navigation Controls */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex items-center bg-gray-100/70 border border-gray-200/40 rounded-xl p-1 w-fit">
+              {/* Previous Button */}
+              <button
+                onClick={prevWeek}
+                className="p-2 rounded-lg transition-all duration-200 text-gray-700 hover:bg-white hover:shadow-sm"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                </svg>
+              </button>
+
+              {/* Jump to Today Button */}
+              <button
+                onClick={jumpToToday}
+                className="px-4 text-xs sm:text-sm font-bold text-gray-800 hover:text-purple-600 transition-colors select-none min-w-[70px] text-center"
+              >
+                Today
+              </button>
+
+              {/* Next Button */}
+              <button
+                onClick={nextWeek}
+                className="p-2 rounded-lg transition-all duration-200 text-gray-700 hover:bg-white hover:shadow-sm"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                </svg>
+              </button>
+            </div>
+
             {/* Displayed Date Range & Subtitle */}
             <div className="flex flex-col text-left sm:text-right">
               <span className="text-xs sm:text-sm font-bold text-purple-600/90 tracking-wide">
