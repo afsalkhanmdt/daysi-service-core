@@ -18,7 +18,7 @@ const dayMapping = [
 export default function SchoolScheduleView({ scheduleData }: SchoolScheduleViewProps) {
   // Helper to determine pastel color based on period / subject
   const getCardColor = (title: string) => {
-    const lowerTitle = title.toLowerCase();
+    const lowerTitle = (title || "").toString().toLowerCase();
     if (lowerTitle.includes("lunch")) {
       return "bg-amber-100/70 text-amber-800 border border-amber-200";
     }

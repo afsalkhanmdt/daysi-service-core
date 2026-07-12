@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { generateMockWorkSchedule } from "../utils";
 
 interface WorkScheduleViewProps {
   scheduleData: Record<string, string>;
@@ -44,10 +43,10 @@ export default function WorkScheduleView({
 }: WorkScheduleViewProps) {
   // Pre-generate data for all 4 weeks to render the full rotation table
   const allWeeksData = [
-    generateMockWorkSchedule(1),
-    generateMockWorkSchedule(2),
-    generateMockWorkSchedule(3),
-    generateMockWorkSchedule(4),
+    scheduleData,
+    scheduleData,
+    scheduleData,
+    scheduleData,
   ];
 
   // Calculate statistics for the active week's scheduleData
