@@ -3,9 +3,6 @@
 import React, { useState } from "react";
 import SchoolScheduleView from "./SchoolScheduleView";
 import WorkScheduleView from "./WorkScheduleView";
-import {
-  getWeekRange,
-} from "../utils";
 import { useFetch } from "@/app/hooks/useFetch";
 
 interface ScheduleViewProps {
@@ -21,55 +18,149 @@ export default function ScheduleView({
 }: ScheduleViewProps) {
   const familyId = data?.Family?.FamilyId;
 
-  const [activeSchedule, setActiveSchedule] = useState<"school" | "work">(
-    "school",
-  );
+  const [activeSchedule, setActiveSchedule] = useState<"school" | "work">("school");
+  
+  const members = data?.Members || [];
+  const [selectedMemberId, setSelectedMemberId] = useState<string>("");
 
-  // React state for school and work week navigations
-  const [currentSchoolWeek, setCurrentSchoolWeek] = useState(1); // 1-based indexing for user visibility
-  const [selectedWorkWeek, setSelectedWorkWeek] = useState(1);
+  React.useEffect(() => {
+    if (members.length > 0 && !selectedMemberId && scheduleDataResponse) {
+      let defaultId = members[0].MemberId;
+      for (const m of members) {
+        const id = m.MemberId;
+        let hasSchedules = false;
+        if (Array.isArray(scheduleDataResponse)) {
+          hasSchedules = scheduleDataResponse.some((t: any) => t.memberId === id || t.familyMemberId === id);
+        } else if (typeof scheduleDataResponse === "object") {
+          const mData = scheduleDataResponse[id];
+          if (mData) {
+             if (Array.isArray(mData)) {
+                if (mData.length > 0) hasSchedules = true;
+             } else if (mData.schedules?.length > 0 || mData.transactions?.length > 0 || mData.SHTrans?.length > 0) {
+                hasSchedules = true;
+             }
+          }
+        }
+        if (hasSchedules) {
+          defaultId = id;
+          break;
+        }
+      }
+      setSelectedMemberId(defaultId);
+    }
+  }, [members, scheduleDataResponse, selectedMemberId]);
 
-  // Fetch current date ranges based on active weeks
-  const schoolDateRange = getWeekRange(currentSchoolWeek - 1);
-  const workDateRange = getWeekRange(selectedWorkWeek - 1);
+  const activeUserId = selectedMemberId || currentUserId;
 
   // Parse scheduleDataResponse for School and Work schedules
-  const parsedSchoolScheduleData: Record<string, any[]> = {
-    monday: [], tuesday: [], wednesday: [], thursday: [], friday: [], saturday: [], sunday: []
-  };
-  const parsedWorkScheduleData: Record<string, any[]> = {
-    monday: [], tuesday: [], wednesday: [], thursday: [], friday: [], saturday: [], sunday: []
-  };
+  const parsedSchoolScheduleData: Record<string, any[]> = {};
+  const parsedWorkScheduleData: Record<string, any[]> = {};
+  const dateRange: string[] = [];
 
-  const dayMap = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-
-  if (scheduleDataResponse) {
-    // Determine the structure of scheduleDataResponse (array vs object mapping)
-    let allTrans: any[] = [];
-    if (Array.isArray(scheduleDataResponse)) {
-      allTrans = scheduleDataResponse;
-    } else if (typeof scheduleDataResponse === "object") {
-      // If grouped by memberId, flatten it for the current user or generally
-      Object.values(scheduleDataResponse).forEach((memberSchedules: any) => {
-         if (Array.isArray(memberSchedules)) allTrans.push(...memberSchedules);
-      });
+  if (scheduleDataResponse && activeUserId) {
+    let memberData: any = null;
+    
+    // 1. Extract member data
+    if (typeof scheduleDataResponse === "object" && !Array.isArray(scheduleDataResponse)) {
+      memberData = scheduleDataResponse[activeUserId];
+    } else if (Array.isArray(scheduleDataResponse)) {
+      memberData = scheduleDataResponse.find((m: any) => m.memberId === activeUserId || m.familyMemberId === activeUserId);
+      if (!memberData) {
+        memberData = scheduleDataResponse.filter((t: any) => t.memberId === activeUserId || t.familyMemberId === activeUserId);
+      }
     }
 
-    allTrans.forEach((trans: any) => {
-       const dayIndex = trans.weekday !== undefined ? trans.weekday : new Date(trans.date).getDay();
-       const dayStr = dayMap[dayIndex] || "monday";
-       
-       const eventCard = {
-         id: trans.shTransId || trans.id || Math.random(),
-         title: trans.description || trans.title || trans.note || "Scheduled Event",
-         time: `${trans.startTime || ""} - ${trans.endTime || ""}`,
-       };
+    // 2. Extract transactions and dates
+    let allTrans: any[] = [];
+    let scheduleStartDate: Date | null = null;
+    let scheduleEndDate: Date | null = null;
 
-       if (trans.scheduleType === 0) {
-         parsedSchoolScheduleData[dayStr].push(eventCard);
-       } else if (trans.scheduleType === 1) {
-         parsedWorkScheduleData[dayStr].push(eventCard);
-       }
+    if (Array.isArray(memberData)) {
+      allTrans = memberData;
+    } else if (memberData && typeof memberData === "object") {
+      if (Array.isArray(memberData.schedules)) allTrans = memberData.schedules;
+      else if (Array.isArray(memberData.transactions)) allTrans = memberData.transactions;
+      else if (Array.isArray(memberData.SHTrans)) allTrans = memberData.SHTrans;
+      else allTrans = [memberData]; // fallback
+      
+      if (memberData.scheduleStartDate || memberData.createStartDate) {
+        scheduleStartDate = new Date(memberData.scheduleStartDate || memberData.createStartDate);
+      }
+      if (memberData.scheduleEndDate || memberData.createEndDate) {
+        scheduleEndDate = new Date(memberData.scheduleEndDate || memberData.createEndDate);
+      }
+    } else if (!memberData && Array.isArray(scheduleDataResponse)) {
+      allTrans = scheduleDataResponse; // fallback to everything if we couldn't filter
+    }
+
+    // 3. Compute dates if missing
+    if (!scheduleStartDate || !scheduleEndDate) {
+      if (allTrans.length > 0) {
+        const dates = allTrans
+          .map((t) => (t.date ? new Date(t.date).getTime() : NaN))
+          .filter((t) => !isNaN(t));
+        if (dates.length > 0) {
+          scheduleStartDate = new Date(Math.min(...dates));
+          scheduleEndDate = new Date(Math.max(...dates));
+        }
+      }
+    }
+
+    if (!scheduleStartDate) scheduleStartDate = new Date();
+    if (!scheduleEndDate) {
+      scheduleEndDate = new Date(scheduleStartDate);
+      scheduleEndDate.setDate(scheduleEndDate.getDate() + 6);
+    }
+
+    // 4. Generate all dates in range
+    let curr = new Date(scheduleStartDate);
+    curr.setHours(0, 0, 0, 0);
+    const end = new Date(scheduleEndDate);
+    end.setHours(0, 0, 0, 0);
+
+    while (curr <= end) {
+      const dStr = curr.toISOString().split("T")[0]; // YYYY-MM-DD
+      dateRange.push(dStr);
+      parsedSchoolScheduleData[dStr] = [];
+      parsedWorkScheduleData[dStr] = [];
+      curr.setDate(curr.getDate() + 1);
+    }
+
+    // 5. Group transactions by date
+    allTrans.forEach((trans: any) => {
+      const dateObj = trans.date ? new Date(trans.date) : null;
+      if (!dateObj || isNaN(dateObj.getTime())) return;
+      const dStr = dateObj.toISOString().split("T")[0];
+
+      if (!parsedSchoolScheduleData[dStr]) {
+        parsedSchoolScheduleData[dStr] = [];
+        parsedWorkScheduleData[dStr] = [];
+        if (!dateRange.includes(dStr)) {
+           dateRange.push(dStr);
+           dateRange.sort();
+        }
+      }
+
+      const eventCard = {
+        id: trans.shTransId || trans.id || Math.random(),
+        title: trans.description || trans.title || trans.note || "Scheduled Event",
+        time: `${trans.startTime || ""} - ${trans.endTime || ""}`,
+        startTime: trans.startTime || "",
+      };
+
+      if (trans.scheduleType === 0) {
+        parsedSchoolScheduleData[dStr].push(eventCard);
+      } else if (trans.scheduleType === 1) {
+        parsedWorkScheduleData[dStr].push(eventCard);
+      }
+    });
+
+    // 6. Sort by StartTime ascending
+    Object.keys(parsedSchoolScheduleData).forEach((dStr) => {
+      parsedSchoolScheduleData[dStr].sort((a, b) => a.startTime.localeCompare(b.startTime));
+    });
+    Object.keys(parsedWorkScheduleData).forEach((dStr) => {
+      parsedWorkScheduleData[dStr].sort((a, b) => a.startTime.localeCompare(b.startTime));
     });
   }
 
@@ -77,43 +168,12 @@ export default function ScheduleView({
   const schoolScheduleData = parsedSchoolScheduleData;
   const workScheduleData = parsedWorkScheduleData;
 
-  // Nav actions for School Schedule
-  const prevSchoolWeek = () => {
-    if (currentSchoolWeek > 1) {
-      setCurrentSchoolWeek((prev) => prev - 1);
-    }
-  };
-
-  const nextSchoolWeek = () => {
-    setCurrentSchoolWeek((prev) => prev + 1);
-  };
-
-  // Nav actions for Work Schedule (Restricted 1 to 4)
-  const prevWorkWeek = () => {
-    if (selectedWorkWeek > 1) {
-      setSelectedWorkWeek((prev) => prev - 1);
-    }
-  };
-
-  const nextWorkWeek = () => {
-    if (selectedWorkWeek < 4) {
-      setSelectedWorkWeek((prev) => prev + 1);
-    }
-  };
-
   // Setup active values based on toggle state
   const isSchool = activeSchedule === "school";
-  const activeWeekLabel = isSchool
-    ? `Week ${currentSchoolWeek}`
-    : `Week ${selectedWorkWeek}`;
-  const activeDateRange = isSchool ? schoolDateRange : workDateRange;
-  const isPrevDisabled = isSchool
-    ? currentSchoolWeek <= 1
-    : selectedWorkWeek <= 1;
-  const isNextDisabled = isSchool ? false : selectedWorkWeek >= 4;
-
-  const handlePrev = isSchool ? prevSchoolWeek : prevWorkWeek;
-  const handleNext = isSchool ? nextSchoolWeek : nextWorkWeek;
+  
+  // Format the overall date range for display
+  const displayStartDate = dateRange.length > 0 ? dateRange[0] : "";
+  const displayEndDate = dateRange.length > 0 ? dateRange[dateRange.length - 1] : "";
 
   return (
     <div className="flex flex-col h-full p-4 sm:p-6 md:p-8 rounded-3xl min-h-[650px]">
@@ -133,6 +193,34 @@ export default function ScheduleView({
           animation: fadeInSlide 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
       `}</style>
+
+      {/* Member Switcher */}
+      {members.length > 0 && (
+        <div className="flex overflow-x-auto gap-4 py-4 mb-4 border-b border-gray-100 hide-scrollbar">
+          {members.map((member: any) => (
+            <button
+              key={member.MemberId}
+              onClick={() => setSelectedMemberId(member.MemberId)}
+              className={`flex items-center gap-2 p-2 rounded-full transition-all border ${
+                activeUserId === member.MemberId
+                  ? "bg-purple-50 border-purple-200 ring-2 ring-purple-300"
+                  : "bg-white border-gray-200 hover:bg-gray-50"
+              }`}
+            >
+              <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center shrink-0">
+                {member.ResourceUrl ? (
+                  <img src={member.ResourceUrl} alt={member.MemberName} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-sm font-bold text-gray-500">{member.MemberName?.charAt(0) || "U"}</span>
+                )}
+              </div>
+              <span className={`text-sm font-semibold pr-2 whitespace-nowrap ${activeUserId === member.MemberId ? "text-purple-900" : "text-gray-600"}`}>
+                {member.MemberName}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Sticky Navigation / Toggle Header */}
       <div className="sticky top-0 z-10 bg-gray-50/95 rounded-lg backdrop-blur-md p-4 mb-6 border-b border-gray-200/40 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -213,77 +301,19 @@ export default function ScheduleView({
               {isSchool ? "Work School Schedule" : "Hybrid Work Schedule"}
             </h2>
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
-              Weekly
+              Active Range
             </span>
           </div>
 
           {/* Navigation Controls */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            {/* Previous / Next Arrow Control Box */}
-            <div className="flex items-center bg-gray-100/70 border border-gray-200/40 rounded-xl p-1 w-fit">
-              {/* Previous Button */}
-              <button
-                disabled={isPrevDisabled}
-                onClick={handlePrev}
-                className={`p-2 rounded-lg transition-all duration-200 ${
-                  isPrevDisabled
-                    ? "text-gray-300 cursor-not-allowed"
-                    : "text-gray-700 hover:bg-white hover:shadow-sm"
-                }`}
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  strokeWidth="2.5"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15.75 19.5L8.25 12l7.5-7.5"
-                  />
-                </svg>
-              </button>
-
-              {/* Current Week Label */}
-              <span className="px-4 text-xs sm:text-sm font-bold text-gray-800 select-none min-w-[70px] text-center">
-                {activeWeekLabel}
-              </span>
-
-              {/* Next Button */}
-              <button
-                disabled={isNextDisabled}
-                onClick={handleNext}
-                className={`p-2 rounded-lg transition-all duration-200 ${
-                  isNextDisabled
-                    ? "text-gray-300 cursor-not-allowed"
-                    : "text-gray-700 hover:bg-white hover:shadow-sm"
-                }`}
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  strokeWidth="2.5"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M8.25 4.5l7.5 7.5-7.5 7.5"
-                  />
-                </svg>
-              </button>
-            </div>
-
             {/* Displayed Date Range & Subtitle */}
             <div className="flex flex-col text-left sm:text-right">
               <span className="text-xs sm:text-sm font-bold text-purple-600/90 tracking-wide">
-                {activeDateRange.startDate} - {activeDateRange.endDate}
+                {displayStartDate} - {displayEndDate}
               </span>
               <span className="text-[10px] sm:text-xs font-semibold text-gray-400 uppercase tracking-wider mt-0.5">
-                {isSchool ? "Session 2024-2025" : "4-Week rotation"}
+                {isSchool ? "School Term" : "Work Rotation"}
               </span>
             </div>
           </div>
@@ -291,20 +321,15 @@ export default function ScheduleView({
 
         {/* Content Container with Animation Key */}
         <div
-          key={
-            isSchool
-              ? `school-${currentSchoolWeek}`
-              : `work-${selectedWorkWeek}`
-          }
+          key={isSchool ? "school" : "work"}
           className="animate-week-change flex-grow"
         >
           {isSchool ? (
-            <SchoolScheduleView scheduleData={schoolScheduleData} />
+            <SchoolScheduleView scheduleData={schoolScheduleData} dateRange={dateRange} />
           ) : (
             <WorkScheduleView
               scheduleData={workScheduleData}
-              selectedWorkWeek={selectedWorkWeek}
-              setSelectedWorkWeek={setSelectedWorkWeek}
+              dateRange={dateRange}
             />
           )}
         </div>
