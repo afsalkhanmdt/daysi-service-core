@@ -3,6 +3,7 @@
 import React from "react";
 import ScheduleCard from "./ScheduleCard";
 import dayjs from "dayjs";
+import { useTranslation } from "react-i18next";
 
 interface WorkScheduleViewProps {
   scheduleData: Record<string, any[]>;
@@ -10,6 +11,8 @@ interface WorkScheduleViewProps {
 }
 
 export default function WorkScheduleView({ scheduleData, dateRange }: WorkScheduleViewProps) {
+  const { t } = useTranslation();
+
   // Helper to determine pastel color based on title or default for work
   const getCardColor = (title: string) => {
     const lowerTitle = (title || "").toString().toLowerCase();
@@ -55,7 +58,7 @@ export default function WorkScheduleView({ scheduleData, dateRange }: WorkSchedu
                   ))
                 ) : (
                   <div className="text-xs text-gray-400 text-center py-8">
-                    No work scheduled
+                    {t("No work scheduled", "No work scheduled")}
                   </div>
                 )}
               </div>

@@ -3,6 +3,7 @@
 import React from "react";
 import ScheduleCard from "./ScheduleCard";
 import dayjs from "dayjs";
+import { useTranslation } from "react-i18next";
 
 interface SchoolScheduleViewProps {
   scheduleData: Record<string, any[]>;
@@ -10,6 +11,8 @@ interface SchoolScheduleViewProps {
 }
 
 export default function SchoolScheduleView({ scheduleData, dateRange }: SchoolScheduleViewProps) {
+  const { t } = useTranslation();
+  
   // Helper to determine pastel color based on period / subject
   const getCardColor = (title: string) => {
     const lowerTitle = (title || "").toString().toLowerCase();
@@ -84,7 +87,7 @@ export default function SchoolScheduleView({ scheduleData, dateRange }: SchoolSc
                   ))
                 ) : (
                   <div className="text-xs text-gray-400 text-center py-8">
-                    No classes scheduled
+                    {t("No classes scheduled", "No classes scheduled")}
                   </div>
                 )}
               </div>

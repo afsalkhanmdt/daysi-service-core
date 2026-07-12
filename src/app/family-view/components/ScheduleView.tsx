@@ -5,6 +5,7 @@ import SchoolScheduleView from "./SchoolScheduleView";
 import WorkScheduleView from "./WorkScheduleView";
 import dayjs from "dayjs";
 import { useFetch } from "@/app/hooks/useFetch";
+import { useTranslation } from "react-i18next";
 
 interface ScheduleViewProps {
   data?: any;
@@ -17,6 +18,7 @@ export default function ScheduleView({
   currentUserId,
   scheduleDataResponse,
 }: ScheduleViewProps) {
+  const { t } = useTranslation();
   const familyId = data?.Family?.FamilyId;
 
   const [activeSchedule, setActiveSchedule] = useState<"school" | "work">("school");
@@ -218,15 +220,6 @@ export default function ScheduleView({
       curr = curr.add(1, 'day');
     }
 
-    // 3a. Determine member start/end dates for template bounds
-    let memStart = "";
-    let memEnd = "";
-    if (memberData && !Array.isArray(memberData)) {
-      memStart = memberData.ScheduleStartDate || memberData.scheduleStartDate || "";
-      memEnd = memberData.ScheduleEndDate || memberData.scheduleEndDate || "";
-    }
-    const isInfinite = memStart === "1990-01-01" || memStart === "0001-01-01" || memStart === "";
-
     // 4. Group transactions by date
     allTrans.forEach((trans: any) => {
       const transDate = trans.Date || trans.date;
@@ -234,15 +227,16 @@ export default function ScheduleView({
       
       const dStr = typeof transDate === "string" ? transDate.substring(0, 10) : dayjs(transDate).format("YYYY-MM-DD");
       
+      if (parsedSchoolScheduleData[dStr] === undefined) {
+        return;
+      }
+
       const transId = trans.ShTransId || trans.shTransId || trans.Id || trans.id || Math.random();
       const transTitle = trans.Description || trans.description || trans.Title || trans.title || trans.Note || trans.note || "Scheduled Event";
       const transStartTime = trans.StartTime || trans.startTime || "";
       const transEndTime = trans.EndTime || trans.endTime || "";
       const transScheduleType = trans.ScheduleType !== undefined ? trans.ScheduleType : trans.scheduleType !== undefined ? trans.scheduleType : memberData?.ScheduleType !== undefined ? memberData.ScheduleType : memberData?.scheduleType;
       
-      const transWeekday = trans.Weekday !== undefined ? trans.Weekday : trans.weekday;
-      const isTransTemplate = dStr === "1990-01-01" || dStr === "0001-01-01" || isInfinite || Boolean(memStart && memEnd);
-
       const eventCard = {
         id: transId,
         title: transTitle,
@@ -250,38 +244,11 @@ export default function ScheduleView({
         startTime: transStartTime,
       };
 
-      // Check if it belongs in any of our 7 displayed days
-      dateRange.forEach((dayStr) => {
-        const dayObj = dayjs(dayStr);
-        let matchesDay = false;
-        
-        if (dStr === dayStr) {
-          matchesDay = true;
-        } else if (isTransTemplate && transWeekday !== undefined) {
-          // Map JS day() (0=Sun, 1=Mon) to API Weekday (0=Mon, 6=Sun) based on the provided payload 2026-07-06 (Mon) = 0
-          const apiWeekdayMap = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 0: 6 };
-          const currentApiWeekday = apiWeekdayMap[dayObj.day() as keyof typeof apiWeekdayMap];
-          
-          if (currentApiWeekday === transWeekday) {
-             const memStartDayjs = memStart ? dayjs(memStart) : null;
-             const memEndDayjs = memEnd ? dayjs(memEnd) : null;
-             
-             // Check if the current calendar day falls inside the member's allowed template date bounds
-             if (!memStartDayjs || !memStartDayjs.isValid() || memStart === "1990-01-01" || memStart === "0001-01-01" || !dayObj.isBefore(memStartDayjs, 'day')) {
-               if (!memEndDayjs || !memEndDayjs.isValid() || memEnd === "1990-01-01" || memEnd === "0001-01-01" || !dayObj.isAfter(memEndDayjs, 'day')) {
-                 matchesDay = true;
-               }
-             }
-          }
-        }
-        
-        if (matchesDay) {
-          const targetArray = String(transScheduleType) === "0" ? parsedSchoolScheduleData[dayStr] : parsedWorkScheduleData[dayStr];
-          if (targetArray && !targetArray.find(c => c.title === eventCard.title && c.startTime === eventCard.startTime)) {
-            targetArray.push(eventCard);
-          }
-        }
-      });
+      if (String(transScheduleType) === "0") {
+        parsedSchoolScheduleData[dStr].push(eventCard);
+      } else if (String(transScheduleType) === "1") {
+        parsedWorkScheduleData[dStr].push(eventCard);
+      }
     });
 
     // 5. Sort by StartTime ascending
@@ -332,27 +299,27 @@ export default function ScheduleView({
 
       {/* Member Switcher */}
       {members.length > 0 && (
-        <div className="flex flex-nowrap overflow-x-auto gap-3 py-3 mb-4 hide-scrollbar items-center border-b border-gray-100">
+        <div className="flex flex-nowrap overflow-x-auto gap-4 py-4 mb-4 hide-scrollbar items-center border-b border-gray-100 pb-5">
           {members.map((member: any) => {
             const isActive = activeUserId === member.MemberId;
             return (
               <button
                 key={member.MemberId}
                 onClick={() => setSelectedMemberId(member.MemberId)}
-                className={`relative flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-200 shrink-0 ${
+                className={`relative flex items-center gap-3 px-4 py-2 rounded-full transition-all duration-200 shrink-0 ${
                   isActive
                     ? "bg-gray-900 text-white shadow-md border-transparent"
                     : "bg-white text-gray-600 border-gray-200 border hover:bg-gray-50 hover:border-gray-300 shadow-sm"
                 }`}
               >
-                <div className={`w-7 h-7 rounded-full overflow-hidden flex items-center justify-center shrink-0 ${isActive ? "bg-gray-700" : "bg-gray-100"} ring-2 ${isActive ? "ring-gray-800" : "ring-white"}`}>
+                <div className={`w-8 h-8 rounded-full overflow-hidden flex items-center justify-center shrink-0 ${isActive ? "bg-gray-700" : "bg-gray-100"} ring-2 ${isActive ? "ring-gray-800" : "ring-white"}`}>
                   {member.ResourceUrl ? (
                     <img src={member.ResourceUrl} alt={member.MemberName} className="w-full h-full object-cover rounded-full" />
                   ) : (
                     <span className={`text-xs font-bold ${isActive ? "text-white" : "text-gray-500"}`}>{member.MemberName?.charAt(0) || "U"}</span>
                   )}
                 </div>
-                <span className="text-sm font-semibold pr-1">
+                <span className="text-sm font-semibold pr-2 tracking-wide">
                   {member.MemberName}
                 </span>
               </button>
@@ -365,10 +332,10 @@ export default function ScheduleView({
       <div className="sticky top-0 z-10 bg-gray-50/95 rounded-lg backdrop-blur-md p-4 mb-6 border-b border-gray-200/40 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
-            Family Schedule
+            {t("Family Schedule", "Family Schedule")}
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 font-medium mt-0.5">
-            Switch between school classes and work rotations
+            {t("Switch between school classes and work rotations", "Switch between school classes and work rotations")}
           </p>
         </div>
 
@@ -403,7 +370,7 @@ export default function ScheduleView({
                 d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
               />
             </svg>
-            <span>School Schedule</span>
+            <span>{t("School Schedule", "School Schedule")}</span>
           </button>
 
           {/* Work Schedule Button */}
@@ -426,21 +393,21 @@ export default function ScheduleView({
                 d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3a1.5 1.5 0 011.5-1.5h3a1.5 1.5 0 011.5 1.5v3"
               />
             </svg>
-            <span>Work Schedule</span>
+            <span>{t("Work Schedule", "Work Schedule")}</span>
           </button>
         </div>
       </div>
 
       {/* Main Content Card with Layout Headers */}
-      <div className="flex-1 bg-white rounded-lg p-5 sm:p-6 md:p-8 shadow-sm flex flex-col justify-start">
+      <div className="flex-1 bg-white rounded-lg p-5 sm:p-6 md:p-8 shadow-sm flex flex-col justify-start min-h-0">
         {/* Dynamic Inner Layout Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between pb-6 mb-6 border-b border-gray-100 gap-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between pb-6 mb-6 border-b border-gray-100 gap-4 shrink-0">
           <div className="flex items-center gap-3">
             <h2 className="text-xl sm:text-2xl font-bold text-gray-800 tracking-tight">
-              {isSchool ? "Work School Schedule" : "Hybrid Work Schedule"}
+              {isSchool ? t("Work School Schedule", "Work School Schedule") : t("Hybrid Work Schedule", "Hybrid Work Schedule")}
             </h2>
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
-              Active Range
+              {t("Active Range", "Active Range")}
             </span>
           </div>
 
@@ -451,7 +418,7 @@ export default function ScheduleView({
               <button
                 onClick={prevMonth}
                 className="p-2 rounded-lg transition-all duration-200 text-gray-500 hover:text-gray-900 hover:bg-white hover:shadow-sm"
-                title="Previous Month"
+                title={t("Previous Month", "Previous Month")}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M18.75 19.5l-7.5-7.5 7.5-7.5m-6 15L5.25 12l7.5-7.5" />
@@ -462,7 +429,7 @@ export default function ScheduleView({
               <button
                 onClick={prevWeek}
                 className="p-2 rounded-lg transition-all duration-200 text-gray-700 hover:bg-white hover:shadow-sm"
-                title="Previous Week"
+                title={t("Previous Week", "Previous Week")}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
@@ -474,14 +441,14 @@ export default function ScheduleView({
                 onClick={jumpToToday}
                 className="px-3 sm:px-4 text-xs sm:text-sm font-bold text-gray-800 hover:text-purple-600 transition-colors select-none min-w-[90px] text-center"
               >
-                Current Week
+                {t("Current Week", "Current Week")}
               </button>
 
               {/* Next Week */}
               <button
                 onClick={nextWeek}
                 className="p-2 rounded-lg transition-all duration-200 text-gray-700 hover:bg-white hover:shadow-sm"
-                title="Next Week"
+                title={t("Next Week", "Next Week")}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
@@ -492,7 +459,7 @@ export default function ScheduleView({
               <button
                 onClick={nextMonth}
                 className="p-2 rounded-lg transition-all duration-200 text-gray-500 hover:text-gray-900 hover:bg-white hover:shadow-sm"
-                title="Next Month"
+                title={t("Next Month", "Next Month")}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 4.5l7.5 7.5-7.5 7.5m6-15l-7.5 7.5 7.5 7.5" />
@@ -506,7 +473,7 @@ export default function ScheduleView({
                 {displayStartDate} - {displayEndDate}
               </span>
               <span className="text-[10px] sm:text-xs font-semibold text-gray-400 uppercase tracking-wider mt-0.5">
-                {isSchool ? "School Term" : "Work Rotation"}
+                {isSchool ? t("School Term", "School Term") : t("Work Rotation", "Work Rotation")}
               </span>
             </div>
           </div>
