@@ -78,11 +78,16 @@ const FamilyViewWrapper = ({
     loading,
   } = useFetch<FamilyData>(`Families/GetAllFamilies?familyId=${familyId}`);
 
+  console.log("data", apiData);
+
   const { data: PMTaskDetails, reload: reloadPM } = useFetch<PMData>(
-    `PocketMoney/GetPMTasks?familyId=${familyId}`,
+    familyId ? `PocketMoney/GetPMTasks?familyId=${familyId}` : null,
   );
   const { data: todoData, reload: reloadTodo } = useFetch<ToDoTaskType[]>(
-    `ToDo/GetToDos?familyId=${familyId}`,
+    familyId ? `ToDo/GetToDos?familyId=${familyId}` : null,
+  );
+  const { data: scheduleDataResponse, reload: reloadSchedule } = useFetch<any>(
+    familyId ? `Schedule/GetSchedules?familyId=${familyId}` : null,
   );
 
   const [familyDetails, setFamilyDetails] = useState<FamilyData | null>(null);
@@ -97,6 +102,11 @@ const FamilyViewWrapper = ({
   const [showImportAppointments, setShowImportAppointments] = useState(false);
   const [showCreatePocketMoney, setShowCreatePocketMoney] = useState(false);
   const [showFreemiumModal, setShowFreemiumModal] = useState(false);
+  const [isDataInitialized, setIsDataInitialized] = useState(false);
+  const [activeView, setActiveView] = useState<"calendar" | "schedule">(
+    "calendar",
+  );
+
   const [isActionLoading, setIsActionLoading] = useState(false);
 
   const [optimisticEvents, setOptimisticEvents] = useState<any[]>([]);
@@ -120,12 +130,12 @@ const FamilyViewWrapper = ({
             memberLocale: member.Locale || "en",
           })),
         ) || [];
-        
+
       // Deduplicate by CalendarId to prevent the same calendar from appearing multiple times
       const uniqueCalendars = Array.from(
-        new Map(calendars.map((c) => [c.CalendarId, c])).values()
+        new Map(calendars.map((c) => [c.CalendarId, c])).values(),
       );
-      
+
       setExternalCalendars(uniqueCalendars);
     }
   }, [apiData]);
@@ -584,6 +594,7 @@ const FamilyViewWrapper = ({
         <ToggleThemeAndLogout
           reloadPM={reloadPM}
           reloadTodo={reloadTodo}
+          reloadSchedule={reloadSchedule}
           reload={reload}
           setIsLoading={setIsActionLoading}
           onNewAppointment={() =>
@@ -606,29 +617,66 @@ const FamilyViewWrapper = ({
       </div>
 
       {/* Main content - Third div (expands to fill remaining space) */}
-      <div className="flex-1 min-w-0 sm:h-full">
-        <CalendarView
-          data={familyDetails}
-          currentDate={currentDate}
-          setCurrentDate={setCurrentDate}
-          dataReload={reload}
-          reloadTodo={reloadTodo}
-          reloadPM={reloadPM}
-          PMTaskDetails={PMTaskDetails}
-          todoData={todoData}
-          optimisticEvents={optimisticEvents}
-          onFreemium={() => setShowFreemiumModal(true)}
-          isLoading={isActionLoading}
-          setIsLoading={setIsActionLoading}
-          isTasksLoading={isTasksLoading}
-          onImportAppointments={() =>
-            // checkSubscription(() => setShowImportAppointments(true))
-            setShowCreateAppointment(true)
-          }
-          optimisticUpdates={optimisticUpdates}
-          setOptimisticUpdates={setOptimisticUpdates}
-        />
-        {/* <ScheduleView data={familyDetails} currentUserId={userId} /> */}
+      <div className="flex-1 min-w-0 sm:h-full flex flex-col">
+        {/* Toggle between Calendar and Schedule View */}
+        <div className="flex justify-center p-2 bg-slate-100 sm:bg-white border-b">
+          <div className="flex bg-gray-100 rounded-lg p-1 border">
+            <button
+              onClick={() => setActiveView("calendar")}
+              className={`px-4 py-1 rounded-md text-sm font-semibold transition-colors ${
+                activeView === "calendar"
+                  ? "bg-white shadow-sm text-blue-600"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Calendar
+            </button>
+            <button
+              onClick={() => setActiveView("schedule")}
+              className={`px-4 py-1 rounded-md text-sm font-semibold transition-colors ${
+                activeView === "schedule"
+                  ? "bg-white shadow-sm text-blue-600"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Schedule
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1 min-h-0 relative overflow-hidden">
+          {activeView === "calendar" ? (
+            <CalendarView
+              data={familyDetails}
+              currentDate={currentDate}
+              setCurrentDate={setCurrentDate}
+              dataReload={reload}
+              reloadTodo={reloadTodo}
+              reloadPM={reloadPM}
+              PMTaskDetails={PMTaskDetails}
+              todoData={todoData}
+              optimisticEvents={optimisticEvents}
+              onFreemium={() => setShowFreemiumModal(true)}
+              isLoading={isActionLoading}
+              setIsLoading={setIsActionLoading}
+              isTasksLoading={isTasksLoading}
+              onImportAppointments={() =>
+                // checkSubscription(() => setShowImportAppointments(true))
+                setShowCreateAppointment(true)
+              }
+              optimisticUpdates={optimisticUpdates}
+              setOptimisticUpdates={setOptimisticUpdates}
+            />
+          ) : (
+            <div className="h-full overflow-y-auto">
+              <ScheduleView
+                data={familyDetails}
+                scheduleDataResponse={scheduleDataResponse}
+                currentUserId={userId}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Popup Modals */}

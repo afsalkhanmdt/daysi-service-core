@@ -4,20 +4,23 @@ import React, { useState } from "react";
 import SchoolScheduleView from "./SchoolScheduleView";
 import WorkScheduleView from "./WorkScheduleView";
 import {
-  generateMockSchoolSchedule,
-  generateMockWorkSchedule,
   getWeekRange,
 } from "../utils";
+import { useFetch } from "@/app/hooks/useFetch";
 
 interface ScheduleViewProps {
   data?: any;
   currentUserId?: string;
+  scheduleDataResponse?: any;
 }
 
 export default function ScheduleView({
   data,
   currentUserId,
+  scheduleDataResponse,
 }: ScheduleViewProps) {
+  const familyId = data?.Family?.FamilyId;
+
   const [activeSchedule, setActiveSchedule] = useState<"school" | "work">(
     "school",
   );
@@ -30,9 +33,55 @@ export default function ScheduleView({
   const schoolDateRange = getWeekRange(currentSchoolWeek - 1);
   const workDateRange = getWeekRange(selectedWorkWeek - 1);
 
-  // Fetch dynamic mock data driven by week states
-  const schoolScheduleData = generateMockSchoolSchedule(currentSchoolWeek);
-  const workScheduleData = generateMockWorkSchedule(selectedWorkWeek);
+  // Parse scheduleDataResponse for School and Work schedules
+  const parsedSchoolScheduleData: Record<string, any[]> = {
+    monday: [], tuesday: [], wednesday: [], thursday: [], friday: [], saturday: [], sunday: []
+  };
+  const parsedWorkScheduleData: Record<string, string> = {
+    Monday: "OFF", Tuesday: "OFF", Wednesday: "OFF", Thursday: "OFF", Friday: "OFF", Saturday: "OFF", Sunday: "OFF"
+  };
+
+  const dayMap = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+  const capDayMap = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+  if (scheduleDataResponse) {
+    // Determine the structure of scheduleDataResponse (array vs object mapping)
+    let allTrans: any[] = [];
+    if (Array.isArray(scheduleDataResponse)) {
+      allTrans = scheduleDataResponse;
+    } else if (typeof scheduleDataResponse === "object") {
+      // If grouped by memberId, flatten it for the current user or generally
+      Object.values(scheduleDataResponse).forEach((memberSchedules: any) => {
+         if (Array.isArray(memberSchedules)) allTrans.push(...memberSchedules);
+      });
+    }
+
+    allTrans.forEach((trans: any) => {
+       const dayIndex = trans.weekday !== undefined ? trans.weekday : new Date(trans.date).getDay();
+       const dayStr = dayMap[dayIndex] || "monday";
+       const capDayStr = capDayMap[dayIndex] || "Monday";
+       
+       // Naive split between school and work based on activeSchedule toggle or keywords
+       if (activeSchedule === "school") {
+         parsedSchoolScheduleData[dayStr].push({
+           id: trans.shTransId || trans.id || Math.random(),
+           title: trans.description || trans.title || trans.note || "Scheduled Event",
+           time: `${trans.startTime || ""} - ${trans.endTime || ""}`,
+         });
+       } else {
+         // Work view expects a simple string "Onsite" | "Work from home" | "OFF"
+         let status = "Onsite";
+         if (trans.description?.toLowerCase().includes("home") || trans.note?.toLowerCase().includes("home")) {
+           status = "Work from home";
+         }
+         parsedWorkScheduleData[capDayStr] = status;
+       }
+    });
+  }
+
+  // Use parsed API data for schedules
+  const schoolScheduleData = parsedSchoolScheduleData;
+  const workScheduleData = parsedWorkScheduleData;
 
   // Nav actions for School Schedule
   const prevSchoolWeek = () => {

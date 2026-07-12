@@ -9,6 +9,7 @@ interface ToggleThemeAndLogoutProps {
   reload: () => void;
   reloadTodo: () => void;
   reloadPM: () => void;
+  reloadSchedule?: () => void;
   onNewAppointment: () => void;
   onNewToDo: () => void;
   onNewPocketMoney: () => void;
@@ -20,6 +21,7 @@ export default function ToggleThemeAndLogout({
   reload,
   reloadTodo,
   reloadPM,
+  reloadSchedule,
   onNewAppointment,
   onNewToDo,
   onNewPocketMoney,
@@ -68,6 +70,7 @@ export default function ToggleThemeAndLogout({
     reload();
     reloadPM();
     reloadTodo();
+    reloadSchedule?.();
     const timer = setTimeout(() => {
       setRefreshing(false);
       setIsLoading?.(false);
