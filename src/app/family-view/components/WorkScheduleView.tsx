@@ -23,9 +23,9 @@ export default function WorkScheduleView({ scheduleData, dateRange }: WorkSchedu
   };
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto">
-      {/* Main schedule layout */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-6">
+    <div className="flex flex-col h-full w-full min-h-0">
+      {/* 7-column grid layout that scrolls vertically instead of horizontally */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3 lg:gap-2 flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1 pb-4">
         {dateRange.map((dateStr) => {
           const tasks = scheduleData[dateStr] || [];
           const dateObj = dayjs(dateStr);
@@ -35,15 +35,15 @@ export default function WorkScheduleView({ scheduleData, dateRange }: WorkSchedu
           return (
             <div
               key={dateStr}
-              className="flex flex-col bg-gray-50/50 rounded-2xl p-4 border border-gray-100/80 min-h-[350px]"
+              className="flex flex-col bg-gray-50/50 rounded-2xl p-2 xl:p-3 border border-gray-100/80 min-h-[300px] h-full"
             >
-              <div className="text-center mb-4 border-b border-gray-200/50 pb-2">
-                <h3 className="text-xs sm:text-sm font-bold text-gray-600 uppercase tracking-wider">
+              <div className="text-center mb-3 border-b border-gray-200/50 pb-2 shrink-0">
+                <h3 className="text-[10px] sm:text-[11px] font-bold text-gray-600 uppercase tracking-wider">
                   {dayLabel}
                 </h3>
-                <p className="text-xs text-gray-400 mt-1">{dateLabel}</p>
+                <p className="text-[9px] sm:text-[10px] text-gray-400 mt-1">{dateLabel}</p>
               </div>
-              <div className="flex flex-col gap-3 flex-grow justify-start">
+              <div className="flex flex-col gap-2 flex-1 justify-start overflow-y-auto min-h-0 pr-1 custom-scrollbar">
                 {tasks.length > 0 ? (
                   tasks.map((task) => (
                     <ScheduleCard
