@@ -191,6 +191,48 @@ const CreateAppointmentPopup: React.FC<
     }));
   };
 
+  const handleRepeatChange = (selectedOption: SelectableOption) => {
+    const repeatValue = selectedOption.isSelected ? selectedOption.id : 0;
+    setFormData((prev) => {
+      let newRepeatEndDate = prev.repeatEndDate;
+      
+      if (repeatValue !== 0) {
+        // Use startDateOnly or today as the base
+        const baseDateStr = prev.startDateOnly || new Date().toISOString().split("T")[0];
+        const date = new Date(baseDateStr);
+        
+        if (!isNaN(date.getTime())) {
+          if (repeatValue === 1) {
+            // Everyday -> 1 month later
+            date.setMonth(date.getMonth() + 1);
+          } else if (repeatValue === 2 || repeatValue === 3) {
+            // Every Week / Every 2 Weeks -> 3 months later
+            date.setMonth(date.getMonth() + 3);
+          } else if (repeatValue === 4) {
+            // Every Month -> 1 year later
+            date.setFullYear(date.getFullYear() + 1);
+          } else if (repeatValue === 5) {
+            // Every Year -> 10 years later
+            date.setFullYear(date.getFullYear() + 10);
+          }
+          
+          const yyyy = date.getFullYear();
+          const mm = String(date.getMonth() + 1).padStart(2, "0");
+          const dd = String(date.getDate()).padStart(2, "0");
+          newRepeatEndDate = `${yyyy}-${mm}-${dd}`;
+        }
+      } else {
+         newRepeatEndDate = null;
+      }
+      
+      return {
+        ...prev,
+        repeat: Number(repeatValue),
+        repeatEndDate: newRepeatEndDate,
+      };
+    });
+  };
+
   const handleResponsiblePersonsChange = (
     selectedPersons: SelectableOption[],
   ) => {
@@ -685,7 +727,7 @@ const CreateAppointmentPopup: React.FC<
                       isSelected: o.id === formData.repeat,
                     }))}
                     onSelectionChange={(s) =>
-                      handleSingleSelectChange("repeat", [s])
+                      handleRepeatChange(s)
                     }
                     selectedBorderColor="blue"
                     selectedBadgeColor="blue"
