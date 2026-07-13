@@ -330,6 +330,7 @@ const FamilyViewWrapper = ({
     setIsTasksLoading(true);
     const updatedPocketMoneyData = {
       ...pocketMoneyData,
+      LocalPMTaskId: pocketMoneyData.LocalPMTaskId || Math.floor(Math.random() * 2147483647) + 1,
       FamilyId: Number(familyId),
       CreatedBy: userId || "",
       PMAmount: Number(pocketMoneyData.PMAmount) || 0,
@@ -340,8 +341,9 @@ const FamilyViewWrapper = ({
       FirstComeFirstServe: Boolean(pocketMoneyData.FirstComeFirstServe),
       PMDescription: pocketMoneyData.PMDescription || "",
       Note: pocketMoneyData.Note || "",
-      Repeat: pocketMoneyData.Repeat || "none", // Assuming RepeatEnum has a default
+      Repeat: pocketMoneyData.Repeat || 0, // FrequencyEnum expects an integer (0 for Never)
       FamilyMembersPlanned: pocketMoneyData.FamilyMembersPlanned || [],
+      CurrencyCode: pocketMoneyData.CurrencyCode || "INR",
     };
 
     const response = await createPocketMoneyTaskCall([updatedPocketMoneyData]);
