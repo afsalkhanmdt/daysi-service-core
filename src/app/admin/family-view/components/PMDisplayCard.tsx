@@ -9,26 +9,28 @@ const PMDisplayCard = ({
 }) => {
   const { t } = useTranslation("common");
   return (
-    <div className="flex justify-between p-1.5 border rounded-lg border-slate-200">
-      <div className="grid grid-flow-col place-items-center gap-2">
+    <div className="flex items-center justify-between p-2 border rounded-xl border-slate-200 bg-white shadow-sm gap-2">
+      <div className="flex items-center gap-2.5 flex-1 min-w-0">
         <img
-          className="rounded-full w-7 h-7"
+          className="rounded-full w-8 h-8 object-cover shrink-0 ring-2 ring-gray-50"
           src={memberDetails.ResourceUrl}
           alt=""
         />
-        <div className="grid gap-1">
-          <div className="font-semibold text-xs">{memberDetails.FirstName}</div>
-          <div className="font-medium text-xs text-emerald-400">
+        <div className="flex flex-col min-w-0">
+          <div className="font-semibold text-sm text-gray-800 truncate">
+            {memberDetails.FirstName}
+          </div>
+          <div className="font-medium text-xs text-emerald-500">
             {t("Paid")}
           </div>
         </div>
       </div>
-      <div className="grid place-items-center">
-        <div className="flex  items-center justify-center gap-0.5 bg-sky-500 text-center px-2 py-1 rounded-2xl text-white w-14">
-          <div className="font-semibold text-[10px]">
-            {memberDetails.AmountEarned}
-          </div>
-          <div className="font-normal text-[10px]">Dkk</div>
+      <div className="shrink-0 flex items-center justify-center gap-1 bg-sky-500 px-3 py-1.5 rounded-full text-white shadow-sm min-w-[4rem]">
+        <div className="font-bold text-xs">
+          {memberDetails.AmountEarned}
+        </div>
+        <div className="font-medium text-[10px] uppercase tracking-wider opacity-90">
+          Dkk
         </div>
       </div>
     </div>

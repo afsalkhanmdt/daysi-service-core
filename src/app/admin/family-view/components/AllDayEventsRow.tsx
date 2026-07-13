@@ -124,7 +124,7 @@ const AllDayEventsRow = ({
   }, [data.Members, currentDate]);
 
   return (
-    <div className="mx-2 mb-2 p-2 rounded-xl border border-slate-200 shadow-sm overflow-hidden min-h-32 bg-blue-200">
+    <div className="mx-2  p-2 rounded-xl border border-slate-200 shadow-sm overflow-hidden min-h-32 bg-blue-200">
       <div className="flex items-center gap-2 mb-2 px-1 ">
         <div className="w-1.5 h-6 bg-gradient-to-b from-emerald-400 to-sky-500 rounded-full " />
         <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">

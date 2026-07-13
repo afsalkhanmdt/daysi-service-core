@@ -356,7 +356,6 @@ export default function ScheduleView({
 
   return (
     <div className="flex flex-col h-full p-4 sm:p-6 md:p-8 rounded-3xl min-h-[650px]">
-      {/* Inline styles for smooth custom fade/slide transition and scrollbars */}
       <style>{`
         @keyframes fadeInSlide {
           0% { opacity: 0; transform: translateY(8px); }
@@ -364,19 +363,6 @@ export default function ScheduleView({
         }
         .animate-week-change {
           animation: fadeInSlide 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background-color: rgba(156, 163, 175, 0.3);
-          border-radius: 20px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background-color: rgba(156, 163, 175, 0.6);
         }
       `}</style>
 
