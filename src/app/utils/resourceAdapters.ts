@@ -20,7 +20,7 @@ export const mapResourcesToSelectableOptions = (
 export const mapPMTaskToCreateCommand = (
   task: PMTask
 ): PMTaskCreateCommand => ({
-  LocalPMTaskId: task.LocalPMTaskId,
+  LocalPMTaskId: task.PMTransId || task.LocalPMTaskId || 0,
   FamilyId: 0, // set from context if needed
   PMDescription: task.PMDescription ?? "",
   PMAmount: task.PMAmount ?? 0,

@@ -194,13 +194,42 @@ const ToDoAndPMComponent = ({
   const handleEditPocketMoney = async (pocketMoneyData: any) => {
     setIsComponentLoading(true);
     try {
-      const response = await updatePocketMoneyTaskCall([pocketMoneyData]);
+      // We safely fall back to PMTransId since the backend primary key is often tracked there
+      const taskId = pocketMoneyData.PMTransId || selectedPocketMoney?.PMTransId || pocketMoneyData.PMTaskId || pocketMoneyData.LocalPMTaskId || selectedPocketMoney?.LocalPMTaskId || 0;
+      const familyId = familyDetails?.Family?.Id || pocketMoneyData.FamilyId || 0;
+
+      // Ensure we have a valid PMTaskId and FamilyId
+      if (!taskId || taskId === 0) {
+        console.error("Invalid PMTaskId or FamilyId. Data:", { pocketMoneyData, selectedPocketMoney, familyId });
+        // You might want to show an error message to the user here
+        return;
+      }
+
+      const apiData = {
+        PMTaskId: taskId,
+        FamilyId: familyId,
+        PMDescription: pocketMoneyData.PMDescription || "",
+        PMAmount: pocketMoneyData.PMAmount || 0,
+        FirstComeFirstServe: pocketMoneyData.FirstComeFirstServe || false,
+        Note: pocketMoneyData.Note || "",
+        FamilyMembersPlanned: pocketMoneyData.FamilyMembersPlanned || [],
+        CreatedBy: pocketMoneyData.CreatedBy || "",
+        ActivityDate: pocketMoneyData.ActivityDate || new Date().toISOString(),
+        Interval: pocketMoneyData.Interval || 0,
+        Repeat: pocketMoneyData.Repeat || 0,
+        CurrencyCode: pocketMoneyData.CurrencyCode || "INR",
+      };
+
+      const response = await updatePocketMoneyTaskCall(apiData);
       if (response) {
         await Promise.all([reloadPM(), dataReload()]);
         if (pocketMoneyData.ActivityDate) {
           setCurrentDate(new Date(pocketMoneyData.ActivityDate));
         }
       }
+    } catch (error) {
+      console.error("Failed to update pocket money:", error);
+      // You might want to show an error toast/notification here
     } finally {
       setIsComponentLoading(false);
     }

@@ -74,7 +74,7 @@ const DateScrollAndDisplay = ({
 
     // Find the language data
     const languageData = countryData.LanguageEventList.find(
-      (lang) => lang.Language === currentLang
+      (lang) => lang.Language === currentLang,
     );
     if (!languageData) return [];
 
@@ -86,7 +86,7 @@ const DateScrollAndDisplay = ({
   };
 
   const [filteredHolidays, setFilteredHolidays] = useState<Holiday[]>(
-    getFilteredHolidays()
+    getFilteredHolidays(),
   );
 
   // Update filtered holidays when language or country changes
@@ -109,7 +109,7 @@ const DateScrollAndDisplay = ({
   };
 
   const [visibleDays, setVisibleDays] = useState<Date[]>(
-    getDaysInMonth(currentDate)
+    getDaysInMonth(currentDate),
   );
 
   // Function to check if a date is a holiday
@@ -121,7 +121,7 @@ const DateScrollAndDisplay = ({
   // Function to get day background color based on holiday status
   const getDayBackgroundColor = (
     date: Date,
-    isCurrentDate: boolean
+    isCurrentDate: boolean,
   ): string => {
     const holiday = getHolidayForDate(date);
 
@@ -181,7 +181,8 @@ const DateScrollAndDisplay = ({
 
   useEffect(() => {
     const currentMonth = dayjs(currentDate).format("YYYY-MM");
-    const visibleMonth = visibleDays.length > 0 ? dayjs(visibleDays[0]).format("YYYY-MM") : "";
+    const visibleMonth =
+      visibleDays.length > 0 ? dayjs(visibleDays[0]).format("YYYY-MM") : "";
 
     if (currentMonth !== visibleMonth) {
       setVisibleDays(getDaysInMonth(currentDate));
@@ -196,7 +197,7 @@ const DateScrollAndDisplay = ({
   }, [currentDate, visibleDays]);
 
   return (
-    <div className="bg-white p-2 m-2 rounded-xl gap-2 sm:gap-4 grid sm:mb-4">
+    <div className="bg-white p-2  rounded-xl grid sm:mb-4">
       {/* Month Navigation */}
       <div className="w-full flex justify-between gap-1 sm:gap-1.5 ">
         <div className="flex gap-1 sm:gap-1.5  justify-center items-center flex-wrap">
@@ -257,7 +258,7 @@ const DateScrollAndDisplay = ({
       </div>
 
       {/* Scrollable Days Bar */}
-      <div className="mb-2 py-2 flex gap-0.5 overflow-x-auto max-w-full scroll-smooth">
+      <div className=" py-2 flex gap-0.5 overflow-x-auto max-w-full scroll-smooth">
         {visibleDays.map((day) => {
           const holiday = getHolidayForDate(day);
           const isCurrentDate = dayjs(day).isSame(currentDate, "day");

@@ -66,8 +66,8 @@ const SideBarMobileView = ({
           bg-white dark:bg-gray-800 border-r dark:border-gray-700
           text-gray-800 dark:text-gray-100 sm:hidden"
     >
-      <div className=" border-b border-slate-100 dark:border-gray-700">
-        <div className="p-3 text-base font-semibold grid place-content-center border-b dark:border-gray-700">
+      <div className="flex-1 min-h-0 flex flex-col border-2 border-slate-300 dark:border-slate-600 rounded-xl m-2 bg-slate-50 dark:bg-slate-800 shadow-md overflow-hidden">
+        <div className="p-3 text-lg font-extrabold text-slate-900 dark:text-white grid place-content-center border-b-2 border-slate-300 dark:border-slate-600 bg-slate-200 dark:bg-slate-700 uppercase tracking-wide">
           {t("Celebrations")}
         </div>
         {selectedDaysEvents.length > 0 ? (
@@ -90,8 +90,8 @@ const SideBarMobileView = ({
       </div>
 
       {/* Pocket Money Section */}
-      <div className="flex-1 min-h-0 flex flex-col">
-        <div className="p-3 text-base font-semibold grid place-content-center border-b dark:border-gray-700">
+      <div className="flex-1 min-h-0 flex flex-col border-2 border-slate-300 dark:border-slate-600 rounded-xl m-2 bg-slate-50 dark:bg-slate-800 shadow-md overflow-hidden">
+        <div className="p-3 text-lg font-extrabold text-slate-900 dark:text-white grid place-content-center border-b-2 border-slate-300 dark:border-slate-600 bg-slate-200 dark:bg-slate-700 uppercase tracking-wide">
           {t("Pocket Money")}
         </div>
         <div className="flex-1 overflow-y-auto p-3">

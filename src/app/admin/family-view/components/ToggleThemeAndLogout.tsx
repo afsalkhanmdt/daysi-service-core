@@ -80,13 +80,13 @@ export default function ToggleThemeAndLogout({
   };
 
   return (
-    <div className="grid grid-cols-4 sm:grid-cols-1 sm:grid-flow-row border-t border-slate-100 dark:border-gray-700 sm:p-1.5 gap-1.5 place-items-center">
+    <div className="grid grid-cols-4 sm:grid-cols-1 sm:grid-flow-row border-t border-slate-100 dark:border-gray-700 sm:p-1 gap-1 place-items-center">
       {/* New Appointment Button */}
       <button
         onClick={onNewAppointment}
         className={`sm:flex sm:justify-between sm:shadow-md ${
           isDark ? `shadow-gray-900` : `shadow-gray-300`
-        } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full transition-colors dark:bg-blue-900 bg-blue-500 hover:bg-stone-500 dark:hover:bg-stone-600`}
+        } sm:px-1.5 sm:py-1 grid place-items-center gap-1 w-full rounded-full transition-colors dark:bg-blue-900 bg-blue-500 hover:bg-stone-500 dark:hover:bg-stone-600`}
       >
         <div className="sm:block hidden text-center font-semibold text-sm text-white dark:text-stone-200">
           {t("Create Appointment Task")}
@@ -121,7 +121,7 @@ export default function ToggleThemeAndLogout({
         onClick={onNewToDo}
         className={`sm:flex sm:justify-between sm:shadow-md ${
           isDark ? `shadow-gray-900` : `shadow-gray-300`
-        } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full transition-colors dark:bg-blue-900 bg-blue-500 hover:bg-stone-500 dark:hover:bg-stone-600`}
+        } sm:px-1.5 sm:py-1 grid place-items-center gap-1 w-full rounded-full transition-colors dark:bg-blue-900 bg-blue-500 hover:bg-stone-500 dark:hover:bg-stone-600`}
       >
         <div className="sm:block hidden text-center font-semibold text-sm text-white dark:text-stone-200">
           {t("Create ToDo Task")}
@@ -148,7 +148,7 @@ export default function ToggleThemeAndLogout({
         onClick={onNewPocketMoney}
         className={`sm:flex sm:justify-between sm:shadow-md ${
           isDark ? `shadow-gray-900` : `shadow-gray-300`
-        } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full transition-colors dark:bg-blue-900 bg-blue-500 hover:bg-stone-500 dark:hover:bg-stone-600`}
+        } sm:px-1.5 sm:py-1 grid place-items-center gap-1 w-full rounded-full transition-colors dark:bg-blue-900 bg-blue-500 hover:bg-stone-500 dark:hover:bg-stone-600`}
       >
         <div className="sm:block hidden text-center font-semibold text-sm text-white dark:text-stone-200">
           {t("Create PocketMoney Task")}
@@ -175,7 +175,7 @@ export default function ToggleThemeAndLogout({
         onClick={onImportAppointments}
         className={`sm:flex sm:justify-between sm:shadow-md ${
           isDark ? `shadow-gray-900` : `shadow-gray-300`
-        } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full transition-colors dark:bg-blue-900 bg-blue-500 hover:bg-stone-500 dark:hover:bg-stone-600`}
+        } sm:px-1.5 sm:py-1 grid place-items-center gap-1 w-full rounded-full transition-colors dark:bg-blue-900 bg-blue-500 hover:bg-stone-500 dark:hover:bg-stone-600`}
       >
         <div className="sm:block hidden text-center font-semibold text-sm text-white dark:text-stone-200">
           {t("Import Appointments")}
@@ -202,7 +202,7 @@ export default function ToggleThemeAndLogout({
         onClick={handleRefresh}
         className={`sm:flex sm:justify-between sm:shadow-md ${
           isDark ? `shadow-gray-900` : `shadow-gray-300`
-        } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full transition-colors dark:bg-blue-900 bg-blue-500 hover:bg-stone-500 dark:hover:bg-stone-600 transform duration-150 active:scale-95 ${
+        } sm:px-1.5 sm:py-1 grid place-items-center gap-1 w-full rounded-full transition-colors dark:bg-blue-900 bg-blue-500 hover:bg-stone-500 dark:hover:bg-stone-600 transform duration-150 active:scale-95 ${
           refreshing ? "scale-90" : "scale-100"
         }`}
       >
@@ -221,7 +221,7 @@ export default function ToggleThemeAndLogout({
         onClick={toggleTheme}
         className={`sm:flex sm:justify-between sm:shadow-md ${
           isDark ? `shadow-gray-900` : `shadow-gray-300`
-        } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full transition-colors dark:bg-blue-900 bg-blue-500 hover:bg-stone-500 dark:hover:bg-stone-600 cursor-pointer`}
+        } sm:px-1.5 sm:py-1 grid place-items-center gap-1 w-full rounded-full transition-colors dark:bg-blue-900 bg-blue-500 hover:bg-stone-500 dark:hover:bg-stone-600 cursor-pointer`}
       >
         <div className="sm:block hidden text-center font-semibold text-sm text-white dark:text-stone-200">
           {t("DarkMode")}
@@ -267,7 +267,7 @@ export default function ToggleThemeAndLogout({
         onClick={handleLogout}
         className={`sm:flex sm:justify-between sm:shadow-md ${
           isDark ? `shadow-gray-900` : `shadow-gray-300`
-        } sm:px-3 sm:py-1.5 grid place-items-center gap-1.5 w-full rounded-full transition-colors dark:bg-blue-900 bg-blue-500 hover:bg-stone-500 dark:hover:bg-stone-600`}
+        } sm:px-1.5 sm:py-1 grid place-items-center gap-1 w-full rounded-full transition-colors dark:bg-blue-900 bg-blue-500 hover:bg-stone-500 dark:hover:bg-stone-600`}
       >
         <div className="sm:block hidden text-center font-semibold text-sm text-white dark:text-stone-200">
           {t("Logout")}
