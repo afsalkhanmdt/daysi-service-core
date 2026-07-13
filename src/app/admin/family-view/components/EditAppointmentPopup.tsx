@@ -476,17 +476,24 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
       formData.repeatEndDate !== undefined &&
       String(formData.repeatEndDate).trim() !== ""
     ) {
-      const timestamp =
+      const parsedVal =
         typeof formData.repeatEndDate === "string" &&
         !isNaN(Number(formData.repeatEndDate))
           ? Number(formData.repeatEndDate)
           : formData.repeatEndDate;
 
-      const date = new Date(timestamp as any);
+      const date = new Date(parsedVal as any);
       if (!isNaN(date.getTime())) {
-        // Force the repeat end date to be the end of the selected day
-        date.setHours(23, 59, 59, 999);
-        repeatEndDate = date.toISOString();
+        // Add 1 day to the selected end date as per backend configuration requirements
+        date.setDate(date.getDate() + 1);
+        
+        // Extract the local date components from the incremented date
+        const yyyy = date.getFullYear();
+        const mm = String(date.getMonth() + 1).padStart(2, "0");
+        const dd = String(date.getDate()).padStart(2, "0");
+        
+        // Create the date at 23:59:59 LOCAL time, then convert to UTC ISO string.
+        repeatEndDate = buildTimestamp(`${yyyy}-${mm}-${dd}`, "23:59:59");
       }
     }
 
@@ -1422,7 +1429,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
                           setFormData((prev) => ({
                             ...prev,
                             recurrenceRule: {
-                              frequency: prev.recurrenceRule?.frequency || 0,
+                              frequency: val > 0 ? val - 1 : 0,
                               interval: val,
                             },
                           }));

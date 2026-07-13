@@ -255,11 +255,12 @@ const CreateAppointmentPopup: React.FC<
 
     let repeatEndDate: string | null = null;
     if (formData.repeatEndDate) {
-      const date = new Date(formData.repeatEndDate);
-      if (!isNaN(date.getTime())) {
-        // Force the repeat end date to be the end of the selected day
-        date.setHours(23, 59, 59, 999);
-        repeatEndDate = date.toISOString();
+      // Add 1 day to the selected end date as per backend configuration requirements
+      const d = new Date(formData.repeatEndDate);
+      if (!isNaN(d.getTime())) {
+        d.setDate(d.getDate() + 1);
+        const nextDayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        repeatEndDate = buildTimestamp(nextDayStr, "23:59:59");
       }
     }
 
@@ -703,7 +704,7 @@ const CreateAppointmentPopup: React.FC<
                           setFormData((prev) => ({
                             ...prev,
                             recurrenceRule: {
-                              frequency: prev.recurrenceRule?.frequency || 0,
+                              frequency: val > 0 ? val - 1 : 0,
                               interval: val,
                             },
                           }));

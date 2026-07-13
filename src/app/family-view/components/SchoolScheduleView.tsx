@@ -2,23 +2,20 @@
 
 import React from "react";
 import ScheduleCard from "./ScheduleCard";
+import dayjs from "dayjs";
+import { useTranslation } from "react-i18next";
 
 interface SchoolScheduleViewProps {
   scheduleData: Record<string, any[]>;
+  dateRange: string[];
 }
 
-const dayMapping = [
-  { key: "monday", label: "Monday" },
-  { key: "tuesday", label: "Tuesday" },
-  { key: "wednesday", label: "Wednesday" },
-  { key: "thursday", label: "Thursday" },
-  { key: "friday", label: "Friday" },
-] as const;
-
-export default function SchoolScheduleView({ scheduleData }: SchoolScheduleViewProps) {
+export default function SchoolScheduleView({ scheduleData, dateRange }: SchoolScheduleViewProps) {
+  const { t } = useTranslation();
+  
   // Helper to determine pastel color based on period / subject
   const getCardColor = (title: string) => {
-    const lowerTitle = title.toLowerCase();
+    const lowerTitle = (title || "").toString().toLowerCase();
     if (lowerTitle.includes("lunch")) {
       return "bg-amber-100/70 text-amber-800 border border-amber-200";
     }
@@ -58,20 +55,27 @@ export default function SchoolScheduleView({ scheduleData }: SchoolScheduleViewP
   };
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Main schedule layout */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 lg:gap-6">
-        {dayMapping.map((day) => {
-          const lessons = scheduleData[day.key] || [];
+    <div className="w-full">
+      {/* 7-column grid layout that scrolls vertically instead of horizontally */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3 lg:gap-2 pb-4">
+        {dateRange.map((dateStr) => {
+          const lessons = scheduleData[dateStr] || [];
+          const dateObj = dayjs(dateStr);
+          const dayLabel = dateObj.format("dddd");
+          const dateLabel = dateObj.format("MMM D, YYYY");
+
           return (
             <div
-              key={day.key}
-              className="flex flex-col bg-gray-50/50 rounded-2xl p-4 border border-gray-100/80 min-h-[350px]"
+              key={dateStr}
+              className="flex flex-col bg-gray-50/50 rounded-2xl p-2 xl:p-3 border border-gray-100/80 min-h-[300px] h-full"
             >
-              <h3 className="text-xs sm:text-sm font-bold text-gray-600 uppercase tracking-wider mb-4 border-b border-gray-200/50 pb-2 text-center">
-                {day.label}
-              </h3>
-              <div className="flex flex-col gap-3 flex-grow justify-start">
+              <div className="text-center mb-3 border-b border-gray-200/50 pb-2 shrink-0">
+                <h3 className="text-[10px] sm:text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                  {dayLabel}
+                </h3>
+                <p className="text-[9px] sm:text-[10px] text-gray-400 mt-1">{dateLabel}</p>
+              </div>
+              <div className="flex flex-col gap-2 flex-1 justify-start">
                 {lessons.length > 0 ? (
                   lessons.map((lesson) => (
                     <ScheduleCard
@@ -83,7 +87,7 @@ export default function SchoolScheduleView({ scheduleData }: SchoolScheduleViewP
                   ))
                 ) : (
                   <div className="text-xs text-gray-400 text-center py-8">
-                    No classes scheduled
+                    {t("No classes scheduled", "No classes scheduled")}
                   </div>
                 )}
               </div>
