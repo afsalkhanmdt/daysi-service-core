@@ -200,7 +200,8 @@ const FamilyViewWrapper = ({
   useEffect(() => {
     // Check the family admin's locale to decide the language of the app
     const adminLanguage = familyDetails?.Members?.find(
-      (m) => m.MemberType === 0 || m.MemberId === familyDetails?.Family?.MemberId
+      (m) =>
+        m.MemberType === 0 || m.MemberId === familyDetails?.Family?.MemberId,
     )?.Locale;
 
     if (adminLanguage) {
@@ -430,13 +431,14 @@ const FamilyViewWrapper = ({
           className={`flex flex-col h-full w-full ${isSidebarCollapsed ? "hidden" : "flex"}`}
         >
           {/* Toggle Button - Inside sidebar at top-right */}
-          <div className="flex justify-end ">
+          <div className="border-b border-slate-100 dark:border-gray-700 grid place-items-center relative">
             <button
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
               className="
+                absolute top-2 right-2
                 bg-blue-500 hover:bg-blue-600 text-white 
                 rounded-full w-6 h-6 flex items-center justify-center
-                shadow-lg transition-all duration-300
+                shadow-lg transition-all duration-300 z-10
               "
               aria-label="Collapse sidebar"
             >
@@ -455,9 +457,7 @@ const FamilyViewWrapper = ({
                 />
               </svg>
             </button>
-          </div>
 
-          <div className="border-b border-slate-100 dark:border-gray-700 pb-3 grid place-items-center">
             {/* <Image
               src={
                 familyDetails?.Members?.find((m) => m.MemberId === userId)
@@ -473,11 +473,11 @@ const FamilyViewWrapper = ({
               height={200}
               className="w-72 h-10"
             /> */}
-            <Image src={mainIcon.src} alt="mainIcon" width={270} height={270} />
+            <Image src={mainIcon.src} alt="mainIcon" width={200} height={200} />
           </div>
 
-          <div className="flex-1 min-h-0 flex flex-col border-b border-slate-100 dark:border-gray-700">
-            <div className="p-3 text-base font-semibold grid place-content-center border-b dark:border-gray-700">
+          <div className="flex-1 min-h-0 flex flex-col border-2 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 shadow-md overflow-hidden">
+            <div className="p-3 text-lg font-extrabold text-slate-900 dark:text-white grid place-content-center border-b-2 border-slate-300 dark:border-slate-600 bg-slate-200 dark:bg-slate-700 uppercase tracking-wide">
               {t("Celebrations")}
             </div>
             {selectedDaysEvents.length > 0 ? (
@@ -493,13 +493,13 @@ const FamilyViewWrapper = ({
                 </div>
               </div>
             ) : (
-              <div className="p-2 border-t-4 rounded-xl m-2 border-gray-300 bg-white shadow-sm flex items-center justify-center h-20 text-gray-500 italic">
+              <div className="p-2 border-t-4 border-gray-300 bg-white shadow-sm flex items-center justify-center h-20 text-gray-500 italic">
                 {t("NoSpecialEvents")}
               </div>
             )}
           </div>
-          <div className="flex-1 min-h-0 flex flex-col">
-            <div className="p-3 text-base font-semibold grid place-content-center border-b dark:border-gray-700">
+          <div className="flex-1 min-h-0 flex flex-col border-2 border-slate-300 dark:border-slate-600  bg-slate-50 dark:bg-slate-800 shadow-md overflow-hidden">
+            <div className="p-3 text-lg font-extrabold text-slate-900 dark:text-white grid place-content-center border-b-2 border-slate-300 dark:border-slate-600 bg-slate-200 dark:bg-slate-700 uppercase tracking-wide">
               {t("PocketMoney")}
             </div>
             <div className="flex-1 overflow-y-auto p-3">
@@ -512,8 +512,8 @@ const FamilyViewWrapper = ({
               </div>
             </div>
           </div>
-          <div className="flex-1 min-h-0 flex flex-col">
-            <div className="p-3 text-base font-semibold grid place-content-center border-b dark:border-gray-700">
+          <div className="flex-1 min-h-0 flex flex-col border-2 border-slate-300 dark:border-slate-600  bg-slate-50 dark:bg-slate-800 shadow-md overflow-hidden">
+            <div className="p-3 text-lg font-extrabold text-slate-900 dark:text-white grid place-content-center border-b-2 border-slate-300 dark:border-slate-600 bg-slate-200 dark:bg-slate-700 uppercase tracking-wide">
               {t("ExternalCalendars")}
             </div>
             <div className="flex-1 overflow-y-auto p-3">
@@ -622,7 +622,7 @@ const FamilyViewWrapper = ({
       {/* Main content - Third div (expands to fill remaining space) */}
       <div className="flex-1 min-w-0 sm:h-full flex flex-col">
         {/* Toggle between Calendar and Schedule View */}
-        <div className="flex justify-center p-2 bg-slate-100 sm:bg-white border-b">
+        <div className="flex justify-center pb-2 bg-slate-100 sm:bg-white border-b">
           <div className="flex bg-gray-100 rounded-lg p-1 border">
             <button
               onClick={() => setActiveView("calendar")}
