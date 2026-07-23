@@ -210,7 +210,7 @@ const CalendarView = ({
     uniqueEventsList.forEach((event) => {
       const targetResourceIds = new Set<string>();
 
-      if (event.IsForAll === 1) {
+      if (Number(event.IsForAll) === 1) {
         // "For All" events show only in the first column
         if (firstResourceId) targetResourceIds.add(firstResourceId);
       } else {
@@ -237,7 +237,7 @@ const CalendarView = ({
 
         let start = new Date(Number(event.Start));
         let end = new Date(Number(event.End));
-        const isAllDay = event.IsAllDayEvent === 1;
+        const isAllDay = Number(event.IsAllDayEvent) === 1;
 
         const eventKey = `${event.Id}-${targetResourceId}`;
         if (seenEventResourcePairs.has(eventKey)) return;
@@ -685,11 +685,13 @@ const CalendarView = ({
         isPremium={data?.Family.SubscriptionType === "Premium"}
       />
 
-      <AllDayEventsRow
-        data={data}
-        currentDate={currentDate}
-        onEventClick={handleRawEventClick}
-      />
+      <div className="sm:hidden">
+        <AllDayEventsRow
+          data={data}
+          currentDate={currentDate}
+          onEventClick={handleRawEventClick}
+        />
+      </div>
 
       <MobileEventAndScrollBar
         selectedMember={selectedMember}
@@ -727,7 +729,7 @@ const CalendarView = ({
             hour12: false, // This is the key - forces 24-hour format
             meridiem: false,
           }}
-          allDaySlot={false}
+          allDaySlot={true}
           weekends
           nowIndicator={false}
           timeZone="local"

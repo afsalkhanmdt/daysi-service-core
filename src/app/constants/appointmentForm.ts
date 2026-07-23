@@ -98,11 +98,16 @@ export const parseTimeToForm = (dateString: string | number | null): string => {
 };
 
 
-export const parseTimestampToDateOnly = (timestamp: string): string => {
+export const parseTimestampToDateOnly = (timestamp: string | Date | number): string => {
   if (!timestamp) return "";
   const date = new Date(timestamp);
   if (isNaN(date.getTime())) return "";
-  return date.toISOString().split('T')[0];
+  
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  
+  return `${yyyy}-${mm}-${dd}`;
 };
 
 export const parseTimestampToTimeOnly = (timestamp: string): string => {
@@ -118,7 +123,10 @@ export const buildLocalTimestamp = (date: string, time: string) => {
 
   if (!targetDate || !targetTime) {
     const now = new Date();
-    targetDate = now.toISOString().split("T")[0];
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    targetDate = `${yyyy}-${mm}-${dd}`;
     targetTime = now.toTimeString().slice(0, 5);
   }
 
@@ -194,9 +202,13 @@ export const normalizeInitialData = (data: any): AppointmentUpdateFormUI => {
         : "",
       endDateOnly: data?.endDate
         ? parseTimestampToDateOnly(data.endDate as string)
+        : data?.startDate
+        ? parseTimestampToDateOnly(data.startDate as string)
         : "",
       endTimeOnly: data?.endDate
         ? parseTimestampToTimeOnly(data.endDate as string)
+        : data?.startDate
+        ? parseTimestampToTimeOnly(data.startDate as string)
         : "",
     } as AppointmentUpdateFormUI;
   }
