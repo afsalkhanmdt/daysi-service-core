@@ -502,15 +502,21 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
       title: formData.title,
       description: formData.description || "",
       location: formData.location,
-      startDate: buildTimestamp(formData.startDateOnly, formData.startTimeOnly),
-      endDate: buildTimestamp(formData.endDateOnly, formData.endTimeOnly),
+      startDate: buildTimestamp(
+        formData.startDateOnly, 
+        Number(formData.isAllDayEvent) === 1 ? "00:00:00" : formData.startTimeOnly
+      ),
+      endDate: buildTimestamp(
+        formData.endDateOnly, 
+        Number(formData.isAllDayEvent) === 1 ? "23:59:59" : formData.endTimeOnly
+      ),
       localStartDate: buildLocalTimestamp(
         formData.startDateOnly,
-        formData.startTimeOnly,
+        Number(formData.isAllDayEvent) === 1 ? "00:00:00" : formData.startTimeOnly,
       ),
       localEndDate: buildLocalTimestamp(
         formData.endDateOnly,
-        formData.endTimeOnly,
+        Number(formData.isAllDayEvent) === 1 ? "23:59:59" : formData.endTimeOnly,
       ),
       repeat: formData.repeat,
       repeatEndDate,
@@ -1049,6 +1055,13 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
     const mappedPersons = mapResourcesToSelectableOptions(resources);
     const otherMembers = mappedPersons.slice(1);
 
+    const isForAllValue = Number(
+      initialData?.isForAll ??
+      initialData?.IsForAll ??
+      initialData?.extendedProps?.IsForAll ??
+      0
+    );
+
     if (initialData?.participants && initialData.participants.length > 0) {
       const selectedMemberIds = new Set(
         initialData.participants.map((p: any) =>
@@ -1069,6 +1082,16 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
       setFormData((prev) => ({
         ...prev,
         isForAll: selectedCount === resources.length ? 1 : 0,
+      }));
+    } else if (isForAllValue === 1) {
+      const updatedPersons = otherMembers.map((person) => ({
+        ...person,
+        isSelected: true,
+      }));
+      setResponsiblePersons(updatedPersons);
+      setFormData((prev) => ({
+        ...prev,
+        isForAll: 1,
       }));
     } else {
       setResponsiblePersons(otherMembers);
@@ -1251,7 +1274,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
                     </span>
                   </div>
                   <ToggleSwitch
-                    checked={formData.isAllDayEvent === 1}
+                    checked={Number(formData.isAllDayEvent) === 1}
                     onChange={(checked) =>
                       handleToggleChange("isAllDayEvent", checked)
                     }
@@ -1407,8 +1430,9 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
                     }
                     hideHeading={true}
                     required
+                    autoSyncEndDateTime={false}
                     disabled={isProcessing}
-                    disableTime={formData.isAllDayEvent === 1}
+                    disableTime={Number(formData.isAllDayEvent) === 1}
                   />
                   {(formData.repeat ?? 0) !== 0 && (
                     <div className="space-y-1 grid grid-cols-1">

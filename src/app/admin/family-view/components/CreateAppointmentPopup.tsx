@@ -310,15 +310,21 @@ const CreateAppointmentPopup: React.FC<
       title: formData.title,
       description: formData.description,
       location: formData.location,
-      startDate: buildTimestamp(formData.startDateOnly, formData.startTimeOnly),
-      endDate: buildTimestamp(formData.endDateOnly, formData.endTimeOnly),
+      startDate: buildTimestamp(
+        formData.startDateOnly, 
+        Number(formData.isAllDayEvent) === 1 ? "00:00:00" : formData.startTimeOnly
+      ),
+      endDate: buildTimestamp(
+        formData.endDateOnly, 
+        Number(formData.isAllDayEvent) === 1 ? "23:59:59" : formData.endTimeOnly
+      ),
       localStartDate: buildLocalTimestamp(
         formData.startDateOnly,
-        formData.startTimeOnly,
+        Number(formData.isAllDayEvent) === 1 ? "00:00:00" : formData.startTimeOnly,
       ),
       localEndDate: buildLocalTimestamp(
         formData.endDateOnly,
-        formData.endTimeOnly,
+        Number(formData.isAllDayEvent) === 1 ? "23:59:59" : formData.endTimeOnly,
       ),
       repeat: formData.repeat,
       repeatEndDate,
@@ -683,7 +689,7 @@ const CreateAppointmentPopup: React.FC<
                     }
                     hideHeading={true}
                     required
-                    autoSyncEndDateTime={true}
+                    autoSyncEndDateTime={false}
                     defaultDate={currentDate} // Pass the date from parent
                     disableTime={formData.isAllDayEvent === 1}
                   />

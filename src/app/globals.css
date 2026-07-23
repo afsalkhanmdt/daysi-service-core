@@ -23,6 +23,13 @@
   background-color: #f2f7fa !important;
 }
 
+/* Make all-day section background more blue */
+.fc .fc-daygrid-day-frame, 
+.fc .fc-timegrid-allday,
+.fc .fc-daygrid-day {
+  background-color: #bfdbfe !important; /* Tailwind blue-200 */
+}
+
 /* Red line for current time */
 .fc-timegrid-now-indicator-line {
   background: red !important;
@@ -49,7 +56,7 @@
 }
 
 /* Style resource labels (left-side names) */
-.fc-scrollgrid-sync-inner {
+.fc-col-header-cell .fc-scrollgrid-sync-inner {
   margin: 10px;
   background-color: #ffffff;
   display: block !important;
@@ -83,7 +90,7 @@
 
 /* Vertical dashed separator for resource/day columns only */
 .fc-timegrid-body .fc-timegrid-col:not(:last-of-type) {
-  border-right: 2px dashed rgba(0, 0, 0, 0.15) !important;
+  border-right: 4px solid #9ea4ad !important;
 }
 /* Hide license message */
 .fc-license-message {
