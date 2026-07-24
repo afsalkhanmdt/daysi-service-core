@@ -884,19 +884,68 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
     if (name === "title") setTitleError(null);
   };
 
-  // Generic handler for toggle switches
   const handleToggleChange = (
     field: keyof AppointmentUpdateFormUI,
     checked: boolean,
   ) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: checked ? 1 : 0,
-      specialEvent:
-        field === "isSpecialEvent" && checked
-          ? (prev.specialEvent ?? SpecialEventEnum.Birthday)
-          : prev.specialEvent,
-    }));
+    setFormData((prev) => {
+      const newState = {
+        ...prev,
+        [field]: checked ? 1 : 0,
+        specialEvent:
+          field === "isSpecialEvent" && checked
+            ? (prev.specialEvent ?? SpecialEventEnum.Birthday)
+            : prev.specialEvent,
+      };
+
+      if (field === "isSpecialEvent" && checked) {
+        // Calculate repeatEndDate (10 years from today or startDate)
+        const baseDateStr = prev.startDateOnly || new Date().toISOString().split("T")[0];
+        const date = new Date(baseDateStr);
+        let newRepeatEndDate = null;
+        if (!isNaN(date.getTime())) {
+          date.setFullYear(date.getFullYear() + 10);
+          const yyyy = date.getFullYear();
+          const mm = String(date.getMonth() + 1).padStart(2, "0");
+          const dd = String(date.getDate()).padStart(2, "0");
+          newRepeatEndDate = `${yyyy}-${mm}-${dd}`;
+        }
+
+        // Select all participants
+        const allOptions = mapResourcesToSelectableOptions(resources);
+        const allParticipants = allOptions.map((option) => ({
+          ParticipantId: option.memberId || "",
+          MemberId: option.memberId || "",
+          localId: option.id,
+          memberId: option.memberId || "",
+          EventId: 0,
+          ParentEventId: "",
+        }));
+
+        setResponsiblePersons(
+          allOptions.slice(1).map((option) => ({
+            ...option,
+            isSelected: true,
+          })),
+        );
+
+        newState.participants = allParticipants;
+        newState.isForAll = 1;
+        newState.repeat = 5;
+        newState.alert = 8;
+        newState.repeatEndDate = newRepeatEndDate;
+      }
+
+      if (field === "isSpecialEvent" && !checked) {
+        // When turning off, optionally reset to some safe default, but in edit we might just let it be
+        // or reset repeat to 0. We'll just reset repeat to 0 and alert to 0.
+        newState.repeat = 0;
+        newState.alert = 0;
+        newState.repeatEndDate = null;
+      }
+
+      return newState;
+    });
   };
 
   const handleSpecialEventChange = (value: SpecialEventEnum) => {
