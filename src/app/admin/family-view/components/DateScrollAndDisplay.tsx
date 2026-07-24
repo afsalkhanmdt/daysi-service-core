@@ -65,8 +65,8 @@ const DateScrollAndDisplay = ({
 
   // Function to get holidays for current country and language
   const getFilteredHolidays = (): Holiday[] => {
-    // Find the country data
-    const countryData = holidaysData.find((c) => c.Country === country);
+    // Find the country data (case-insensitive)
+    const countryData = holidaysData.find((c) => c.Country.toLowerCase() === country.toLowerCase());
     if (!countryData) return [];
 
     // Get current language code (map i18n language to your data language codes)
@@ -275,7 +275,7 @@ const DateScrollAndDisplay = ({
             >
               {/* Holiday Specialty Badge */}
               {holiday?.name && (
-                <div className="absolute -top-2  bg-yellow-500 text-white text-xs px-1 py-0.5 rounded-full max-w-28 mx-auto truncate">
+                <div className="absolute -top-2 z-10 bg-yellow-500 text-white text-[10px] leading-tight px-1.5 py-0.5 rounded-full max-w-[90%] mx-auto truncate shadow-sm">
                   {holiday.name}
                 </div>
               )}

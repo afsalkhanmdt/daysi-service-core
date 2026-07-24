@@ -120,15 +120,30 @@ const CreateAppointmentPopup: React.FC<
         })),
       );
 
-      setFormData((prev) => ({
-        ...prev,
-        participants: allParticipants,
-        isForAll: 1,
-        // Set repeat to Every Year (assuming 3 is the ID for "Every Year")
-        repeat: 5,
-        // Set alarm to 1 day before (assuming appropriate ID)
-        alert: 8,
-      }));
+      setFormData((prev) => {
+        // Calculate repeatEndDate (10 years from today or startDate)
+        const baseDateStr = prev.startDateOnly || new Date().toISOString().split("T")[0];
+        const date = new Date(baseDateStr);
+        let newRepeatEndDate = null;
+        if (!isNaN(date.getTime())) {
+          date.setFullYear(date.getFullYear() + 10);
+          const yyyy = date.getFullYear();
+          const mm = String(date.getMonth() + 1).padStart(2, "0");
+          const dd = String(date.getDate()).padStart(2, "0");
+          newRepeatEndDate = `${yyyy}-${mm}-${dd}`;
+        }
+
+        return {
+          ...prev,
+          participants: allParticipants,
+          isForAll: 1,
+          // Set repeat to Every Year (assuming 5 is the ID for "Every Year")
+          repeat: 5,
+          // Set alarm to 1 day before (assuming appropriate ID)
+          alert: 8,
+          repeatEndDate: newRepeatEndDate,
+        };
+      });
     }
 
     // If turning OFF special event, reset to default values

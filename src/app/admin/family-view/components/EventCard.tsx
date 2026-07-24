@@ -49,15 +49,17 @@ const EventCardUI = ({
         </div>
         <div className="flex sm:gap-2 items-center">
           <div className="text-[9px] sm:text-sm text-stone-500">
-            {eventInfo.event.extendedProps.IsAllDayEvent === 1
-              ? `${t("AllDayEvent")}`
-              : start && end
-                ? `${formatTime(start)} - ${formatTime(end)}`
-                : start
-                  ? formatTime(start)
-                  : end
-                    ? formatTime(end)
-                    : ""}
+            {isSpecialEvent
+              ? ""
+              : eventInfo.event.extendedProps.IsAllDayEvent === 1
+                ? `${t("AllDayEvent")}`
+                : start && end
+                  ? `${formatTime(start)} - ${formatTime(end)}`
+                  : start
+                    ? formatTime(start)
+                    : end
+                      ? formatTime(end)
+                      : ""}
           </div>
 
           <div className="text-[9px] sm:text-xs text-black break-all ">

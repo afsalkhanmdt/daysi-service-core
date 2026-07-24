@@ -310,7 +310,17 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
       localStartDate: buildLocalTimestamp(toDateOnly(startDate), startTime),
       localEndDate: buildLocalTimestamp(toDateOnly(endDate), endTime),
       repeat: originalEvent.repeat,
-      repeatEndDate: new Date(repeatEndDate).toISOString(),
+      repeatEndDate: (() => {
+        const d = new Date(repeatEndDate);
+        if (!isNaN(d.getTime())) {
+          d.setDate(d.getDate() + 1);
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, "0");
+          const dd = String(d.getDate()).padStart(2, "0");
+          return buildTimestamp(`${yyyy}-${mm}-${dd}`, "23:59:59");
+        }
+        return new Date(repeatEndDate).toISOString();
+      })(),
       alert: originalEvent.alert || 0,
       isForAll: originalEvent.isForAll || 0,
       isAllDayEvent: originalEvent.isAllDayEvent || 0,
@@ -595,18 +605,23 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
 
       // Series first-occurrence start/end — from raw API extendedProps
       const originalSeriesStartISO =
+        parseTs(initialData?.extendedProps?.ActualStartDate) ||
         parseTs(initialData?.extendedProps?.Start) ||
         parseTs(initialData?.extendedProps?.start) ||
         parseTs(initialData?.startDate); // fallback if not a recurrence instance
 
-      const originalSeriesEndISO =
-        parseTs(initialData?.extendedProps?.End) ||
-        parseTs(initialData?.extendedProps?.end) ||
-        parseTs(initialData?.endDate);
-
       // The occurrence the user clicked — initialData.startDate
       const editDateISO =
         parseTs(initialData?.startDate) || originalSeriesStartISO;
+        
+      const occurrenceEndISO = parseTs(initialData?.endDate) || parseTs(initialData?.extendedProps?.End) || editDateISO;
+        
+      // Calculate original series end based on duration of the edited occurrence
+      const originalSeriesEndISO = calculateEndDate(
+        originalSeriesStartISO,
+        editDateISO,
+        occurrenceEndISO
+      );
 
       // Parse repeatEndDate (may be a numeric timestamp string from the API)
       const repeatEndDateISO = parseTs(rawRepeatEndDate);
@@ -752,7 +767,12 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
           originalSeriesStartISO,
           originalSeriesEndISO,
         );
-        const beforeSeriesEnd = beforeDates[beforeDates.length - 1];
+        const beforeSeriesLastStart = beforeDates[beforeDates.length - 1];
+        const beforeSeriesEnd = calculateEndDate(
+          beforeSeriesLastStart,
+          originalSeriesStartISO,
+          originalSeriesEndISO,
+        );
 
         const beforePayload = createSeriesPayload(
           beforeStart,
@@ -774,7 +794,12 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
           originalSeriesStartISO,
           originalSeriesEndISO,
         );
-        const afterSeriesEnd = afterDates[afterDates.length - 1];
+        const afterSeriesLastStart = afterDates[afterDates.length - 1];
+        const afterSeriesEnd = calculateEndDate(
+          afterSeriesLastStart,
+          originalSeriesStartISO,
+          originalSeriesEndISO,
+        );
 
         const afterPayload = createSeriesPayload(
           afterStart,
@@ -859,19 +884,68 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
     if (name === "title") setTitleError(null);
   };
 
-  // Generic handler for toggle switches
   const handleToggleChange = (
     field: keyof AppointmentUpdateFormUI,
     checked: boolean,
   ) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: checked ? 1 : 0,
-      specialEvent:
-        field === "isSpecialEvent" && checked
-          ? (prev.specialEvent ?? SpecialEventEnum.Birthday)
-          : prev.specialEvent,
-    }));
+    setFormData((prev) => {
+      const newState = {
+        ...prev,
+        [field]: checked ? 1 : 0,
+        specialEvent:
+          field === "isSpecialEvent" && checked
+            ? (prev.specialEvent ?? SpecialEventEnum.Birthday)
+            : prev.specialEvent,
+      };
+
+      if (field === "isSpecialEvent" && checked) {
+        // Calculate repeatEndDate (10 years from today or startDate)
+        const baseDateStr = prev.startDateOnly || new Date().toISOString().split("T")[0];
+        const date = new Date(baseDateStr);
+        let newRepeatEndDate = null;
+        if (!isNaN(date.getTime())) {
+          date.setFullYear(date.getFullYear() + 10);
+          const yyyy = date.getFullYear();
+          const mm = String(date.getMonth() + 1).padStart(2, "0");
+          const dd = String(date.getDate()).padStart(2, "0");
+          newRepeatEndDate = `${yyyy}-${mm}-${dd}`;
+        }
+
+        // Select all participants
+        const allOptions = mapResourcesToSelectableOptions(resources);
+        const allParticipants = allOptions.map((option) => ({
+          ParticipantId: option.memberId || "",
+          MemberId: option.memberId || "",
+          localId: option.id,
+          memberId: option.memberId || "",
+          EventId: 0,
+          ParentEventId: "",
+        }));
+
+        setResponsiblePersons(
+          allOptions.slice(1).map((option) => ({
+            ...option,
+            isSelected: true,
+          })),
+        );
+
+        newState.participants = allParticipants;
+        newState.isForAll = 1;
+        newState.repeat = 5;
+        newState.alert = 8;
+        newState.repeatEndDate = newRepeatEndDate;
+      }
+
+      if (field === "isSpecialEvent" && !checked) {
+        // When turning off, optionally reset to some safe default, but in edit we might just let it be
+        // or reset repeat to 0. We'll just reset repeat to 0 and alert to 0.
+        newState.repeat = 0;
+        newState.alert = 0;
+        newState.repeatEndDate = null;
+      }
+
+      return newState;
+    });
   };
 
   const handleSpecialEventChange = (value: SpecialEventEnum) => {

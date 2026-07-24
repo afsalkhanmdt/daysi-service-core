@@ -289,13 +289,23 @@ const ImportAppointmentsPopup: React.FC<ImportAppointmentsPopupProps> = ({
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="mt-4 h-[40px] w-full rounded-md bg-[#49aaf0] text-[18px] font-extrabold text-white shadow-sm transition hover:bg-[#349ce5] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isSubmitting ? t("Importing...") : t("Import Appointments")}
-          </button>
+          <div className="mt-4 flex gap-3">
+            <button
+              type="button"
+              onClick={handleClose}
+              disabled={isSubmitting}
+              className="h-[40px] flex-1 rounded-md border border-[#d6d8e8] bg-white text-[16px] font-bold text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {t("Cancel")}
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="h-[40px] flex-1 rounded-md bg-[#49aaf0] text-[16px] font-bold text-white shadow-sm transition hover:bg-[#349ce5] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isSubmitting ? t("Importing...") : t("Import")}
+            </button>
+          </div>
 
           <div className="mt-6 grid grid-cols-3 items-center gap-x-5 gap-y-4">
             {EXTERNAL_CALENDAR_LOGOS.map((item) => (
