@@ -683,6 +683,10 @@ const CalendarView = ({
         currentDate={currentDate}
         setCurrentDate={setCurrentDate}
         isPremium={data?.Family.SubscriptionType === "Premium"}
+        country={
+          data.Members.find((m) => m.MemberId === data.LoggedInUserId)
+            ?.HolidaysCountryCode || "dk"
+        }
       />
 
       <div className="sm:hidden">
