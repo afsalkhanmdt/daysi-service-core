@@ -148,6 +148,8 @@ const FamilyViewWrapper = ({
     "calendar",
   );
 
+  const [showImportInfoModal, setShowImportInfoModal] = useState(false);
+
   const [isActionLoading, setIsActionLoading] = useState(false);
 
   const [optimisticEvents, setOptimisticEvents] = useState<any[]>([]);
@@ -391,11 +393,17 @@ const FamilyViewWrapper = ({
 
   const handleImportAppointments = async (importData: any) => {
     setIsActionLoading(true);
-    const response = await createCalendarFeedCall(importData);
-    if (response) {
-      reload();
+    try {
+      const response = await createCalendarFeedCall(importData);
+      if (response) {
+        reload();
+        setShowImportInfoModal(true);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsActionLoading(false);
     }
-    setIsActionLoading(false);
   };
 
   if (!familyDetails || !isLangReady) {
@@ -755,6 +763,23 @@ const FamilyViewWrapper = ({
         isOpen={showFreemiumModal}
         onClose={() => setShowFreemiumModal(false)}
       />
+
+      {showImportInfoModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4" onClick={() => setShowImportInfoModal(false)}>
+          <div className="bg-[#e8fff5] rounded-xl border-[3px] border-[#4ec7bd] p-6 max-w-sm w-full shadow-xl text-center" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-bold text-gray-900 mb-3">{t("Import Started")}</h3>
+            <p className="text-gray-700 mb-6 text-sm font-medium leading-relaxed">
+              {t("Import of the appointments from the external calendar is in progress. It will typically take 2-4 minutes for the import to be finished")}
+            </p>
+            <button 
+              onClick={() => setShowImportInfoModal(false)}
+              className="px-6 py-2 text-sm font-bold text-white bg-[#49aaf0] rounded-md hover:bg-[#349ce5] transition-colors"
+            >
+              {t("OK")}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

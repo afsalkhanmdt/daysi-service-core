@@ -24,10 +24,20 @@ const ExternalCalendarDisplayCard = ({
   const { t } = useTranslation("common");
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const handleDelete = async () => {
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const handleDeleteClick = () => {
+    setShowConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    setShowConfirm(false);
     setIsDeleting(true);
-    // Immediately call parent to remove from UI
     onDelete(calendar.CalendarId);
+  };
+
+  const cancelDelete = () => {
+    setShowConfirm(false);
   };
 
   return (
@@ -60,7 +70,7 @@ const ExternalCalendarDisplayCard = ({
 
       <div className="flex justify-between items-center gap-[0.25rem]">
         <button
-          onClick={handleDelete}
+          onClick={handleDeleteClick}
           disabled={isDeleting}
           className={`bg-sky-500 px-2 py-0.5 text-white italic text-[8px] sm:text-sm rounded-2xl cursor-pointer ${
             isDeleting ? "opacity-50 cursor-not-allowed" : ""
@@ -69,6 +79,29 @@ const ExternalCalendarDisplayCard = ({
           {isDeleting ? "Deleting..." : "Delete"}
         </button>
       </div>
+
+      {showConfirm && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">{t("Delete Calendar")}</h3>
+            <p className="text-gray-600 mb-6 text-sm">{t("Are you sure you want to delete this calendar? This action cannot be undone.")}</p>
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={cancelDelete}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+              >
+                {t("Cancel")}
+              </button>
+              <button 
+                onClick={confirmDelete}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-md hover:bg-red-600 transition-colors"
+              >
+                {t("Delete")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
