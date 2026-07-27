@@ -35,6 +35,7 @@ export type ToDoCreateCommand = {
   note?: string
   private: number
   isForAll?: boolean
+  status?: number
 }
 
 export type ToDoEditCommand = {
