@@ -29,15 +29,18 @@ const CreateTodoPopup: React.FC<
   const modalRef = useRef<HTMLDivElement>(null);
   const { errors, validate, clearError, clearAllErrors } = useTodoValidation();
 
-  const [formData, setFormData] = useState<ToDoCreateCommand>(
-    initialToDoCreateBody,
-  );
+  const [formData, setFormData] = useState<ToDoCreateCommand>({
+    ...initialToDoCreateBody,
+    status: 0,
+  });
 
   // Component states for selector components
   const [responsiblePersons, setResponsiblePersons] = useState<
     SelectableOption[]
   >([]);
-  const [status, setStatus] = useState<SelectableOption[]>(statusOptions);
+  const [status, setStatus] = useState<SelectableOption[]>(() =>
+    statusOptions.map((opt) => ({ ...opt, isSelected: opt.id === 0 }))
+  );
 
   const groupOptions = useMemo(
     () =>
@@ -172,8 +175,8 @@ const CreateTodoPopup: React.FC<
   };
 
   const resetForm = () => {
-    setFormData(initialToDoCreateBody);
-    setStatus(statusOptions);
+    setFormData({ ...initialToDoCreateBody, status: 0 });
+    setStatus(statusOptions.map((opt) => ({ ...opt, isSelected: opt.id === 0 })));
     clearAllErrors();
     // Responsible persons are updated via the useEffect on resources/isOpen
   };
@@ -289,6 +292,26 @@ const CreateTodoPopup: React.FC<
                   )}
                 </div>
 
+                {/* Status */}
+                <div className="space-y-1">
+                  <label className="text-xs font-bold flex items-center gap-1.5 text-gray-700 uppercase tracking-wider">
+                    <Image
+                      src={participantsIcon}
+                      alt="icon"
+                      width={12}
+                      height={12}
+                    />{" "}
+                    Status
+                  </label>
+                  <SingleSelector
+                    options={status}
+                    onSelectionChange={(s) => handleStatusChange([s])}
+                    mainHeading="Select task status"
+                    selectedBorderColor="blue"
+                    selectedBadgeColor="blue"
+                  />
+                </div>
+
                 {/* Group */}
                 <div className="space-y-1">
                   <label className="text-xs font-bold flex items-center gap-1.5 text-gray-700 uppercase tracking-wider">
@@ -340,26 +363,6 @@ const CreateTodoPopup: React.FC<
                   {errors.assignedTo}
                 </p>
               )}
-            </div>
-
-            {/* Status */}
-            <div className="space-y-1">
-              <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
-                <Image
-                  src={participantsIcon}
-                  alt="icon"
-                  width={14}
-                  height={14}
-                />{" "}
-                Status
-              </label>
-              <SingleSelector
-                options={status}
-                onSelectionChange={(s) => handleStatusChange([s])}
-                mainHeading="Select task status"
-                selectedBorderColor="blue"
-                selectedBadgeColor="blue"
-              />
             </div>
 
             {/* Additional Notes */}

@@ -6,6 +6,8 @@ import { mapResourcesToSelectableOptions } from "@/app/utils/resourceAdapters";
 import CustomDropdown from "./FormComponents/DropDown";
 import { SelectableOption } from "./FormComponents/MultipleSelector";
 import { useTranslation } from "react-i18next";
+import Image from "next/image";
+import mainIcon from "../../assets/2026-03-06 NEW MyFamilii Header - ONLY Logo Black TAG line CROP.png";
 import OutlookLogo from "../../assets/outlook-externalcal-icon.jpg";
 import AppleLogo from "../../assets/apple-externalcal-icon.png";
 import GoogleLogo from "../../assets/google-externalcal-icon.png";
@@ -177,9 +179,13 @@ const ImportAppointmentsPopup: React.FC<ImportAppointmentsPopupProps> = ({
         <form onSubmit={handleSubmit}>
           <div className="mb-2 flex justify-center">
             <div className="text-center">
-              <div className="text-3xl font-extrabold text-[#26c6b8]">
-                MyFamilii
-              </div>
+              <Image 
+                src={mainIcon.src} 
+                alt="MyFamilii" 
+                width={200} 
+                height={60} 
+                className="object-contain max-h-[50px] mix-blend-multiply" 
+              />
             </div>
           </div>
 
