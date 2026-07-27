@@ -90,8 +90,32 @@ const FamilyViewWrapper = ({
     familyId ? `Schedule/GetSchedules?familyId=${familyId}` : null,
   );
 
-  const [familyDetails, setFamilyDetails] = useState<FamilyData | null>(null);
-  const [isLangReady, setIsLangReady] = useState(false);
+  const [familyDetails, setFamilyDetails] = useState<FamilyData | null>(() => {
+    if (typeof window !== "undefined") {
+      const cached = localStorage.getItem(STORAGE_KEY);
+      if (cached) {
+        try {
+          return JSON.parse(cached);
+        } catch {
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      }
+    }
+    return null;
+  });
+  const [isLangReady, setIsLangReady] = useState(() => {
+    // If we have cached details, check if the language already matches
+    if (familyDetails) {
+      const adminLanguage = familyDetails?.Members?.find(
+        (m) =>
+          m.MemberType === 0 || m.MemberId === familyDetails?.Family?.MemberId,
+      )?.Locale;
+      if (adminLanguage && i18next.language === adminLanguage) {
+        return true;
+      }
+    }
+    return false;
+  });
   const [currentDate, setCurrentDate] = useState(new Date());
 
   // State for sidebar collapse
@@ -179,16 +203,7 @@ const FamilyViewWrapper = ({
     }
   };
 
-  useEffect(() => {
-    const cached = localStorage.getItem(STORAGE_KEY);
-    if (cached) {
-      try {
-        setFamilyDetails(JSON.parse(cached));
-      } catch {
-        localStorage.removeItem(STORAGE_KEY);
-      }
-    }
-  }, []);
+  // We can remove the on-mount localStorage read since it is now in the useState initializer
 
   useEffect(() => {
     if (apiData) {
@@ -204,7 +219,7 @@ const FamilyViewWrapper = ({
         m.MemberType === 0 || m.MemberId === familyDetails?.Family?.MemberId,
     )?.Locale;
 
-    if (adminLanguage) {
+    if (adminLanguage && i18next.language !== adminLanguage) {
       i18next.changeLanguage(adminLanguage).then(() => setIsLangReady(true));
     } else {
       setIsLangReady(true);
