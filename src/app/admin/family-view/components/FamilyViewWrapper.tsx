@@ -119,7 +119,24 @@ const FamilyViewWrapper = ({
   const [currentDate, setCurrentDate] = useState(new Date());
 
   // State for sidebar collapse
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("isSidebarCollapsed") === "true";
+    }
+    return false;
+  });
+
+  const toggleSidebar = (collapsed: boolean) => {
+    setIsSidebarCollapsed(collapsed);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("isSidebarCollapsed", String(collapsed));
+      setTimeout(() => {
+        reload();
+        // Also trigger window resize just in case the data doesn't change
+        window.dispatchEvent(new Event('resize'));
+      }, 350);
+    }
+  };
 
   const [showCreateTodo, setShowCreateTodo] = useState(false);
   const [showCreateAppointment, setShowCreateAppointment] = useState(false);
@@ -450,7 +467,7 @@ const FamilyViewWrapper = ({
           {/* Toggle Button - Inside sidebar at top-right */}
           <div className="border-b border-slate-100 dark:border-gray-700 grid place-items-center relative">
             <button
-              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              onClick={() => toggleSidebar(!isSidebarCollapsed)}
               className="
                 absolute top-2 right-2
                 bg-blue-500 hover:bg-blue-600 text-white 
@@ -575,7 +592,7 @@ const FamilyViewWrapper = ({
       {/* Expand button - appears when sidebar is collapsed */}
       {isSidebarCollapsed && (
         <button
-          onClick={() => setIsSidebarCollapsed(false)}
+          onClick={() => toggleSidebar(false)}
           className="hidden sm:flex absolute top-4 left-4 z-50
             bg-blue-500 hover:bg-blue-600 text-white 
             rounded-full w-6 h-6 items-center justify-center
