@@ -6,53 +6,37 @@ import { mapResourcesToSelectableOptions } from "@/app/utils/resourceAdapters";
 import CustomDropdown from "./FormComponents/DropDown";
 import { SelectableOption } from "./FormComponents/MultipleSelector";
 import { useTranslation } from "react-i18next";
+import OutlookLogo from "../../assets/outlook-externalcal-icon.jpg";
+import AppleLogo from "../../assets/apple-externalcal-icon.png";
+import GoogleLogo from "../../assets/google-externalcal-icon.png";
+import FacebookLogo from "../../assets/facebook-externalcal-icon.png";
 
 interface ExternalCalendarLogos {
   name: string;
-  logo: string;
+  logo: any;
   link: string;
 }
 
 const EXTERNAL_CALENDAR_LOGOS: ExternalCalendarLogos[] = [
   {
     name: "Outlook",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/d/df/Microsoft_Office_Outlook_%282018%E2%80%93present%29.svg",
+    logo: OutlookLogo?.src || OutlookLogo,
     link: "https://support.microsoft.com/en-us/office/introduction-to-publishing-calendars-06927a3c-b391-4475-a01c-6d9b4b0e9b2d",
   },
   {
-    name: "iPhone",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg",
-    link: "https://support.apple.com/en-us/HT204407",
-  },
-  {
     name: "iCal",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/5/5e/Calendar_icon.svg",
-    link: "https://support.apple.com/en-us/HT204407",
-  },
-  {
-    name: "teamsnap",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/9/94/TeamSnap_logo.svg",
-    link: "https://helpme.teamsnap.com/article/278-subscribe-to-a-team-schedule",
-  },
-  {
-    name: "Team Cowboy",
-    logo: "https://www.teamcowboy.com/img/logo_team_cowboy.png",
-    link: "https://www.teamcowboy.com/help",
-  },
-  {
-    name: "Team App",
-    logo: "https://www.teamapp.com/assets/teamapp-logo.png",
-    link: "https://support.teamapp.com/",
+    logo: AppleLogo?.src || AppleLogo,
+    link: "https://support.apple.com/en-in/guide/icloud/mm6b1a9479/1.0/icloud/1.0",
   },
   {
     name: "Google Calendar",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/a/a5/Google_Calendar_icon_%282020%29.svg",
+    logo: GoogleLogo?.src || GoogleLogo,
     link: "https://support.google.com/calendar/answer/37648?hl=en",
   },
   {
-    name: "SportMember",
-    logo: "https://www.sportmember.com/favicon.ico",
-    link: "https://www.sportmember.com",
+    name: "facebook",
+    logo: FacebookLogo?.src || FacebookLogo,
+    link: "https://www.facebook.com/help/www/152652248136178",
   },
 ];
 
@@ -307,20 +291,20 @@ const ImportAppointmentsPopup: React.FC<ImportAppointmentsPopupProps> = ({
             </button>
           </div>
 
-          <div className="mt-6 grid grid-cols-3 items-center gap-x-5 gap-y-4">
+          <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 items-center gap-x-4 gap-y-4">
             {EXTERNAL_CALENDAR_LOGOS.map((item) => (
               <a
                 key={item.name}
                 href={item.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex h-[28px] items-center justify-center"
+                className="flex h-[44px] items-center justify-center transition-transform hover:scale-105 mix-blend-multiply"
                 title={item.name}
               >
                 <img
                   src={item.logo}
                   alt={item.name}
-                  className="max-h-[26px] max-w-[82px] object-contain"
+                  className="max-h-[40px] max-w-[100px] object-contain"
                 />
               </a>
             ))}
