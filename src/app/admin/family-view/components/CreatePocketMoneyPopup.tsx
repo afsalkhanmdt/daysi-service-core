@@ -40,6 +40,7 @@ const CreatePocketMoneyPopup: React.FC<
 > = ({ isOpen, onClose, onSubmit, isLoading }) => {
   const { resources } = useResources();
   const modalRef = useRef<HTMLDivElement>(null);
+  const hasInitialized = useRef(false);
 
   // Main form state
   const [formData, setFormData] = useState<PMTaskCreateCommand>(
@@ -229,6 +230,7 @@ const CreatePocketMoneyPopup: React.FC<
   };
 
   const handleClose = () => {
+    hasInitialized.current = false;
     resetForm();
     onClose();
     // Reset selection state when closing
@@ -252,7 +254,8 @@ const CreatePocketMoneyPopup: React.FC<
   };
 
   useEffect(() => {
-    if (resources.length > 0) {
+    if (resources.length > 0 && isOpen && !hasInitialized.current) {
+      hasInitialized.current = true;
       const allOptions = mapResourcesToSelectableOptions(resources);
       const otherMembers = allOptions.slice(1);
       setResponsiblePersons(otherMembers);

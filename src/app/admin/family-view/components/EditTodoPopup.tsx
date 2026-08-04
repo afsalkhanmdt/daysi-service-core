@@ -51,6 +51,12 @@ const EditTodoPopup: React.FC<todoPopupPropsType & { isLoading?: boolean }> = ({
 
   const { resources } = useResources();
   const modalRef = useRef<HTMLDivElement>(null);
+  const hasInitialized = useRef(false);
+  
+  useEffect(() => {
+    hasInitialized.current = false;
+  }, [todo]);
+  
   const { errors, validate, clearError, clearAllErrors } = useTodoValidation();
   const [status, setStatus] = useState<SelectableOption[]>(statusOptions);
   const [responsiblePersons, setResponsiblePersons] = useState<
@@ -113,7 +119,8 @@ const EditTodoPopup: React.FC<todoPopupPropsType & { isLoading?: boolean }> = ({
 
   /* ---------- Load family members ---------- */
   useEffect(() => {
-    if (resources.length > 0) {
+    if (resources.length > 0 && isOpen && !hasInitialized.current) {
+      hasInitialized.current = true;
       const allOptions = mapResourcesToSelectableOptions(resources);
       setResponsiblePersons(allOptions);
 
@@ -127,7 +134,7 @@ const EditTodoPopup: React.FC<todoPopupPropsType & { isLoading?: boolean }> = ({
         );
       }
     }
-  }, [resources, todo]);
+  }, [resources, todo, isOpen]);
 
   /* ---------- Map todo → formData ---------- */
   useEffect(() => {
