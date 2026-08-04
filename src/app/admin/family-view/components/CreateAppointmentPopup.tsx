@@ -59,6 +59,7 @@ const CreateAppointmentPopup: React.FC<
   const [selectionError, setSelectionError] = useState<string | null>(null);
 
   const modalRef = useRef<HTMLDivElement>(null);
+  const hasInitialized = useRef(false);
   const [formData, setFormData] =
     useState<AppointmentCreateFormUI>(initialFormData);
 
@@ -122,7 +123,8 @@ const CreateAppointmentPopup: React.FC<
 
       setFormData((prev) => {
         // Calculate repeatEndDate (10 years from today or startDate)
-        const baseDateStr = prev.startDateOnly || new Date().toISOString().split("T")[0];
+        const baseDateStr =
+          prev.startDateOnly || new Date().toISOString().split("T")[0];
         const date = new Date(baseDateStr);
         let newRepeatEndDate = null;
         if (!isNaN(date.getTime())) {
@@ -210,12 +212,13 @@ const CreateAppointmentPopup: React.FC<
     const repeatValue = selectedOption.isSelected ? selectedOption.id : 0;
     setFormData((prev) => {
       let newRepeatEndDate = prev.repeatEndDate;
-      
+
       if (repeatValue !== 0) {
         // Use startDateOnly or today as the base
-        const baseDateStr = prev.startDateOnly || new Date().toISOString().split("T")[0];
+        const baseDateStr =
+          prev.startDateOnly || new Date().toISOString().split("T")[0];
         const date = new Date(baseDateStr);
-        
+
         if (!isNaN(date.getTime())) {
           if (repeatValue === 1) {
             // Everyday -> 1 month later
@@ -230,16 +233,16 @@ const CreateAppointmentPopup: React.FC<
             // Every Year -> 10 years later
             date.setFullYear(date.getFullYear() + 10);
           }
-          
+
           const yyyy = date.getFullYear();
           const mm = String(date.getMonth() + 1).padStart(2, "0");
           const dd = String(date.getDate()).padStart(2, "0");
           newRepeatEndDate = `${yyyy}-${mm}-${dd}`;
         }
       } else {
-         newRepeatEndDate = null;
+        newRepeatEndDate = null;
       }
-      
+
       return {
         ...prev,
         repeat: Number(repeatValue),
@@ -326,20 +329,28 @@ const CreateAppointmentPopup: React.FC<
       description: formData.description,
       location: formData.location,
       startDate: buildTimestamp(
-        formData.startDateOnly, 
-        Number(formData.isAllDayEvent) === 1 ? "00:00:00" : formData.startTimeOnly
+        formData.startDateOnly,
+        Number(formData.isAllDayEvent) === 1
+          ? "00:00:00"
+          : formData.startTimeOnly,
       ),
       endDate: buildTimestamp(
-        formData.endDateOnly, 
-        Number(formData.isAllDayEvent) === 1 ? "23:59:59" : formData.endTimeOnly
+        formData.endDateOnly,
+        Number(formData.isAllDayEvent) === 1
+          ? "23:59:59"
+          : formData.endTimeOnly,
       ),
       localStartDate: buildLocalTimestamp(
         formData.startDateOnly,
-        Number(formData.isAllDayEvent) === 1 ? "00:00:00" : formData.startTimeOnly,
+        Number(formData.isAllDayEvent) === 1
+          ? "00:00:00"
+          : formData.startTimeOnly,
       ),
       localEndDate: buildLocalTimestamp(
         formData.endDateOnly,
-        Number(formData.isAllDayEvent) === 1 ? "23:59:59" : formData.endTimeOnly,
+        Number(formData.isAllDayEvent) === 1
+          ? "23:59:59"
+          : formData.endTimeOnly,
       ),
       repeat: formData.repeat,
       repeatEndDate,
@@ -370,6 +381,7 @@ const CreateAppointmentPopup: React.FC<
   };
 
   const handleClose = () => {
+    hasInitialized.current = false;
     onClose();
     setFormData(initialFormData);
     setSelectionError(null); // Clear error on close
@@ -400,7 +412,8 @@ const CreateAppointmentPopup: React.FC<
   }, [isOpen, handleClose]);
 
   useEffect(() => {
-    if (resources.length > 0) {
+    if (resources.length > 0 && isOpen && !hasInitialized.current) {
+      hasInitialized.current = true;
       const allOptions = mapResourcesToSelectableOptions(resources);
       const familyMember = allOptions[0];
       const otherMembers = allOptions.slice(1);
@@ -505,7 +518,7 @@ const CreateAppointmentPopup: React.FC<
                 )}
               </div>
 
-              <div className="space-y-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="space-y-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div className="flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-gray-100 shadow-sm">
                   <div className="flex items-center gap-2">
                     <Image
@@ -541,25 +554,6 @@ const CreateAppointmentPopup: React.FC<
                     checked={formData.isPrivateEvent === 1}
                     onChange={(checked) =>
                       handleToggleChange("isPrivateEvent", checked)
-                    }
-                  />
-                </div>
-                <div className="flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-gray-100 shadow-sm">
-                  <div className="flex items-center gap-2">
-                    <Image
-                      src={SpecialEventIcon}
-                      alt="icon"
-                      width={12}
-                      height={12}
-                    />
-                    <span className="text-xs font-semibold text-gray-700">
-                      All Day
-                    </span>
-                  </div>
-                  <ToggleSwitch
-                    checked={formData.isAllDayEvent === 1}
-                    onChange={(checked) =>
-                      handleToggleChange("isAllDayEvent", checked)
                     }
                   />
                 </div>
@@ -675,16 +669,18 @@ const CreateAppointmentPopup: React.FC<
             >
               {/* Date & Time - Hide for Special Events since it's handled in the special event section */}
               {formData.isSpecialEvent === 0 && (
-                <div className="space-y-1">
-                  <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
-                    <Image
-                      src={participantsIcon}
-                      alt="icon"
-                      width={14}
-                      height={14}
-                    />{" "}
-                    Choose Dates & Time
-                  </label>
+                <div className="space-y-1 bg-blue-100 p-1">
+                  <div className="flex justify-between items-center mb-1 ">
+                    <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
+                      <Image
+                        src={participantsIcon}
+                        alt="icon"
+                        width={14}
+                        height={14}
+                      />{" "}
+                      Choose Dates & Time
+                    </label>
+                  </div>
                   <DateTimeRange
                     startDate={formData.startDateOnly}
                     endDate={formData.endDateOnly}
@@ -708,6 +704,17 @@ const CreateAppointmentPopup: React.FC<
                     defaultDate={currentDate} // Pass the date from parent
                     disableTime={formData.isAllDayEvent === 1}
                   />
+                  <div className="flex items-center gap-2 bg-white px-3 py-1.5 mx-2 rounded-lg border shadow-sm">
+                    <span className="text-[10px] font-bold text-gray-500 uppercase">
+                      All Day
+                    </span>
+                    <ToggleSwitch
+                      checked={formData.isAllDayEvent === 1}
+                      onChange={(checked) =>
+                        handleToggleChange("isAllDayEvent", checked)
+                      }
+                    />
+                  </div>
                   {/* Repeat End Date - Only show if repeat is not Never */}
                   {formData.repeat !== 0 && (
                     <div className="space-y-1 grid grid-cols-1 ">
@@ -747,9 +754,7 @@ const CreateAppointmentPopup: React.FC<
                       ...o,
                       isSelected: o.id === formData.repeat,
                     }))}
-                    onSelectionChange={(s) =>
-                      handleRepeatChange(s)
-                    }
+                    onSelectionChange={(s) => handleRepeatChange(s)}
                     selectedBorderColor="blue"
                     selectedBadgeColor="blue"
                   />

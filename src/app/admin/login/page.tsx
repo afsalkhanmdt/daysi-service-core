@@ -6,9 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import emailPlaceholderLogo from "../assets/inputEmailIcon.svg";
 import passwordPlaceholderLogo from "../assets/inputLockIcon.svg";
-import danishAndNorwegianLogo from "@/app/admin/assets/DaysiDanishLogo.png";
-import enLogo from "@/app/admin/assets/DaysiEnLogo.png";
-import swedishLogo from "@/app/admin/assets/DaysiSwedishLogo.png";
+import mainIcon from "@/app/admin/assets/2026-03-06 NEW MyFamilii Header - ONLY Logo Black TAG line CROP.png";
 import { AdminLoginCall } from "@/services/api/apiCall";
 
 const Login = () => {
@@ -47,7 +45,7 @@ const Login = () => {
       localStorage.setItem("memberId", res.memberId);
 
       router.push(
-        `/admin/family-view/?familyId=${res.familyId}&memberId=${res.memberId}`
+        `/admin/family-view/?familyId=${res.familyId}&memberId=${res.memberId}`,
       );
     } catch (err: any) {
       console.error("Login failed:", err);
@@ -57,22 +55,15 @@ const Login = () => {
     }
   };
 
-  const getLogoForLanguage = () => {
-    if (userLanguage === "sv") return swedishLogo;
-    if (userLanguage === "da" || userLanguage === "no")
-      return danishAndNorwegianLogo;
-    return enLogo;
-  };
-
   return (
     <div className="grid h-screen w-screen place-items-center bg-gradient-to-r from-emerald-400 to-sky-500 p-10">
       <div className="bg-white rounded-2xl shadow-xl p-8 grid place-items-center sm:gap-4 w-full max-w-md">
         <Image
-          src={getLogoForLanguage().src}
+          src={mainIcon.src}
           alt="Daysi Logo"
           width={300}
           height={60}
-          className="w-64 h-12 object-contain mb-4"
+          className="w-80 h-20 object-contain"
         />
         <form className="grid gap-6 w-full" onSubmit={handleSubmit}>
           <div className="grid gap-2">
