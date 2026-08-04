@@ -27,6 +27,7 @@ const CreateTodoPopup: React.FC<
 > = ({ ToDoFamilyGroup, isOpen, onClose, onSubmit, isLoading }) => {
   const { resources } = useResources();
   const modalRef = useRef<HTMLDivElement>(null);
+  const hasInitialized = useRef(false);
   const { errors, validate, clearError, clearAllErrors } = useTodoValidation();
 
   const [formData, setFormData] = useState<ToDoCreateCommand>({
@@ -165,6 +166,7 @@ const CreateTodoPopup: React.FC<
   };
 
   const handleClose = () => {
+    hasInitialized.current = false;
     resetForm();
     onClose();
     // Reset selection state when closing
@@ -182,7 +184,8 @@ const CreateTodoPopup: React.FC<
   };
 
   useEffect(() => {
-    if (resources.length > 0) {
+    if (resources.length > 0 && isOpen && !hasInitialized.current) {
+      hasInitialized.current = true;
       const allOptions = mapResourcesToSelectableOptions(resources);
       setResponsiblePersons(allOptions);
 

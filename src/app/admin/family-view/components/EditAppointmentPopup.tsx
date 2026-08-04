@@ -76,6 +76,11 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
   const [isRepeatDisabled, setIsRepeatDisabled] = useState<boolean>(false); // ADD THIS STATE
 
   const modalRef = useRef<HTMLDivElement>(null);
+  const hasInitialized = useRef(false);
+
+  useEffect(() => {
+    hasInitialized.current = false;
+  }, [initialData]);
 
   const [formData, setFormData] = useState<AppointmentUpdateFormUI>(() => {
     return normalizeInitialData(initialData);
@@ -496,12 +501,12 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
       if (!isNaN(date.getTime())) {
         // Add 1 day to the selected end date as per backend configuration requirements
         date.setDate(date.getDate() + 1);
-        
+
         // Extract the local date components from the incremented date
         const yyyy = date.getFullYear();
         const mm = String(date.getMonth() + 1).padStart(2, "0");
         const dd = String(date.getDate()).padStart(2, "0");
-        
+
         // Create the date at 23:59:59 LOCAL time, then convert to UTC ISO string.
         repeatEndDate = buildTimestamp(`${yyyy}-${mm}-${dd}`, "23:59:59");
       }
@@ -513,20 +518,28 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
       description: formData.description || "",
       location: formData.location,
       startDate: buildTimestamp(
-        formData.startDateOnly, 
-        Number(formData.isAllDayEvent) === 1 ? "00:00:00" : formData.startTimeOnly
+        formData.startDateOnly,
+        Number(formData.isAllDayEvent) === 1
+          ? "00:00:00"
+          : formData.startTimeOnly,
       ),
       endDate: buildTimestamp(
-        formData.endDateOnly, 
-        Number(formData.isAllDayEvent) === 1 ? "23:59:59" : formData.endTimeOnly
+        formData.endDateOnly,
+        Number(formData.isAllDayEvent) === 1
+          ? "23:59:59"
+          : formData.endTimeOnly,
       ),
       localStartDate: buildLocalTimestamp(
         formData.startDateOnly,
-        Number(formData.isAllDayEvent) === 1 ? "00:00:00" : formData.startTimeOnly,
+        Number(formData.isAllDayEvent) === 1
+          ? "00:00:00"
+          : formData.startTimeOnly,
       ),
       localEndDate: buildLocalTimestamp(
         formData.endDateOnly,
-        Number(formData.isAllDayEvent) === 1 ? "23:59:59" : formData.endTimeOnly,
+        Number(formData.isAllDayEvent) === 1
+          ? "23:59:59"
+          : formData.endTimeOnly,
       ),
       repeat: formData.repeat,
       repeatEndDate,
@@ -613,14 +626,17 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
       // The occurrence the user clicked — initialData.startDate
       const editDateISO =
         parseTs(initialData?.startDate) || originalSeriesStartISO;
-        
-      const occurrenceEndISO = parseTs(initialData?.endDate) || parseTs(initialData?.extendedProps?.End) || editDateISO;
-        
+
+      const occurrenceEndISO =
+        parseTs(initialData?.endDate) ||
+        parseTs(initialData?.extendedProps?.End) ||
+        editDateISO;
+
       // Calculate original series end based on duration of the edited occurrence
       const originalSeriesEndISO = calculateEndDate(
         originalSeriesStartISO,
         editDateISO,
-        occurrenceEndISO
+        occurrenceEndISO,
       );
 
       // Parse repeatEndDate (may be a numeric timestamp string from the API)
@@ -900,7 +916,8 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
 
       if (field === "isSpecialEvent" && checked) {
         // Calculate repeatEndDate (10 years from today or startDate)
-        const baseDateStr = prev.startDateOnly || new Date().toISOString().split("T")[0];
+        const baseDateStr =
+          prev.startDateOnly || new Date().toISOString().split("T")[0];
         const date = new Date(baseDateStr);
         let newRepeatEndDate = null;
         if (!isNaN(date.getTime())) {
@@ -973,13 +990,14 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
     const repeatValue = selectedOption.isSelected ? selectedOption.id : 0;
     setFormData((prev) => {
       let newRepeatEndDate = prev.repeatEndDate;
-      
+
       if (repeatValue !== 0) {
         // Only generate a new default date if one isn't already set, or if changing frequency
         // We use startDateOnly or today as the base
-        const baseDateStr = prev.startDateOnly || new Date().toISOString().split("T")[0];
+        const baseDateStr =
+          prev.startDateOnly || new Date().toISOString().split("T")[0];
         const date = new Date(baseDateStr);
-        
+
         if (!isNaN(date.getTime())) {
           if (repeatValue === 1) {
             date.setMonth(date.getMonth() + 1);
@@ -990,16 +1008,16 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
           } else if (repeatValue === 5) {
             date.setFullYear(date.getFullYear() + 10);
           }
-          
+
           const yyyy = date.getFullYear();
           const mm = String(date.getMonth() + 1).padStart(2, "0");
           const dd = String(date.getDate()).padStart(2, "0");
           newRepeatEndDate = `${yyyy}-${mm}-${dd}`;
         }
       } else {
-         newRepeatEndDate = null;
+        newRepeatEndDate = null;
       }
-      
+
       return {
         ...prev,
         repeat: Number(repeatValue),
@@ -1124,16 +1142,17 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
 
   // Initialize responsible persons from resources
   useEffect(() => {
-    if (resources.length === 0 || !isOpen) return;
+    if (resources.length === 0 || !isOpen || hasInitialized.current) return;
+    hasInitialized.current = true;
 
     const mappedPersons = mapResourcesToSelectableOptions(resources);
     const otherMembers = mappedPersons.slice(1);
 
     const isForAllValue = Number(
       initialData?.isForAll ??
-      initialData?.IsForAll ??
-      initialData?.extendedProps?.IsForAll ??
-      0
+        initialData?.IsForAll ??
+        initialData?.extendedProps?.IsForAll ??
+        0,
     );
 
     if (initialData?.participants && initialData.participants.length > 0) {
@@ -1294,7 +1313,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div className="flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-gray-100 shadow-sm">
                   <div className="flex items-center gap-2">
                     <Image
@@ -1331,26 +1350,6 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
                     checked={formData.isPrivateEvent === 1}
                     onChange={(checked) =>
                       handleToggleChange("isPrivateEvent", checked)
-                    }
-                    disabled={isProcessing}
-                  />
-                </div>
-                <div className="flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-gray-100 shadow-sm">
-                  <div className="flex items-center gap-2">
-                    <Image
-                      src={SpecialEventIcon}
-                      alt="icon"
-                      width={12}
-                      height={12}
-                    />
-                    <span className="text-xs font-semibold text-gray-700">
-                      All Day
-                    </span>
-                  </div>
-                  <ToggleSwitch
-                    checked={Number(formData.isAllDayEvent) === 1}
-                    onChange={(checked) =>
-                      handleToggleChange("isAllDayEvent", checked)
                     }
                     disabled={isProcessing}
                   />
@@ -1475,16 +1474,18 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {/* Date & Time - Hide when special event is active */}
               {formData.isSpecialEvent === 0 && (
-                <div className="space-y-1">
-                  <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
-                    <Image
-                      src={participantsIcon}
-                      alt="icon"
-                      width={14}
-                      height={14}
-                    />{" "}
-                    Choose Dates & Time
-                  </label>
+                <div className="space-y-1 bg-blue-100 p-1">
+                  <div className="flex justify-between items-center mb-1 ">
+                    <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
+                      <Image
+                        src={participantsIcon}
+                        alt="icon"
+                        width={14}
+                        height={14}
+                      />{" "}
+                      Choose Dates & Time
+                    </label>
+                  </div>
                   <DateTimeRange
                     startDate={formData.startDateOnly}
                     endDate={formData.endDateOnly}
@@ -1508,6 +1509,18 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
                     disabled={isProcessing}
                     disableTime={Number(formData.isAllDayEvent) === 1}
                   />
+                  <div className="flex items-center gap-2 bg-white px-3 py-1.5 mx-2 rounded-lg border shadow-sm">
+                    <span className="text-[10px] font-bold text-gray-500 uppercase">
+                      All Day
+                    </span>
+                    <ToggleSwitch
+                      checked={Number(formData.isAllDayEvent) === 1}
+                      onChange={(checked) =>
+                        handleToggleChange("isAllDayEvent", checked)
+                      }
+                      disabled={isProcessing}
+                    />
+                  </div>
                   {(formData.repeat ?? 0) !== 0 && (
                     <div className="space-y-1 grid grid-cols-1">
                       <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
@@ -1542,9 +1555,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
                       ...o,
                       isSelected: o.id === formData.repeat,
                     }))}
-                    onSelectionChange={(s) =>
-                      handleRepeatChange(s)
-                    }
+                    onSelectionChange={(s) => handleRepeatChange(s)}
                     selectedBorderColor="blue"
                     selectedBadgeColor="blue"
                     disabled={isProcessing || isRepeatDisabled}

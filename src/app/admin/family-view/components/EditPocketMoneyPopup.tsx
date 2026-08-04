@@ -61,6 +61,12 @@ const EditPocketMoneyPopup: React.FC<
 
   const { resources } = useResources();
   const modalRef = useRef<HTMLDivElement>(null);
+  const hasInitialized = useRef(false);
+
+  useEffect(() => {
+    hasInitialized.current = false;
+  }, [pocketMoney]);
+
   const { errors, validate, clearError, clearAllErrors } =
     usePocketMoneyValidation();
 
@@ -379,7 +385,8 @@ const EditPocketMoneyPopup: React.FC<
   };
 
   useEffect(() => {
-    if (resources.length > 0) {
+    if (resources.length > 0 && isOpen && !hasInitialized.current) {
+      hasInitialized.current = true;
       const allOptions = mapResourcesToSelectableOptions(resources);
       const otherMembers = allOptions.slice(1);
       setResponsiblePersons(otherMembers);
@@ -396,7 +403,7 @@ const EditPocketMoneyPopup: React.FC<
         );
       }
     }
-  }, [resources, pocketMoney]);
+  }, [resources, pocketMoney, isOpen]);
 
   if (!isOpen || !pocketMoney) return null;
 
