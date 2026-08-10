@@ -25,6 +25,7 @@ export default function ResponsiblePersonSelector({
       showImages={true}
       selectedBorderColor="blue"
       selectedBadgeColor="blue"
+      disabled={disabled}
     />
   );
 }

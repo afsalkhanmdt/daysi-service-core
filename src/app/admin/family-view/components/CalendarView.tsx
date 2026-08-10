@@ -193,6 +193,8 @@ const CalendarView = ({
     const uniqueEventsList: any[] = [];
     data.Members.forEach((m) => {
       m.Events.forEach((e) => {
+        if (Number(e.IsSpecialEvent) === 1) return;
+        
         const contentKey = `${e.Title}-${e.Start}-${e.End}-${e.Location || ""}`;
         if (!seenContentKeys.has(contentKey)) {
           seenContentKeys.add(contentKey);
@@ -331,10 +333,26 @@ const CalendarView = ({
       (e) => !editedEventIds.some((id) => String(e.id).startsWith(`${id}-`)),
     );
 
+    const filteredOptimisticUpdates = Object.values(optimisticUpdates)
+      .flat()
+      .filter(
+        (e) =>
+          Number(
+            e.extendedProps?.isSpecialEvent ?? e.extendedProps?.IsSpecialEvent,
+          ) !== 1,
+      );
+
+    const filteredOptimisticEvents = optimisticEvents.filter(
+      (e) =>
+        Number(
+          e.extendedProps?.isSpecialEvent ?? e.extendedProps?.IsSpecialEvent,
+        ) !== 1,
+    );
+
     return [
       ...filteredEvents,
-      ...Object.values(optimisticUpdates).flat(),
-      ...optimisticEvents,
+      ...filteredOptimisticUpdates,
+      ...filteredOptimisticEvents,
     ];
   }, [events, optimisticUpdates, optimisticEvents]);
 

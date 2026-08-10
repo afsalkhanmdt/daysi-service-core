@@ -318,7 +318,6 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
       repeatEndDate: (() => {
         const d = new Date(repeatEndDate);
         if (!isNaN(d.getTime())) {
-          d.setDate(d.getDate() + 1);
           const yyyy = d.getFullYear();
           const mm = String(d.getMonth() + 1).padStart(2, "0");
           const dd = String(d.getDate()).padStart(2, "0");
@@ -499,9 +498,6 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
 
       const date = new Date(parsedVal as any);
       if (!isNaN(date.getTime())) {
-        // Add 1 day to the selected end date as per backend configuration requirements
-        date.setDate(date.getDate() + 1);
-
         // Extract the local date components from the incremented date
         const yyyy = date.getFullYear();
         const mm = String(date.getMonth() + 1).padStart(2, "0");
@@ -1461,7 +1457,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
                 options={responsiblePersons}
                 onSelectionChange={handleResponsiblePersonsChange}
                 subHeading="Select Responsible Persons"
-                disabled={isProcessing}
+                disabled={isProcessing || formData.isSpecialEvent === 1}
               />
               {selectionError && (
                 <p className="text-xs text-red-500 font-medium mt-1">

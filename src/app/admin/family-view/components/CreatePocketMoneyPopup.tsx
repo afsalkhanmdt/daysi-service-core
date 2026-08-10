@@ -23,21 +23,10 @@ import { useResources } from "@/app/context/ResourceContext";
 import { initialFormDataForPMTaskApi } from "@/app/constants/pocketMoneyForm";
 import { usePocketMoneyValidation } from "@/app/hooks/usePocketMoneyValidation";
 
-// Standard task options
-const standardTaskOptions: SelectableOption[] = [
-  { id: 1, label: "Clean up the room", isSelected: false },
-  { id: 2, label: "Walk the Dog", isSelected: false },
-  { id: 3, label: "Vacuum the Room", isSelected: false },
-  { id: 4, label: "Wash up", isSelected: false },
-  { id: 5, label: "Empty the Dishwasher", isSelected: false },
-  { id: 6, label: "Wash the Car", isSelected: false },
-  { id: 7, label: "Make the Bed", isSelected: false },
-  { id: 8, label: "Do Homework", isSelected: false },
-];
 
 const CreatePocketMoneyPopup: React.FC<
-  PocketMoneyPopupProps & { isLoading?: boolean }
-> = ({ isOpen, onClose, onSubmit, isLoading }) => {
+  PocketMoneyPopupProps & { isLoading?: boolean; PMStdFamilyTasks?: any[] }
+> = ({ isOpen, onClose, onSubmit, isLoading, PMStdFamilyTasks = [] }) => {
   const { resources } = useResources();
   const modalRef = useRef<HTMLDivElement>(null);
   const hasInitialized = useRef(false);
@@ -51,8 +40,17 @@ const CreatePocketMoneyPopup: React.FC<
   const [responsiblePersons, setResponsiblePersons] = useState<
     SelectableOption[]
   >([]);
-  const [standardTasks, setStandardTasks] =
-    useState<SelectableOption[]>(standardTaskOptions);
+  const [standardTasks, setStandardTasks] = useState<SelectableOption[]>([]);
+
+  useEffect(() => {
+    setStandardTasks(
+      PMStdFamilyTasks.map((task: any) => ({
+        id: task.PMStdFamilyTaskId || task.id,
+        label: task.Description || task.description || task.label,
+        isSelected: false,
+      }))
+    );
+  }, [PMStdFamilyTasks]);
   const [repeatSequence, setRepeatSequence] =
     useState<SelectableOption[]>(REPEAT_OPTIONS);
   const [isCustomDescription, setIsCustomDescription] = useState(false);
@@ -118,7 +116,7 @@ const CreatePocketMoneyPopup: React.FC<
     clearError("PMDescription");
 
     // Check if the typed description matches any standard task
-    const isStandardTask = standardTaskOptions.some(
+    const isStandardTask = standardTasks.some(
       (task) => task.label === value,
     );
 
@@ -246,7 +244,11 @@ const CreatePocketMoneyPopup: React.FC<
       responsiblePersons.map((p) => ({ ...p, isSelected: false })),
     );
     setStandardTasks(
-      standardTaskOptions.map((t) => ({ ...t, isSelected: false })),
+      PMStdFamilyTasks.map((task: any) => ({
+        id: task.PMStdFamilyTaskId || task.id,
+        label: task.Description || task.description || task.label,
+        isSelected: false,
+      }))
     );
     setRepeatSequence(REPEAT_OPTIONS);
     setIsCustomDescription(false);

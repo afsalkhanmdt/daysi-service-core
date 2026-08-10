@@ -39,6 +39,9 @@ const AllDayEventsRow = ({
         // Must be an all-day event
         if (Number(event.IsAllDayEvent) !== 1) return;
 
+        // Filter out special events from the calendar completely
+        if (Number(event.IsSpecialEvent) === 1) return;
+
         // Apply same filtering as CalendarView
         if (event.IsForAll === 1) {
           if (member.MemberType !== 1) return;

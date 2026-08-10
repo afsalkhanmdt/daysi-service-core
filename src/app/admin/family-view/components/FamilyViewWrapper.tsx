@@ -757,6 +757,7 @@ const FamilyViewWrapper = ({
         onClose={() => setShowCreatePocketMoney(false)}
         onSubmit={handleCreatePocketMoney}
         isLoading={isTasksLoading}
+        PMStdFamilyTasks={apiData?.Family?.PMStdFamilyTasks || []}
       />
 
       <FreemiumModal
