@@ -23,6 +23,7 @@ type MultipleSelectorProps = {
   selectedBorderColor?: string;
   selectedBadgeColor?: string;
   className?: string;
+  disabled?: boolean;
 };
 
 function Check({ color, strokeWidth, className = "" }: { color?: string; strokeWidth?: number; className?: string }) {
@@ -44,6 +45,7 @@ export default function MultipleSelector({
   showImages = false,
   selectedBorderColor = "green",
   selectedBadgeColor = "green",
+  disabled = false,
 }: MultipleSelectorProps) {
   const [options, setOptions] = useState<SelectableOption[]>(initialOptions);
 
@@ -52,6 +54,7 @@ export default function MultipleSelector({
   }, [initialOptions]);
 
   const handleToggleOption = (id: number) => {
+    if (disabled) return;
     const updatedOptions = options.map((option) => {
       if (option.id === id) {
         return { ...option, isSelected: !option.isSelected };
@@ -67,12 +70,14 @@ export default function MultipleSelector({
   };
 
   const handleSelectAll = () => {
+    if (disabled) return;
     const allSelected = options.map((option) => ({ ...option, isSelected: true }));
     setOptions(allSelected);
     if (onSelectionChange) onSelectionChange(allSelected);
   };
 
   const handleClearAll = () => {
+    if (disabled) return;
     const noneSelected = options.map((option) => ({ ...option, isSelected: false }));
     setOptions(noneSelected);
     if (onSelectionChange) onSelectionChange([]);
@@ -142,7 +147,8 @@ export default function MultipleSelector({
                 type="button"
                 className={`relative px-3 py-1 bg-white rounded-full border transition-all duration-200 flex items-center space-x-2 max-w-full group ${
                   option.isSelected ? `${borderColorClass} shadow-sm` : "border-gray-300 hover:border-gray-400"
-                }`}
+                } ${disabled ? "opacity-60 cursor-not-allowed" : ""}`}
+                disabled={disabled}
               >
                 {showImages && (
                   <div className="flex-shrink-0 w-4 h-4 relative">

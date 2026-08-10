@@ -315,10 +315,8 @@ const CreateAppointmentPopup: React.FC<
 
     let repeatEndDate: string | null = null;
     if (formData.repeatEndDate) {
-      // Add 1 day to the selected end date as per backend configuration requirements
       const d = new Date(formData.repeatEndDate);
       if (!isNaN(d.getTime())) {
-        d.setDate(d.getDate() + 1);
         const nextDayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
         repeatEndDate = buildTimestamp(nextDayStr, "23:59:59");
       }
@@ -655,6 +653,7 @@ const CreateAppointmentPopup: React.FC<
                 options={responsiblePersons}
                 onSelectionChange={handleResponsiblePersonsChange}
                 subHeading="Select Responsible Persons"
+                disabled={formData.isSpecialEvent === 1}
               />
               {selectionError && (
                 <p className="text-xs text-red-500 font-medium mt-1">

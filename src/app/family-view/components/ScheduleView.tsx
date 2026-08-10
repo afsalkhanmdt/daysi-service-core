@@ -387,19 +387,19 @@ export default function ScheduleView({
                   {member.ResourceUrl ? (
                     <img
                       src={member.ResourceUrl}
-                      alt={member.MemberName}
+                      alt={member.FirstName || member.MemberName}
                       className="w-full h-full object-cover rounded-full"
                     />
                   ) : (
                     <span
                       className={`text-xs font-bold ${isActive ? "text-white" : "text-gray-500"}`}
                     >
-                      {member.MemberName?.charAt(0) || "U"}
+                      {(member.FirstName || member.MemberName)?.charAt(0) || "U"}
                     </span>
                   )}
                 </div>
                 <span className="text-sm font-semibold pr-2 tracking-wide">
-                  {member.MemberName}
+                  {member.FirstName || member.MemberName}
                 </span>
               </button>
             );
