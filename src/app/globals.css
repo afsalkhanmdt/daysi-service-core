@@ -47,7 +47,7 @@
   height: 250px !important;
   max-height: none !important;
   border: none !important;
-  border-top: 4px solid #9ea4ad !important; /* Bolder solid horizontal line across the calendar */
+  border-top: 2px solid #cbd5e1 !important; /* Thinner solid horizontal line across the calendar */
 }
 
 /* Ensure event containers can expand properly */
@@ -90,7 +90,7 @@
 
 /* Vertical dashed separator for resource/day columns only */
 .fc-timegrid-body .fc-timegrid-col:not(:last-of-type) {
-  border-right: 4px solid #9ea4ad !important;
+  border-right: 2px solid #cbd5e1 !important;
 }
 /* Hide license message */
 .fc-license-message {

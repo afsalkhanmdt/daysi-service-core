@@ -35,20 +35,10 @@ const STATUS = {
   APPROVED: 2,
 };
 
-const standardTaskOptions: SelectableOption[] = [
-  { id: 1, label: "Clean up the room", isSelected: false },
-  { id: 2, label: "Walk the Dog", isSelected: false },
-  { id: 3, label: "Vacuum the Room", isSelected: false },
-  { id: 4, label: "Wash up", isSelected: false },
-  { id: 5, label: "Empty the Dishwasher", isSelected: false },
-  { id: 6, label: "Wash the Car", isSelected: false },
-  { id: 7, label: "Make the Bed", isSelected: false },
-  { id: 8, label: "Do Homework", isSelected: false },
-];
 
 const EditPocketMoneyPopup: React.FC<
-  PocketMoneyPopupProps & { isLoading?: boolean }
-> = ({ isOpen, onClose, onSubmit, pocketMoney, isLoading }) => {
+  PocketMoneyPopupProps & { isLoading?: boolean; PMStdFamilyTasks?: any[] }
+> = ({ isOpen, onClose, onSubmit, pocketMoney, isLoading, PMStdFamilyTasks = [] }) => {
   const [formData, setFormData] = useState<PMTaskCreateCommand>(
     initialFormDataForPMTaskApi,
   );
@@ -73,8 +63,17 @@ const EditPocketMoneyPopup: React.FC<
   const [responsiblePersons, setResponsiblePersons] = useState<
     SelectableOption[]
   >([]);
-  const [standardTasks, setStandardTasks] =
-    useState<SelectableOption[]>(standardTaskOptions);
+  const [standardTasks, setStandardTasks] = useState<SelectableOption[]>([]);
+
+  useEffect(() => {
+    setStandardTasks(
+      PMStdFamilyTasks.map((task: any) => ({
+        id: task.PMStdFamilyTaskId || task.id,
+        label: task.Description || task.description || task.label,
+        isSelected: false,
+      }))
+    );
+  }, [PMStdFamilyTasks]);
   const [repeatSequence, setRepeatSequence] =
     useState<SelectableOption[]>(REPEAT_OPTIONS);
 
@@ -121,8 +120,8 @@ const EditPocketMoneyPopup: React.FC<
     setCurrentStatus(pocketMoney.Status || STATUS.OPEN);
 
     // Check if the description matches any standard task
-    const isStandardTask = standardTaskOptions.some(
-      (task) => task.label === mappedFormData.PMDescription,
+    const isStandardTask = PMStdFamilyTasks.some(
+      (task: any) => (task.Description || task.description || task.label) === mappedFormData.PMDescription,
     );
     setIsCustomDescription(!isStandardTask);
 
@@ -252,8 +251,8 @@ const EditPocketMoneyPopup: React.FC<
     clearError("PMDescription");
 
     // Check if the typed description matches any standard task
-    const isStandardTask = standardTaskOptions.some(
-      (task) => task.label === value,
+    const isStandardTask = PMStdFamilyTasks.some(
+      (task: any) => (task.Description || task.description || task.label) === value,
     );
 
     if (isStandardTask) {

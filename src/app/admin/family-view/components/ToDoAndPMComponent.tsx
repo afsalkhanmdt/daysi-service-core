@@ -430,6 +430,7 @@ const ToDoAndPMComponent = ({
         }}
         onSubmit={handleEditPocketMoney}
         isLoading={isComponentLoading}
+        PMStdFamilyTasks={familyDetails?.Family?.PMStdFamilyTasks || []}
       />
     </div>
   );
