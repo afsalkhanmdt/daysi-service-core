@@ -267,9 +267,15 @@ const CalendarView = ({
         // Recurrence logic
         const recurrenceEvents: EventInput[] = [];
         const rule = event.RecurrenceRule;
-        const repeatEnd = event.RepeatEndDate
-          ? new Date(Number(event.RepeatEndDate))
-          : null;
+        let repeatEnd: Date | null = null;
+        if (event.RepeatEndDate) {
+          repeatEnd = new Date(Number(event.RepeatEndDate));
+          if (!isNaN(repeatEnd.getTime())) {
+            repeatEnd.setHours(23, 59, 59, 999);
+          } else {
+            repeatEnd = null;
+          }
+        }
 
         if (rule && rule.Frequency > 0 && repeatEnd) {
           let currentStart = new Date(start);

@@ -6,6 +6,8 @@ export interface PocketMoneyPopupProps {
   onClose: () => void;
   onSubmit: (data: PMTaskCreateCommand) => void;
   pocketMoney?: PMTask | null; // For edit mode
+  familyId?: number;
+  loggedInUserId?: string;
 }
 
 export interface PMTaskCreateCommand {

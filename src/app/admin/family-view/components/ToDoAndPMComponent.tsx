@@ -424,12 +424,15 @@ const ToDoAndPMComponent = ({
       <EditPocketMoneyPopup
         isOpen={showEditPocketMoney}
         pocketMoney={selectedPocketMoney}
+        familyId={PMTaskDetails?.PMFamily?.FamilyId || familyDetails?.Family?.Id}
+        loggedInUserId={familyDetails?.LoggedInUserId}
         onClose={() => {
           setShowEditPocketMoney(false);
           setSelectedPocketMoney(null);
         }}
         onSubmit={handleEditPocketMoney}
         isLoading={isComponentLoading}
+        reloadPM={reloadPM}
         PMStdFamilyTasks={familyDetails?.Family?.PMStdFamilyTasks || []}
       />
     </div>
