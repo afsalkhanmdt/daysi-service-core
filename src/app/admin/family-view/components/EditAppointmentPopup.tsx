@@ -34,6 +34,7 @@ import LocationInput from "./FormComponents/LocationInput";
 import DateTimeRange from "./FormComponents/DateTimeRange";
 import dayjs from "dayjs";
 import RecurringEditOptions from "./RecurringEditOptions";
+import { deleteAppointmentCall } from "@/services/api";
 
 // Helper function to check if string contains coordinates
 const isCoordinateString = (str: string): boolean => {
@@ -51,6 +52,7 @@ type EditAppointmentPopupProps = appointmentPopupPropsType & {
     editedEvent: UserEventUpdateRequest;
     afterSeries: UserEventCreateRequest | null;
   }) => Promise<void>;
+  onDelete?: (eventId: number, familyId: number, eventsUpdatedOn: string, locale: string, parentEventId: string) => Promise<void>;
 };
 
 const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
@@ -61,6 +63,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
   initialData,
   onRecurringSplit,
   editType = null,
+  onDelete,
 }) => {
   const { resources } = useResources();
   const [responsiblePersons, setResponsiblePersons] = useState<
@@ -73,10 +76,46 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
   const [showRecurringOptions, setShowRecurringOptions] =
     useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [isRepeatDisabled, setIsRepeatDisabled] = useState<boolean>(false); // ADD THIS STATE
+  const [isRepeatDisabled, setIsRepeatDisabled] = useState<boolean>(false);
 
   const modalRef = useRef<HTMLDivElement>(null);
   const hasInitialized = useRef(false);
+
+  // Delete state - UPDATED to use popup
+  const [showDeleteConfirmPopup, setShowDeleteConfirmPopup] = useState<boolean>(false);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+
+  const handleDelete = async () => {
+    const eventId = Number(initialData?.id);
+    const familyId = Number((initialData?.extendedProps as any)?.familyId ||
+      (initialData?.extendedProps as any)?.FamilyId ||
+      (initialData as any)?.familyId || 0);
+    const eventsUpdatedOn = new Date().toISOString();
+    const locale = (initialData?.extendedProps as any)?.locale ||
+      (initialData?.extendedProps as any)?.Locale || "en";
+    const parentEventId = String(
+      (initialData?.extendedProps as any)?.parentEventId ||
+      (initialData?.extendedProps as any)?.ParentEventId ||
+      (initialData as any)?.parentEventId || ""
+    );
+
+    if (!eventId) return;
+    
+    setIsDeleting(true);
+    try {
+      if (onDelete) {
+        await onDelete(eventId, familyId, eventsUpdatedOn, locale, parentEventId);
+      } else {
+        await deleteAppointmentCall(eventId, familyId, eventsUpdatedOn, locale, parentEventId);
+      }
+      onClose();
+    } catch (err) {
+      console.error("Failed to delete appointment:", err);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirmPopup(false);
+    }
+  };
 
   useEffect(() => {
     hasInitialized.current = false;
@@ -1084,7 +1123,8 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
     setShowRecurringOptions(false);
     setIsProcessing(false);
     setOriginalRepeatValue(0);
-    setIsRepeatDisabled(false); // RESET REPEAT DISABLED STATE
+    setIsRepeatDisabled(false);
+    setShowDeleteConfirmPopup(false); // Reset delete popup state
   };
 
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -1096,7 +1136,11 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
   useEffect(() => {
     const handleEscapeKey = (event: KeyboardEvent) => {
       if (event.key === "Escape" && isOpen) {
-        handleClose();
+        if (showDeleteConfirmPopup) {
+          setShowDeleteConfirmPopup(false);
+        } else {
+          handleClose();
+        }
       }
     };
 
@@ -1104,7 +1148,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
     return () => {
       document.removeEventListener("keydown", handleEscapeKey);
     };
-  }, [isOpen, handleClose]);
+  }, [isOpen, showDeleteConfirmPopup, handleClose]);
 
   // Initialize form when initialData changes
   useEffect(() => {
@@ -1194,222 +1238,94 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-2"
-      onClick={isProcessing ? undefined : handleOverlayClick}
-    >
+    <>
+      {/* Main Popup */}
       <div
-        ref={modalRef}
-        className="bg-white rounded-xl w-full max-w-4xl max-h-[98vh] flex flex-col shadow-2xl relative"
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-2"
+        onClick={isProcessing ? undefined : handleOverlayClick}
       >
-        {/* Full-modal processing overlay — shown during split API calls */}
-        {isProcessing && (
-          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm rounded-xl">
-            <div className="flex flex-col items-center gap-4 p-8 text-center">
-              <div className="relative">
-                <div className="w-14 h-14 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-2.5 h-2.5 bg-blue-600 rounded-full animate-pulse" />
-                </div>
-              </div>
-              <div className="space-y-1">
-                <p className="text-base font-bold text-gray-800">
-                  Saving changes...
-                </p>
-                <p className="text-xs text-gray-500 font-medium">
-                  Updating your calendar. Please wait.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Compact Header */}
-        <div className="flex justify-between items-center px-4 py-2 border-b">
-          <div className="flex items-center gap-2">
-            <div className="bg-blue-100 p-1.5 rounded-lg">
-              <Image
-                src={editAppointmentImage}
-                alt="icon"
-                width={16}
-                height={16}
-              />
-            </div>
-            <h2 className="text-lg font-bold text-gray-800">
-              {isRecurringEvent() ? "Edit Recurring Event" : "Edit Appointment"}
-            </h2>
-          </div>
-          <button
-            onClick={handleClose}
-            className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-            disabled={isProcessing}
-          >
-            <Image src={closeIcon} alt="Close" width={20} height={20} />
-          </button>
-        </div>
-
-        {/* Recurring Options Overlay */}
-        {showRecurringOptions && isRecurringEvent() && (
-          <RecurringEditOptions
-            onSelect={handleRecurringOptionSelect}
-            onCancel={() => setShowRecurringOptions(false)}
-            isProcessing={isProcessing}
-          />
-        )}
-
-        {/* Scrollable Form Content */}
         <div
-          className={`overflow-y-auto flex-1 p-3 lg:p-4 ${showRecurringOptions ? "opacity-50 pointer-events-none" : ""}`}
+          ref={modalRef}
+          className="bg-white rounded-xl w-full max-w-4xl max-h-[98vh] flex flex-col shadow-2xl relative"
+          onClick={(e) => e.stopPropagation()}
         >
-          <form onSubmit={handleSubmit} className="space-y-3">
-            {/* Basic Information & Toggles Combined */}
-            <div className="bg-blue-50/50 p-3 rounded-xl border border-blue-100">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                {/* Name field - hide when special event is active */}
-                {formData.isSpecialEvent === 0 && (
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold flex items-center gap-1.5 text-gray-700 uppercase tracking-wider">
-                      <Image src={nameIcon} alt="icon" width={12} height={12} />{" "}
-                      Name
-                    </label>
-                    <input
-                      type="text"
-                      name="title"
-                      placeholder="Enter appointment title"
-                      value={formData.title || ""}
-                      onChange={handleInputChange}
-                      className={`w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm ${titleError ? "border-red-500" : "border-gray-200"}`}
-                      disabled={isProcessing}
-                    />
-                    {titleError && (
-                      <p className="text-xs text-red-500 font-medium mt-1">
-                        {titleError}
-                      </p>
-                    )}
+          {/* Full-modal processing overlay — shown during split API calls */}
+          {isProcessing && (
+            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm rounded-xl">
+              <div className="flex flex-col items-center gap-4 p-8 text-center">
+                <div className="relative">
+                  <div className="w-14 h-14 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-2.5 h-2.5 bg-blue-600 rounded-full animate-pulse" />
                   </div>
-                )}
+                </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold flex items-center gap-1.5 text-gray-700 uppercase tracking-wider">
-                    Location
-                  </label>
-                  <LocationInput
-                    key={formData.location}
-                    value={formData?.location || ""}
-                    onChange={handleLocationChange}
-                    placeholder="Search location..."
-                    required
-                    disabled={isProcessing}
-                  />
-                  {isCoordinateString(formData?.location || "") && (
-                    <p className="text-[10px] text-gray-500 mt-0.5 italic">
-                      Fetching place name...
-                    </p>
-                  )}
+                  <p className="text-base font-bold text-gray-800">
+                    Saving changes...
+                  </p>
+                  <p className="text-xs text-gray-500 font-medium">
+                    Updating your calendar. Please wait.
+                  </p>
                 </div>
               </div>
+            </div>
+          )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <div className="flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-gray-100 shadow-sm">
-                  <div className="flex items-center gap-2">
-                    <Image
-                      src={SpecialEventIcon}
-                      alt="icon"
-                      width={12}
-                      height={12}
-                    />
-                    <span className="text-xs font-semibold text-gray-700">
-                      Special Event
-                    </span>
-                  </div>
-                  <ToggleSwitch
-                    checked={formData.isSpecialEvent === 1}
-                    onChange={(checked) =>
-                      handleToggleChange("isSpecialEvent", checked)
-                    }
-                    disabled={isProcessing}
-                  />
-                </div>
-                <div className="flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-gray-100 shadow-sm">
-                  <div className="flex items-center gap-2">
-                    <Image
-                      src={SpecialEventIcon}
-                      alt="icon"
-                      width={12}
-                      height={12}
-                    />
-                    <span className="text-xs font-semibold text-gray-700">
-                      Private
-                    </span>
-                  </div>
-                  <ToggleSwitch
-                    checked={formData.isPrivateEvent === 1}
-                    onChange={(checked) =>
-                      handleToggleChange("isPrivateEvent", checked)
-                    }
-                    disabled={isProcessing}
-                  />
-                </div>
+          {/* Compact Header */}
+          <div className="flex justify-between items-center px-4 py-2 border-b">
+            <div className="flex items-center gap-2">
+              <div className="bg-blue-100 p-1.5 rounded-lg">
+                <Image
+                  src={editAppointmentImage}
+                  alt="icon"
+                  width={16}
+                  height={16}
+                />
               </div>
+              <h2 className="text-lg font-bold text-gray-800">
+                {isRecurringEvent() ? "Edit Recurring Event" : "Edit Appointment"}
+              </h2>
+            </div>
+            <button
+              onClick={handleClose}
+              className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              disabled={isProcessing}
+            >
+              <Image src={closeIcon} alt="Close" width={20} height={20} />
+            </button>
+          </div>
 
-              {/* Special Event Options */}
-              {formData.isSpecialEvent === 1 && (
-                <div className="mt-3 p-3 bg-white rounded-lg border border-blue-100 shadow-sm space-y-3">
-                  <div className="flex items-center gap-6">
-                    <label className="flex items-center gap-2 cursor-pointer group">
-                      <input
-                        type="radio"
-                        name="specialEvent"
-                        checked={
-                          formData.specialEvent === SpecialEventEnum.Birthday
-                        }
-                        onChange={() =>
-                          handleSpecialEventChange(SpecialEventEnum.Birthday)
-                        }
-                        className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 transition-all cursor-pointer"
-                        disabled={isProcessing}
-                      />
-                      <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">
-                        Birthday
-                      </span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer group">
-                      <input
-                        type="radio"
-                        name="specialEvent"
-                        checked={
-                          formData.specialEvent === SpecialEventEnum.Anniversary
-                        }
-                        onChange={() =>
-                          handleSpecialEventChange(SpecialEventEnum.Anniversary)
-                        }
-                        className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 transition-all cursor-pointer"
-                        disabled={isProcessing}
-                      />
-                      <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">
-                        Anniversary
-                      </span>
-                    </label>
-                  </div>
+          {/* Recurring Options Overlay */}
+          {showRecurringOptions && isRecurringEvent() && (
+            <RecurringEditOptions
+              onSelect={handleRecurringOptionSelect}
+              onCancel={() => setShowRecurringOptions(false)}
+              isProcessing={isProcessing}
+            />
+          )}
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Scrollable Form Content */}
+          <div
+            className={`overflow-y-auto flex-1 p-3 lg:p-4 ${showRecurringOptions ? "opacity-50 pointer-events-none" : ""}`}
+          >
+            <form onSubmit={handleSubmit} className="space-y-3">
+              {/* Basic Information & Toggles Combined */}
+              <div className="bg-blue-50/50 p-3 rounded-xl border border-blue-100">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                  {/* Name field - hide when special event is active */}
+                  {formData.isSpecialEvent === 0 && (
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-600 uppercase tracking-tight">
-                        What / Whom
+                      <label className="text-xs font-bold flex items-center gap-1.5 text-gray-700 uppercase tracking-wider">
+                        <Image src={nameIcon} alt="icon" width={12} height={12} />{" "}
+                        Name
                       </label>
                       <input
                         type="text"
-                        name="specialEventWhatWhom"
-                        value={formData.title}
-                        onChange={(e) => {
-                          setFormData((prev) => ({
-                            ...prev,
-                            title: e.target.value,
-                          }));
-                          setTitleError(null);
-                        }}
-                        placeholder="e.g., John's Birthday"
-                        className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-gray-50/30"
+                        name="title"
+                        placeholder="Enter appointment title"
+                        value={formData.title || ""}
+                        onChange={handleInputChange}
+                        className={`w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm ${titleError ? "border-red-500" : "border-gray-200"}`}
                         disabled={isProcessing}
                       />
                       {titleError && (
@@ -1418,266 +1334,465 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
                         </p>
                       )}
                     </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-600 uppercase tracking-tight">
-                        Date
-                      </label>
-                      <input
-                        type="date"
-                        name="specialEventDate"
-                        value={formData.startDateOnly}
-                        onChange={(e) => {
-                          setFormData((prev) => ({
-                            ...prev,
-                            startDateOnly: e.target.value,
-                            endDateOnly: e.target.value,
-                          }));
-                        }}
-                        className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-gray-50/30"
-                        disabled={isProcessing}
-                      />
-                    </div>
+                  )}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold flex items-center gap-1.5 text-gray-700 uppercase tracking-wider">
+                      Location
+                    </label>
+                    <LocationInput
+                      key={formData.location}
+                      value={formData?.location || ""}
+                      onChange={handleLocationChange}
+                      placeholder="Search location..."
+                      required
+                      disabled={isProcessing}
+                    />
+                    {isCoordinateString(formData?.location || "") && (
+                      <p className="text-[10px] text-gray-500 mt-0.5 italic">
+                        Fetching place name...
+                      </p>
+                    )}
                   </div>
                 </div>
-              )}
-            </div>
 
-            {/* Participants */}
-            <div className="space-y-1">
-              <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
-                <Image
-                  src={participantsIcon}
-                  alt="icon"
-                  width={14}
-                  height={14}
-                />{" "}
-                Choose Participants
-              </label>
-              <ResponsiblePersonSelector
-                options={responsiblePersons}
-                onSelectionChange={handleResponsiblePersonsChange}
-                subHeading="Select Responsible Persons"
-                disabled={isProcessing || formData.isSpecialEvent === 1}
-              />
-              {selectionError && (
-                <p className="text-xs text-red-500 font-medium mt-1">
-                  {selectionError}
-                </p>
-              )}
-            </div>
-
-            {/* Repeat & Alarm Side-by-Side */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {/* Date & Time - Hide when special event is active */}
-              {formData.isSpecialEvent === 0 && (
-                <div className="space-y-1 bg-blue-100 p-1">
-                  <div className="flex justify-between items-center mb-1 ">
-                    <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-gray-100 shadow-sm">
+                    <div className="flex items-center gap-2">
                       <Image
-                        src={participantsIcon}
+                        src={SpecialEventIcon}
                         alt="icon"
-                        width={14}
-                        height={14}
-                      />{" "}
-                      Choose Dates & Time
-                    </label>
-                  </div>
-                  <DateTimeRange
-                    startDate={formData.startDateOnly}
-                    endDate={formData.endDateOnly}
-                    startTime={formData.startTimeOnly}
-                    endTime={formData.endTimeOnly}
-                    onStartDateChange={(v) =>
-                      setFormData((p) => ({ ...p, startDateOnly: v }))
-                    }
-                    onEndDateChange={(v) =>
-                      setFormData((p) => ({ ...p, endDateOnly: v }))
-                    }
-                    onStartTimeChange={(v) =>
-                      setFormData((p) => ({ ...p, startTimeOnly: v }))
-                    }
-                    onEndTimeChange={(v) =>
-                      setFormData((p) => ({ ...p, endTimeOnly: v }))
-                    }
-                    hideHeading={true}
-                    required
-                    autoSyncEndDateTime={false}
-                    disabled={isProcessing}
-                    disableTime={Number(formData.isAllDayEvent) === 1}
-                  />
-                  <div className="flex items-center gap-2 bg-white px-3 py-1.5 mx-2 rounded-lg border shadow-sm">
-                    <span className="text-[10px] font-bold text-gray-500 uppercase">
-                      All Day
-                    </span>
+                        width={12}
+                        height={12}
+                      />
+                      <span className="text-xs font-semibold text-gray-700">
+                        Special Event
+                      </span>
+                    </div>
                     <ToggleSwitch
-                      checked={Number(formData.isAllDayEvent) === 1}
+                      checked={formData.isSpecialEvent === 1}
                       onChange={(checked) =>
-                        handleToggleChange("isAllDayEvent", checked)
+                        handleToggleChange("isSpecialEvent", checked)
                       }
                       disabled={isProcessing}
                     />
                   </div>
-                  {(formData.repeat ?? 0) !== 0 && (
-                    <div className="space-y-1 grid grid-cols-1">
-                      <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
-                        Repeat End Date
+                  <div className="flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-gray-100 shadow-sm">
+                    <div className="flex items-center gap-2">
+                      <Image
+                        src={SpecialEventIcon}
+                        alt="icon"
+                        width={12}
+                        height={12}
+                      />
+                      <span className="text-xs font-semibold text-gray-700">
+                        Private
+                      </span>
+                    </div>
+                    <ToggleSwitch
+                      checked={formData.isPrivateEvent === 1}
+                      onChange={(checked) =>
+                        handleToggleChange("isPrivateEvent", checked)
+                      }
+                      disabled={isProcessing}
+                    />
+                  </div>
+                </div>
+
+                {/* Special Event Options */}
+                {formData.isSpecialEvent === 1 && (
+                  <div className="mt-3 p-3 bg-white rounded-lg border border-blue-100 shadow-sm space-y-3">
+                    <div className="flex items-center gap-6">
+                      <label className="flex items-center gap-2 cursor-pointer group">
+                        <input
+                          type="radio"
+                          name="specialEvent"
+                          checked={
+                            formData.specialEvent === SpecialEventEnum.Birthday
+                          }
+                          onChange={() =>
+                            handleSpecialEventChange(SpecialEventEnum.Birthday)
+                          }
+                          className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 transition-all cursor-pointer"
+                          disabled={isProcessing}
+                        />
+                        <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">
+                          Birthday
+                        </span>
                       </label>
-                      <div className="bg-blue-100/50 p-2 rounded-lg">
+                      <label className="flex items-center gap-2 cursor-pointer group">
+                        <input
+                          type="radio"
+                          name="specialEvent"
+                          checked={
+                            formData.specialEvent === SpecialEventEnum.Anniversary
+                          }
+                          onChange={() =>
+                            handleSpecialEventChange(SpecialEventEnum.Anniversary)
+                          }
+                          className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 transition-all cursor-pointer"
+                          disabled={isProcessing}
+                        />
+                        <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">
+                          Anniversary
+                        </span>
+                      </label>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-gray-600 uppercase tracking-tight">
+                          What / Whom
+                        </label>
+                        <input
+                          type="text"
+                          name="specialEventWhatWhom"
+                          value={formData.title}
+                          onChange={(e) => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              title: e.target.value,
+                            }));
+                            setTitleError(null);
+                          }}
+                          placeholder="e.g., John's Birthday"
+                          className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-gray-50/30"
+                          disabled={isProcessing}
+                        />
+                        {titleError && (
+                          <p className="text-xs text-red-500 font-medium mt-1">
+                            {titleError}
+                          </p>
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-gray-600 uppercase tracking-tight">
+                          Date
+                        </label>
                         <input
                           type="date"
-                          name="repeatEndDate"
-                          value={parseDateToForm(formData.repeatEndDate)}
-                          onChange={handleInputChange}
-                          className="w-full px-2 py-1 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                          disabled={
-                            isProcessing ||
-                            isRepeatDisabled ||
-                            (formData.repeat ?? 0) === 0
-                          }
+                          name="specialEventDate"
+                          value={formData.startDateOnly}
+                          onChange={(e) => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              startDateOnly: e.target.value,
+                              endDateOnly: e.target.value,
+                            }));
+                          }}
+                          className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-gray-50/30"
+                          disabled={isProcessing}
                         />
                       </div>
                     </div>
-                  )}
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
+
+              {/* Participants */}
               <div className="space-y-1">
                 <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
-                  <Image src={repeatIcon} alt="icon" width={14} height={14} />{" "}
-                  Repeat
+                  <Image
+                    src={participantsIcon}
+                    alt="icon"
+                    width={14}
+                    height={14}
+                  />{" "}
+                  Choose Participants
                 </label>
-                <div className="flex flex-col gap-2">
-                  <SingleSelector
-                    options={REPEAT_OPTIONS.map((o) => ({
-                      ...o,
-                      isSelected: o.id === formData.repeat,
-                    }))}
-                    onSelectionChange={(s) => handleRepeatChange(s)}
-                    selectedBorderColor="blue"
-                    selectedBadgeColor="blue"
-                    disabled={isProcessing || isRepeatDisabled}
-                  />
-                  {formData.repeat !== 0 && (
-                    <div className="flex items-center gap-2 bg-blue-50/50 p-2 rounded-lg border border-blue-100">
-                      <span className="text-xs font-bold text-gray-700">
-                        Interval:
-                      </span>
-                      <input
-                        type="number"
-                        min="1"
-                        value={formData.recurrenceRule?.interval || 1}
-                        disabled={isProcessing || isRepeatDisabled}
-                        onChange={(e) => {
-                          const val = parseInt(e.target.value) || 1;
-                          setFormData((prev) => ({
-                            ...prev,
-                            recurrenceRule: {
-                              frequency: val > 0 ? val - 1 : 0,
-                              interval: val,
-                            },
-                          }));
-                        }}
-                        className="w-16 px-2 py-1 border border-gray-200 rounded-md text-xs focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50"
-                      />
-                      <span className="text-xs text-gray-500">
-                        {formData.repeat === 1
-                          ? "day(s)"
-                          : formData.repeat === 2
-                            ? "week(s)"
-                            : formData.repeat === 3
-                              ? "2 week(s)"
-                              : formData.repeat === 4
-                                ? "month(s)"
-                                : "year(s)"}
-                      </span>
-                    </div>
-                  )}
-                </div>
-                {isRepeatDisabled && isRecurringEvent() && (
-                  <p className="text-xs text-orange-600 mt-1 flex items-center gap-1">
-                    <svg
-                      className="w-3 h-3"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                      />
-                    </svg>
-                    This occurrence will be a standalone event (not recurring)
+                <ResponsiblePersonSelector
+                  options={responsiblePersons}
+                  onSelectionChange={handleResponsiblePersonsChange}
+                  subHeading="Select Responsible Persons"
+                  disabled={isProcessing || formData.isSpecialEvent === 1}
+                />
+                {selectionError && (
+                  <p className="text-xs text-red-500 font-medium mt-1">
+                    {selectionError}
                   </p>
                 )}
               </div>
+
+              {/* Repeat & Alarm Side-by-Side */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* Date & Time - Hide when special event is active */}
+                {formData.isSpecialEvent === 0 && (
+                  <div className="space-y-1 bg-blue-100 p-1">
+                    <div className="flex justify-between items-center mb-1 ">
+                      <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
+                        <Image
+                          src={participantsIcon}
+                          alt="icon"
+                          width={14}
+                          height={14}
+                        />{" "}
+                        Choose Dates & Time
+                      </label>
+                    </div>
+                    <DateTimeRange
+                      startDate={formData.startDateOnly}
+                      endDate={formData.endDateOnly}
+                      startTime={formData.startTimeOnly}
+                      endTime={formData.endTimeOnly}
+                      onStartDateChange={(v) =>
+                        setFormData((p) => ({ ...p, startDateOnly: v }))
+                      }
+                      onEndDateChange={(v) =>
+                        setFormData((p) => ({ ...p, endDateOnly: v }))
+                      }
+                      onStartTimeChange={(v) =>
+                        setFormData((p) => ({ ...p, startTimeOnly: v }))
+                      }
+                      onEndTimeChange={(v) =>
+                        setFormData((p) => ({ ...p, endTimeOnly: v }))
+                      }
+                      hideHeading={true}
+                      required
+                      autoSyncEndDateTime={false}
+                      disabled={isProcessing}
+                      disableTime={Number(formData.isAllDayEvent) === 1}
+                    />
+                    <div className="flex items-center gap-2 bg-white px-3 py-1.5 mx-2 rounded-lg border shadow-sm">
+                      <span className="text-[10px] font-bold text-gray-500 uppercase">
+                        All Day
+                      </span>
+                      <ToggleSwitch
+                        checked={Number(formData.isAllDayEvent) === 1}
+                        onChange={(checked) =>
+                          handleToggleChange("isAllDayEvent", checked)
+                        }
+                        disabled={isProcessing}
+                      />
+                    </div>
+
+                  </div>
+                )}
+                <div className="space-y-1">
+                  <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
+                    <Image src={repeatIcon} alt="icon" width={14} height={14} />{" "}
+                    Repeat
+                  </label>
+                  <div className="flex flex-col gap-2">
+                    <SingleSelector
+                      options={REPEAT_OPTIONS.map((o) => ({
+                        ...o,
+                        isSelected: o.id === formData.repeat,
+                      }))}
+                      onSelectionChange={(s) => handleRepeatChange(s)}
+                      selectedBorderColor="blue"
+                      selectedBadgeColor="blue"
+                      disabled={isProcessing || isRepeatDisabled}
+                    />
+                    {formData.repeat !== 0 && (
+                      <div className="flex items-center gap-2 bg-blue-50/50 p-2 rounded-lg border border-blue-100">
+                        <span className="text-xs font-bold text-gray-700">
+                          Interval:
+                        </span>
+                        <input
+                          type="number"
+                          min="1"
+                          value={formData.recurrenceRule?.interval || 1}
+                          disabled={isProcessing || isRepeatDisabled}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value) || 1;
+                            setFormData((prev) => ({
+                              ...prev,
+                              recurrenceRule: {
+                                frequency: val > 0 ? val - 1 : 0,
+                                interval: val,
+                              },
+                            }));
+                          }}
+                          className="w-16 px-2 py-1 border border-gray-200 rounded-md text-xs focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50"
+                        />
+                        <span className="text-xs text-gray-500">
+                          {formData.repeat === 1
+                            ? "day(s)"
+                            : formData.repeat === 2
+                              ? "week(s)"
+                              : formData.repeat === 3
+                                ? "2 week(s)"
+                                : formData.repeat === 4
+                                  ? "month(s)"
+                                  : "year(s)"}
+                        </span>
+                      </div>
+                    )}
+                    {/* Repeat End Date - Only show if repeat is not Never */}
+                    {(formData.repeat ?? 0) !== 0 && (
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
+                          Repeat End Date
+                        </label>
+                        <div className="bg-blue-100/50 p-2 rounded-lg">
+                          <label className="block text-[10px] font-bold text-gray-600 uppercase mb-0.5">
+                            Ends On
+                          </label>
+                          <input
+                            type="date"
+                            name="repeatEndDate"
+                            value={parseDateToForm(formData.repeatEndDate)}
+                            onChange={handleInputChange}
+                            className="w-full px-2 py-1 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                            disabled={
+                              isProcessing ||
+                              isRepeatDisabled ||
+                              (formData.repeat ?? 0) === 0
+                            }
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {isRepeatDisabled && isRecurringEvent() && (
+                    <p className="text-xs text-orange-600 mt-1 flex items-center gap-1">
+                      <svg
+                        className="w-3 h-3"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                        />
+                      </svg>
+                      This occurrence will be a standalone event (not recurring)
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
+                  <Image src={alarmIcon} alt="icon" width={14} height={14} />{" "}
+                  Alarm
+                </label>
+                <SingleSelector
+                  options={ALERT_OPTIONS.map((o) => ({
+                    ...o,
+                    isSelected: o.id === formData.alert,
+                  }))}
+                  onSelectionChange={(s) =>
+                    handleSingleSelectChange("alert", [s])
+                  }
+                  selectedBorderColor="blue"
+                  selectedBadgeColor="blue"
+                  disabled={isProcessing}
+                />
+              </div>
+
+              {/* Notes */}
+              <div className="space-y-1">
+                <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
+                  <Image
+                    src={additionalNoteIcon}
+                    alt="icon"
+                    width={14}
+                    height={14}
+                  />{" "}
+                  Additional Notes
+                </label>
+                <textarea
+                  name="description"
+                  onChange={handleInputChange}
+                  placeholder="Add any additional details here..."
+                  rows={1}
+                  className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm min-h-[40px]"
+                  value={formData.description || ""}
+                  disabled={isProcessing}
+                />
+              </div>
+            </form>
+          </div>
+
+          {/* Footer Actions - UPDATED: Simplified footer with only Delete button */}
+          <div className="px-4 py-2.5 border-t bg-gray-50 rounded-b-xl flex justify-end gap-3">
+            {/* Delete button - left side */}
+            <button
+              type="button"
+              onClick={() => setShowDeleteConfirmPopup(true)}
+              disabled={isProcessing || isDeleting}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:text-red-600 hover:bg-red-50 rounded-lg border transition-colors disabled:opacity-50"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Delete
+            </button>
+            
+            
+            
+            {/* Save/Cancel - right side */}
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="px-4 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200 bg-white"
+                disabled={isProcessing || isDeleting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmit}
+                className="px-5 py-1.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isProcessing || isDeleting}
+              >
+                {isProcessing ? "Processing..." : "Update Appointment"}
+              </button>
             </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
-                <Image src={alarmIcon} alt="icon" width={14} height={14} />{" "}
-                Alarm
-              </label>
-              <SingleSelector
-                options={ALERT_OPTIONS.map((o) => ({
-                  ...o,
-                  isSelected: o.id === formData.alert,
-                }))}
-                onSelectionChange={(s) =>
-                  handleSingleSelectChange("alert", [s])
-                }
-                selectedBorderColor="blue"
-                selectedBadgeColor="blue"
-                disabled={isProcessing}
-              />
-            </div>
-
-            {/* Repeat End Date - Only show if repeat is not Never */}
-
-            {/* Notes */}
-            <div className="space-y-1">
-              <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
-                <Image
-                  src={additionalNoteIcon}
-                  alt="icon"
-                  width={14}
-                  height={14}
-                />{" "}
-                Additional Notes
-              </label>
-              <textarea
-                name="description"
-                onChange={handleInputChange}
-                placeholder="Add any additional details here..."
-                rows={1}
-                className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm min-h-[40px]"
-                value={formData.description || ""}
-                disabled={isProcessing}
-              />
-            </div>
-          </form>
-        </div>
-
-        {/* Footer Actions */}
-        <div className="px-4 py-2.5 border-t bg-gray-50 rounded-b-xl flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={handleClose}
-            className="px-4 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200 bg-white"
-            disabled={isProcessing}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            className="px-5 py-1.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={isProcessing}
-          >
-            {isProcessing ? "Processing..." : "Update Appointment"}
-          </button>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Delete Confirmation Popup - UPDATED: Separate overlay popup */}
+      {showDeleteConfirmPopup && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
+          <div className="bg-white rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-gray-800">
+                Delete Appointment
+              </h3>
+            </div>
+            <p className="text-sm text-gray-600 mb-6">
+              Are you sure you want to delete this appointment? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowDeleteConfirmPopup(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200"
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {isDeleting ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Deleting...
+                  </>
+                ) : (
+                  "Yes, Delete"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
