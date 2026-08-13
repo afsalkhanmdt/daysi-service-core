@@ -13,13 +13,22 @@ import AppleLogo from "../../assets/apple-externalcal-icon.png";
 import GoogleLogo from "../../assets/google-externalcal-icon.png";
 import FacebookLogo from "../../assets/facebook-externalcal-icon.png";
 
+export interface ExternalCalendarProvider {
+  Id: number;
+  Language: string;
+  SequenceNumber: number;
+  Name: string;
+  Link: string;
+  Logo: string;
+}
+
 interface ExternalCalendarLogos {
   name: string;
   logo: any;
   link: string;
 }
 
-const EXTERNAL_CALENDAR_LOGOS: ExternalCalendarLogos[] = [
+const STATIC_EXTERNAL_CALENDAR_LOGOS: ExternalCalendarLogos[] = [
   {
     name: "Outlook",
     logo: OutlookLogo?.src || OutlookLogo,
@@ -48,6 +57,7 @@ interface ImportAppointmentsPopupProps {
   onSubmit: (data: any) => Promise<void>;
   familyId: number;
   locale: string;
+  externalCalendarTypes?: ExternalCalendarProvider[];
 }
 
 const ImportAppointmentsPopup: React.FC<ImportAppointmentsPopupProps> = ({
@@ -56,6 +66,7 @@ const ImportAppointmentsPopup: React.FC<ImportAppointmentsPopupProps> = ({
   onSubmit,
   familyId,
   locale,
+  externalCalendarTypes,
 }) => {
   const { resources } = useResources();
   const { t } = useTranslation("common");
@@ -298,7 +309,35 @@ const ImportAppointmentsPopup: React.FC<ImportAppointmentsPopupProps> = ({
           </div>
 
           <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 items-center gap-x-4 gap-y-4">
-            {EXTERNAL_CALENDAR_LOGOS.map((item) => (
+            {(() => {
+              const rawItems =
+                externalCalendarTypes && externalCalendarTypes.length > 0
+                  ? externalCalendarTypes.map((item) => {
+                      const matchedStatic = STATIC_EXTERNAL_CALENDAR_LOGOS.find(
+                        (s) =>
+                          s.name.toLowerCase() === item.Name.toLowerCase() ||
+                          item.Name.toLowerCase().includes(s.name.toLowerCase()) ||
+                          s.name.toLowerCase().includes(item.Name.toLowerCase()),
+                      );
+                      return {
+                        name: item.Name,
+                        logo: matchedStatic?.logo || item.Logo,
+                        link: item.Link,
+                      };
+                    })
+                  : STATIC_EXTERNAL_CALENDAR_LOGOS;
+
+              // Deduplicate logos by normalized name so each provider appears only once
+              const uniqueItemsMap = new Map<string, (typeof rawItems)[0]>();
+              rawItems.forEach((item) => {
+                const key = item.name.trim().toLowerCase();
+                if (!uniqueItemsMap.has(key)) {
+                  uniqueItemsMap.set(key, item);
+                }
+              });
+
+              return Array.from(uniqueItemsMap.values());
+            })().map((item) => (
               <a
                 key={item.name}
                 href={item.link}

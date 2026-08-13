@@ -27,6 +27,8 @@ import {
 import { useResources } from "@/app/context/ResourceContext";
 import { initialFormDataForPMTaskApi } from "@/app/constants/pocketMoneyForm";
 import { usePocketMoneyValidation } from "@/app/hooks/usePocketMoneyValidation";
+import { finishPocketMoneyTaskCall } from "@/services/api";
+import Family from "@/models/family";
 
 // Status constants
 const STATUS = {
@@ -37,8 +39,8 @@ const STATUS = {
 
 
 const EditPocketMoneyPopup: React.FC<
-  PocketMoneyPopupProps & { isLoading?: boolean; PMStdFamilyTasks?: any[] }
-> = ({ isOpen, onClose, onSubmit, pocketMoney, isLoading, PMStdFamilyTasks = [] }) => {
+  PocketMoneyPopupProps & { isLoading?: boolean; PMStdFamilyTasks?: any[]; reloadPM?: () => void }
+> = ({ isOpen, onClose, onSubmit, pocketMoney, isLoading, PMStdFamilyTasks = [], reloadPM, familyId, loggedInUserId }) => {
   const [formData, setFormData] = useState<PMTaskCreateCommand>(
     initialFormDataForPMTaskApi,
   );
@@ -363,7 +365,7 @@ const EditPocketMoneyPopup: React.FC<
   };
 
   // Handle status change button
-  const handleStatusChange = () => {
+  const handleStatusChange = async () => {
     let newStatus: number;
 
     if (currentStatus === STATUS.OPEN) {
@@ -375,11 +377,21 @@ const EditPocketMoneyPopup: React.FC<
     }
 
     setCurrentStatus(newStatus);
-    const updatedFormData = { ...formData, Status: newStatus };
-    setFormData(updatedFormData);
+
+    const apiData = {
+      FamilyId: familyId ?? formData.FamilyId,
+      PMTransId: pocketMoney?.PMTransId,
+      FinishedBy: loggedInUserId ?? "",
+    };
+
+          const response = await finishPocketMoneyTaskCall(apiData);
+          if (response) {
+            if (reloadPM) await reloadPM();
+          }
+        
+      
 
     // Auto-save with new status
-    onSubmit(updatedFormData);
     onClose();
   };
 

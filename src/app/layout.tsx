@@ -3,7 +3,7 @@ import "./globals.css";
 import { ResourceProvider } from "@/app/context/ResourceContext";
 
 export const metadata: Metadata = {
-  title: "Daysi",
+  title: "MyFamilii",
   description: "Daysi Calender Application",
   icons: {
     icon: "/favicon.ico",
