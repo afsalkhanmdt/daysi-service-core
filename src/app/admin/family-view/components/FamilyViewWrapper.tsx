@@ -742,6 +742,7 @@ const FamilyViewWrapper = ({
           familyDetails?.Members?.find((m) => m.MemberId === userId)?.Locale ||
           "en"
         }
+        externalCalendarTypes={familyDetails?.ExternalCalendarTypes}
       />
 
       <CreateTodoPopup

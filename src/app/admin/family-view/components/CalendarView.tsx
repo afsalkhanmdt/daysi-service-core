@@ -43,6 +43,7 @@ import { ToDoTaskType } from "@/app/types/todo";
 import {
   createAppointmentCall,
   updateAppointmentCall,
+  deleteAppointmentCall,
   updatePocketMoneyTaskCall,
   updateToDoTaskCall,
 } from "@/services/api";
@@ -267,9 +268,15 @@ const CalendarView = ({
         // Recurrence logic
         const recurrenceEvents: EventInput[] = [];
         const rule = event.RecurrenceRule;
-        const repeatEnd = event.RepeatEndDate
-          ? new Date(Number(event.RepeatEndDate))
-          : null;
+        let repeatEnd: Date | null = null;
+        if (event.RepeatEndDate) {
+          repeatEnd = new Date(Number(event.RepeatEndDate));
+          if (!isNaN(repeatEnd.getTime())) {
+            repeatEnd.setHours(23, 59, 59, 999);
+          } else {
+            repeatEnd = null;
+          }
+        }
 
         if (rule && rule.Frequency > 0 && repeatEnd) {
           let currentStart = new Date(start);
@@ -593,6 +600,37 @@ const CalendarView = ({
     }
   };
 
+  const handleDeleteAppointment = async (
+    eventId: number,
+    _familyId: number,
+    eventsUpdatedOn: string,
+    _locale: string,
+    parentEventId: string,
+  ) => {
+    setIsLoading?.(true);
+    const resolvedFamilyId = Number(familyId);
+    const resolvedLocale =
+      data?.Members?.find((m) => m.MemberId === data.Family.MemberId)
+        ?.Locale || "en";
+    try {
+      await deleteAppointmentCall(
+        eventId,
+        resolvedFamilyId,
+        eventsUpdatedOn,
+        resolvedLocale,
+        parentEventId,
+      );
+      await dataReload();
+      setShowEditAppointment(false);
+      setSelectedAppointment(null);
+      setSelectedRawEvent(null);
+    } catch (error) {
+      console.error("Failed to delete appointment:", error);
+    } finally {
+      setIsLoading?.(false);
+    }
+  };
+
   useEffect(() => {
     if (data?.Members?.length) {
       setMembers(data.Members);
@@ -889,6 +927,7 @@ const CalendarView = ({
             onSubmit={handleEditAppointment}
             onCreateSeries={handleCreateSeries}
             onRecurringSplit={handleRecurringSplit}
+            onDelete={handleDeleteAppointment}
             editType={editType}
             initialData={
               selectedRawEvent

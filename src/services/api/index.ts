@@ -1,8 +1,19 @@
 import { postCall,deleteCall } from "@/services/api/apiCall";
 export const createAppointmentCall = postCall("Events/CreateV1");
 export const updateAppointmentCall = postCall("Events/Update");
+export const deleteAppointmentCall = (
+  id: number,
+  familyId: number,
+  eventsUpdatedOn: string,
+  locale: string,
+  parentEventId: string
+) =>
+  deleteCall(
+    `Events/${id}?familyId=${familyId}&eventsUpdatedOn=${encodeURIComponent(eventsUpdatedOn)}&locale=${encodeURIComponent(locale)}&parentEventId=${encodeURIComponent(parentEventId)}`
+  );
 export const createPocketMoneyTaskCall = postCall("PocketMoney/CreatePMTask");
 export const updatePocketMoneyTaskCall = postCall("PocketMoney/UpdatePMTask");
+export const finishPocketMoneyTaskCall =  postCall("PocketMoney/Finish");
 export const createToDoTaskCall = postCall("ToDo/CreateToDo");
 export const updateToDoTaskCall = postCall("ToDo/UpdateTodo");
 export const createCalendarFeedCall = postCall("CalendarFeeds/Create");

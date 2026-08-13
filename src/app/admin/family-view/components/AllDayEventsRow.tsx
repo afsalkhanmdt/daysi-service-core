@@ -59,7 +59,7 @@ const AllDayEventsRow = ({
           // For recurring events
           let currentStart = dayjs(Number(event.Start));
           const repeatEnd = event.RepeatEndDate
-            ? dayjs(Number(event.RepeatEndDate))
+            ? dayjs(Number(event.RepeatEndDate)).endOf("day")
             : null;
           const rule = event.RecurrenceRule;
 
