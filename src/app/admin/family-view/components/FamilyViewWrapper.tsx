@@ -578,20 +578,16 @@ const FamilyViewWrapper = ({
             reload={reload}
             setIsLoading={setIsActionLoading}
             onNewAppointment={() =>
-              // checkSubscription(() => setShowCreateAppointment(true))
-              setShowCreateAppointment(true)
+              checkSubscription(() => setShowCreateAppointment(true))
             }
             onNewToDo={() =>
-              // checkSubscription(() => setShowCreateTodo(true))
-              setShowCreateTodo(true)
+              checkSubscription(() => setShowCreateTodo(true))
             }
             onNewPocketMoney={() =>
-              // checkSubscription(() => setShowCreatePocketMoney(true))
-              setShowCreatePocketMoney(true)
+              checkSubscription(() => setShowCreatePocketMoney(true))
             }
             onImportAppointments={() =>
-              // checkSubscription(() => setShowImportAppointments(true))
-              setShowImportAppointments(true)
+              checkSubscription(() => setShowImportAppointments(true))
             }
           />
         </div>
@@ -643,20 +639,16 @@ const FamilyViewWrapper = ({
           reload={reload}
           setIsLoading={setIsActionLoading}
           onNewAppointment={() =>
-            // checkSubscription(() => setShowCreateAppointment(true))
-            setShowCreateAppointment(true)
+            checkSubscription(() => setShowCreateAppointment(true))
           }
           onNewToDo={() =>
-            // checkSubscription(() => setShowCreateTodo(true))
-            setShowCreateTodo(true)
+            checkSubscription(() => setShowCreateTodo(true))
           }
           onNewPocketMoney={() =>
-            // checkSubscription(() => setShowCreatePocketMoney(true))
-            setShowCreatePocketMoney(true)
+            checkSubscription(() => setShowCreatePocketMoney(true))
           }
           onImportAppointments={() =>
-            // checkSubscription(() => setShowImportAppointments(true))
-            setShowImportAppointments(true)
+            checkSubscription(() => setShowImportAppointments(true))
           }
         />
       </div>
@@ -706,8 +698,7 @@ const FamilyViewWrapper = ({
               setIsLoading={setIsActionLoading}
               isTasksLoading={isTasksLoading}
               onImportAppointments={() =>
-                // checkSubscription(() => setShowImportAppointments(true))
-                setShowCreateAppointment(true)
+                checkSubscription(() => setShowImportAppointments(true))
               }
               optimisticUpdates={optimisticUpdates}
               setOptimisticUpdates={setOptimisticUpdates}

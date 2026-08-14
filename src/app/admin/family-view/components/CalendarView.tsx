@@ -146,32 +146,32 @@ const CalendarView = ({
 
   const handleRawEventClick = useCallback(
     (event: any) => {
-      // checkSubscription(() => {
-      const rawRepeat =
-        event.extendedProps?.repeat ??
-        event.extendedProps?.Repeat ??
-        event.repeat ??
-        event.Repeat;
-      const repeatStr = String(rawRepeat ?? "0")
-        .toLowerCase()
-        .trim();
-      const isRecurring =
-        repeatStr !== "0" &&
-        repeatStr !== "never" &&
-        repeatStr !== "none" &&
-        repeatStr !== "null" &&
-        repeatStr !== "undefined" &&
-        repeatStr !== "";
+      checkSubscription(() => {
+        const rawRepeat =
+          event.extendedProps?.repeat ??
+          event.extendedProps?.Repeat ??
+          event.repeat ??
+          event.Repeat;
+        const repeatStr = String(rawRepeat ?? "0")
+          .toLowerCase()
+          .trim();
+        const isRecurring =
+          repeatStr !== "0" &&
+          repeatStr !== "never" &&
+          repeatStr !== "none" &&
+          repeatStr !== "null" &&
+          repeatStr !== "undefined" &&
+          repeatStr !== "";
 
-      if (isRecurring) {
-        setPendingRawEvent(event);
-        setPendingAppointment(null);
-        setShowRecurringOptions(true);
-      } else {
-        setSelectedRawEvent(event);
-        setShowEditAppointment(true);
-      }
-      // });
+        if (isRecurring) {
+          setPendingRawEvent(event);
+          setPendingAppointment(null);
+          setShowRecurringOptions(true);
+        } else {
+          setSelectedRawEvent(event);
+          setShowEditAppointment(true);
+        }
+      });
     },
     [data?.Family.SubscriptionType, onFreemium],
   );
@@ -854,16 +854,18 @@ const CalendarView = ({
             return (
               <div
                 onClick={() => {
-                  if (isRecurring) {
-                    // Show the recurring options overlay first
-                    setPendingAppointment(eventInfo.event);
-                    setPendingRawEvent(null);
-                    setShowRecurringOptions(true);
-                  } else {
-                    // Directly open edit popup for non-recurring events
-                    setSelectedAppointment(eventInfo.event);
-                    setShowEditAppointment(true);
-                  }
+                  checkSubscription(() => {
+                    if (isRecurring) {
+                      // Show the recurring options overlay first
+                      setPendingAppointment(eventInfo.event);
+                      setPendingRawEvent(null);
+                      setShowRecurringOptions(true);
+                    } else {
+                      // Directly open edit popup for non-recurring events
+                      setSelectedAppointment(eventInfo.event);
+                      setShowEditAppointment(true);
+                    }
+                  });
                 }}
                 className={`h-full border-t-4 rounded-xl border-sky-500 ${
                   eventInfo.event.extendedProps.ExternalCalendarName
