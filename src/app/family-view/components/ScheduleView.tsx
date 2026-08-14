@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import SchoolScheduleView from "./SchoolScheduleView";
 import WorkScheduleView from "./WorkScheduleView";
 import dayjs from "dayjs";
-import { useFetch } from "@/app/hooks/useFetch";
 import { useTranslation } from "react-i18next";
 
 interface ScheduleViewProps {
@@ -13,56 +12,116 @@ interface ScheduleViewProps {
   scheduleDataResponse?: any;
 }
 
+// Helper to extract a member's schedule container from various response shapes
+function getMemberScheduleContainer(scheduleDataResponse: any, memberId: string): any {
+  if (!scheduleDataResponse || !memberId) return null;
+
+  let membersArray: any[] = [];
+  if (
+    scheduleDataResponse.MemberSchedules &&
+    Array.isArray(scheduleDataResponse.MemberSchedules)
+  ) {
+    membersArray = scheduleDataResponse.MemberSchedules;
+  } else if (Array.isArray(scheduleDataResponse)) {
+    membersArray = scheduleDataResponse;
+  } else if (typeof scheduleDataResponse === "object") {
+    if (scheduleDataResponse[memberId]) {
+      return scheduleDataResponse[memberId];
+    }
+    membersArray = Object.values(scheduleDataResponse);
+  }
+
+  const found = membersArray.find(
+    (m: any) =>
+      m?.FamilyMemberId === memberId ||
+      m?.familyMemberId === memberId ||
+      m?.MemberId === memberId ||
+      m?.memberId === memberId
+  );
+
+  return found || null;
+}
+
+// Helper to extract the list of schedule items for a member
+function getMemberSchedulesList(scheduleDataResponse: any, memberId: string): any[] {
+  const container = getMemberScheduleContainer(scheduleDataResponse, memberId);
+  if (!container) return [];
+
+  if (Array.isArray(container)) return container;
+  if (Array.isArray(container.Schedules)) return container.Schedules;
+  if (Array.isArray(container.schedules)) return container.schedules;
+  if (Array.isArray(container.Transactions)) return container.Transactions;
+  if (Array.isArray(container.transactions)) return container.transactions;
+  if (Array.isArray(container.SHTrans)) return container.SHTrans;
+  if (Array.isArray(container.MasterSchedules)) return container.MasterSchedules;
+  if (Array.isArray(container.masterSchedules)) return container.masterSchedules;
+
+  return [];
+}
+
+// Helper to format time strings (e.g. "08:00:00" -> "08:00")
+function formatTimePart(t: string | undefined | null): string {
+  if (!t) return "";
+  const parts = String(t).trim().split(":");
+  if (parts.length >= 2) return `${parts[0]}:${parts[1]}`;
+  return String(t).trim();
+}
+
 export default function ScheduleView({
   data,
   currentUserId,
   scheduleDataResponse,
 }: ScheduleViewProps) {
   const { t } = useTranslation();
-  const familyId = data?.Family?.FamilyId;
 
-  const [activeSchedule, setActiveSchedule] = useState<"school" | "work">(
-    "school",
-  );
-
+  const [activeSchedule, setActiveSchedule] = useState<"school" | "work">("school");
   const members = data?.Members || [];
   const [selectedMemberId, setSelectedMemberId] = useState<string>("");
 
-  React.useEffect(() => {
-    if (members.length > 0 && !selectedMemberId && scheduleDataResponse) {
-      let defaultId = members[0].MemberId;
-      for (const m of members) {
-        const id = m.MemberId;
-        let hasSchedules = false;
-        if (Array.isArray(scheduleDataResponse)) {
-          hasSchedules = scheduleDataResponse.some(
-            (t: any) => t.memberId === id || t.familyMemberId === id,
-          );
-        } else if (typeof scheduleDataResponse === "object") {
-          const mData = scheduleDataResponse[id];
-          if (mData) {
-            if (Array.isArray(mData)) {
-              if (mData.length > 0) hasSchedules = true;
-            } else if (
-              mData.schedules?.length > 0 ||
-              mData.transactions?.length > 0 ||
-              mData.SHTrans?.length > 0
-            ) {
-              hasSchedules = true;
-            }
+  // Select initial member with schedules if available
+  useEffect(() => {
+    if (members.length > 0) {
+      if (!selectedMemberId || !members.some((m: any) => m.MemberId === selectedMemberId)) {
+        let defaultId = members[0].MemberId;
+        for (const m of members) {
+          const list = getMemberSchedulesList(scheduleDataResponse, m.MemberId);
+          if (list && list.length > 0) {
+            defaultId = m.MemberId;
+            break;
           }
         }
-        if (hasSchedules) {
-          defaultId = id;
-          break;
-        }
+        setSelectedMemberId(defaultId);
       }
-      setSelectedMemberId(defaultId);
     }
   }, [members, scheduleDataResponse, selectedMemberId]);
 
-  const activeUserId = selectedMemberId || currentUserId;
+  const activeUserId = selectedMemberId || currentUserId || (members[0]?.MemberId ?? "");
 
+  // Auto-switch active schedule tab ("school" vs "work") based on selected member's schedule types
+  useEffect(() => {
+    if (activeUserId && scheduleDataResponse) {
+      const list = getMemberSchedulesList(scheduleDataResponse, activeUserId);
+      if (list.length > 0) {
+        let hasSchool = false;
+        let hasWork = false;
+        for (const item of list) {
+          const sType = item.ScheduleType ?? item.scheduleType;
+          if (String(sType) === "1") {
+            hasWork = true;
+          } else {
+            hasSchool = true;
+          }
+        }
+        if (hasWork && !hasSchool) {
+          setActiveSchedule("work");
+        } else if (hasSchool && !hasWork) {
+          setActiveSchedule("school");
+        }
+      }
+    }
+  }, [activeUserId, scheduleDataResponse]);
+
+  // Current view start date (Monday of the current week)
   const [currentDateStart, setCurrentDateStart] = useState<Date>(() => {
     const now = new Date();
     const day = now.getDay();
@@ -72,125 +131,10 @@ export default function ScheduleView({
     return start;
   });
 
-  const [hasInitializedDate, setHasInitializedDate] = useState(false);
-
-  React.useEffect(() => {
-    if (scheduleDataResponse && activeUserId && !hasInitializedDate) {
-      let memberData: any = null;
-      let membersArray: any[] = [];
-
-      if (
-        scheduleDataResponse.MemberSchedules &&
-        Array.isArray(scheduleDataResponse.MemberSchedules)
-      ) {
-        membersArray = scheduleDataResponse.MemberSchedules;
-      } else if (Array.isArray(scheduleDataResponse)) {
-        membersArray = scheduleDataResponse;
-      } else if (typeof scheduleDataResponse === "object") {
-        membersArray = Object.values(scheduleDataResponse);
-      }
-
-      memberData = membersArray.find(
-        (m: any) =>
-          m.memberId === activeUserId ||
-          m.familyMemberId === activeUserId ||
-          m.FamilyMemberId === activeUserId,
-      );
-      if (!memberData) {
-        memberData = membersArray.filter(
-          (t: any) =>
-            t.memberId === activeUserId ||
-            t.familyMemberId === activeUserId ||
-            t.FamilyMemberId === activeUserId,
-        );
-      }
-
-      let startDate: Date | null = null;
-      if (memberData && !Array.isArray(memberData)) {
-        if (
-          memberData.scheduleStartDate ||
-          memberData.createStartDate ||
-          memberData.ScheduleStartDate
-        ) {
-          startDate = new Date(
-            memberData.scheduleStartDate ||
-              memberData.createStartDate ||
-              memberData.ScheduleStartDate,
-          );
-        }
-      }
-
-      // If we couldn't find a start date, look at transactions
-      if (!startDate || isNaN(startDate.getTime())) {
-        startDate = null;
-        let allT: any[] = [];
-        if (Array.isArray(memberData)) allT = memberData;
-        else if (memberData && typeof memberData === "object") {
-          if (Array.isArray(memberData.Schedules)) allT = memberData.Schedules;
-          else if (Array.isArray(memberData.schedules))
-            allT = memberData.schedules;
-          else if (Array.isArray(memberData.Transactions))
-            allT = memberData.Transactions;
-          else if (Array.isArray(memberData.transactions))
-            allT = memberData.transactions;
-          else if (Array.isArray(memberData.SHTrans)) allT = memberData.SHTrans;
-        } else if (!memberData && membersArray.length > 0) {
-          allT = membersArray;
-        }
-
-        if (allT.length > 0) {
-          const dates = allT
-            .map((t) =>
-              t.Date
-                ? new Date(t.Date).getTime()
-                : t.date
-                  ? new Date(t.date).getTime()
-                  : NaN,
-            )
-            .filter((t) => !isNaN(t));
-          if (dates.length > 0) {
-            startDate = new Date(Math.min(...dates));
-          }
-        }
-      }
-
-      if (startDate) {
-        const day = startDate.getDay();
-        const diff = startDate.getDate() - day + (day === 0 ? -6 : 1);
-        const weekStart = new Date(startDate.setDate(diff));
-        weekStart.setHours(0, 0, 0, 0);
-        setCurrentDateStart(weekStart);
-      }
-      setHasInitializedDate(true);
-    }
-  }, [scheduleDataResponse, activeUserId, hasInitializedDate]);
-
   const prevWeek = () => {
     setCurrentDateStart((prev) => {
       const newDate = new Date(prev);
       newDate.setDate(newDate.getDate() - 7);
-      return newDate;
-    });
-  };
-
-  const prevMonth = () => {
-    setCurrentDateStart((prev) => {
-      const newDate = new Date(prev);
-      newDate.setMonth(newDate.getMonth() - 1);
-      const day = newDate.getDay();
-      const diff = newDate.getDate() - day + (day === 0 ? -6 : 1);
-      newDate.setDate(diff);
-      return newDate;
-    });
-  };
-
-  const nextMonth = () => {
-    setCurrentDateStart((prev) => {
-      const newDate = new Date(prev);
-      newDate.setMonth(newDate.getMonth() + 1);
-      const day = newDate.getDay();
-      const diff = newDate.getDate() - day + (day === 0 ? -6 : 1);
-      newDate.setDate(diff);
       return newDate;
     });
   };
@@ -203,6 +147,28 @@ export default function ScheduleView({
     });
   };
 
+  const prevMonth = () => {
+    setCurrentDateStart((prev) => {
+      const m = dayjs(prev).subtract(1, "month").startOf("month");
+      const day = m.day();
+      const diff = m.date() - day + (day === 0 ? -6 : 1);
+      const start = m.date(diff).toDate();
+      start.setHours(0, 0, 0, 0);
+      return start;
+    });
+  };
+
+  const nextMonth = () => {
+    setCurrentDateStart((prev) => {
+      const m = dayjs(prev).add(1, "month").startOf("month");
+      const day = m.day();
+      const diff = m.date() - day + (day === 0 ? -6 : 1);
+      const start = m.date(diff).toDate();
+      start.setHours(0, 0, 0, 0);
+      return start;
+    });
+  };
+
   const jumpToToday = () => {
     const now = new Date();
     const day = now.getDay();
@@ -212,147 +178,144 @@ export default function ScheduleView({
     setCurrentDateStart(start);
   };
 
-  // Parse scheduleDataResponse for School and Work schedules
-  const parsedSchoolScheduleData: Record<string, any[]> = {};
-  const parsedWorkScheduleData: Record<string, any[]> = {};
-  const dateRange: string[] = [];
+  // Generate 7 days for the selected week (Monday = index 0 .. Sunday = index 6)
+  const { dateRange, parsedSchoolScheduleData, parsedWorkScheduleData } = useMemo(() => {
+    const range: string[] = [];
+    const schoolMap: Record<string, any[]> = {};
+    const workMap: Record<string, any[]> = {};
 
-  if (scheduleDataResponse && activeUserId) {
-    let memberData: any = null;
-    let membersArray: any[] = [];
-
-    // 1. Extract member data
-    if (
-      scheduleDataResponse.MemberSchedules &&
-      Array.isArray(scheduleDataResponse.MemberSchedules)
-    ) {
-      membersArray = scheduleDataResponse.MemberSchedules;
-    } else if (Array.isArray(scheduleDataResponse)) {
-      membersArray = scheduleDataResponse;
-    } else if (typeof scheduleDataResponse === "object") {
-      membersArray = Object.values(scheduleDataResponse);
-    }
-
-    memberData = membersArray.find(
-      (m: any) =>
-        m.memberId === activeUserId ||
-        m.familyMemberId === activeUserId ||
-        m.FamilyMemberId === activeUserId,
-    );
-    if (!memberData) {
-      memberData = membersArray.filter(
-        (t: any) =>
-          t.memberId === activeUserId ||
-          t.familyMemberId === activeUserId ||
-          t.FamilyMemberId === activeUserId,
-      );
-    }
-
-    // 2. Extract transactions
-    let allTrans: any[] = [];
-    if (Array.isArray(memberData)) {
-      allTrans = memberData;
-    } else if (memberData && typeof memberData === "object") {
-      if (Array.isArray(memberData.Schedules)) allTrans = memberData.Schedules;
-      else if (Array.isArray(memberData.schedules))
-        allTrans = memberData.schedules;
-      else if (Array.isArray(memberData.Transactions))
-        allTrans = memberData.Transactions;
-      else if (Array.isArray(memberData.transactions))
-        allTrans = memberData.transactions;
-      else if (Array.isArray(memberData.SHTrans)) allTrans = memberData.SHTrans;
-      else allTrans = [memberData];
-    } else if (!memberData && Array.isArray(scheduleDataResponse)) {
-      allTrans = scheduleDataResponse;
-    }
-
-    // 3. Generate the 7 days of the currently selected week
     let curr = dayjs(currentDateStart).startOf("day");
     for (let i = 0; i < 7; i++) {
       const dStr = curr.format("YYYY-MM-DD");
-      dateRange.push(dStr);
-      parsedSchoolScheduleData[dStr] = [];
-      parsedWorkScheduleData[dStr] = [];
+      range.push(dStr);
+      schoolMap[dStr] = [];
+      workMap[dStr] = [];
       curr = curr.add(1, "day");
     }
 
-    // 4. Group transactions by date
-    allTrans.forEach((trans: any) => {
-      const transDate = trans.Date || trans.date;
-      if (!transDate) return;
+    if (scheduleDataResponse && activeUserId) {
+      const memberContainer = getMemberScheduleContainer(scheduleDataResponse, activeUserId);
+      const allTrans = getMemberSchedulesList(scheduleDataResponse, activeUserId);
 
-      const dStr =
-        typeof transDate === "string"
-          ? transDate.substring(0, 10)
-          : dayjs(transDate).format("YYYY-MM-DD");
+      allTrans.forEach((trans: any, idx: number) => {
+        const transId =
+          trans.SHTransId ??
+          trans.ShTransId ??
+          trans.shTransId ??
+          trans.sHTransId ??
+          trans.Id ??
+          trans.id ??
+          trans.ShMasterId ??
+          trans.shMasterId ??
+          `trans-${idx}`;
 
-      if (parsedSchoolScheduleData[dStr] === undefined) {
-        return;
-      }
+        const transTitle = (
+          trans.Description ??
+          trans.description ??
+          trans.Title ??
+          trans.title ??
+          trans.Subject ??
+          trans.subject ??
+          trans.Note ??
+          trans.note ??
+          "Scheduled Event"
+        ).trim();
 
-      const transId =
-        trans.ShTransId ||
-        trans.shTransId ||
-        trans.Id ||
-        trans.id ||
-        Math.random();
-      const transTitle =
-        trans.Description ||
-        trans.description ||
-        trans.Title ||
-        trans.title ||
-        trans.Note ||
-        trans.note ||
-        "Scheduled Event";
-      const transStartTime = trans.StartTime || trans.startTime || "";
-      const transEndTime = trans.EndTime || trans.endTime || "";
-      const transScheduleType =
-        trans.ScheduleType !== undefined
-          ? trans.ScheduleType
-          : trans.scheduleType !== undefined
-            ? trans.scheduleType
-            : memberData?.ScheduleType !== undefined
-              ? memberData.ScheduleType
-              : memberData?.scheduleType;
+        const transRawStartTime = trans.StartTime ?? trans.startTime ?? "";
+        const transRawEndTime = trans.EndTime ?? trans.endTime ?? "";
 
-      const eventCard = {
-        id: transId,
-        title: transTitle,
-        time: `${transStartTime} - ${transEndTime}`,
-        startTime: transStartTime,
-      };
+        const startTimeFormatted = formatTimePart(transRawStartTime);
+        const endTimeFormatted = formatTimePart(transRawEndTime);
+        const timeDisplay =
+          startTimeFormatted && endTimeFormatted
+            ? `${startTimeFormatted} - ${endTimeFormatted}`
+            : startTimeFormatted || endTimeFormatted || "";
 
-      if (String(transScheduleType) === "0") {
-        parsedSchoolScheduleData[dStr].push(eventCard);
-      } else if (String(transScheduleType) === "1") {
-        parsedWorkScheduleData[dStr].push(eventCard);
-      }
-    });
+        const transIcon =
+          trans.Icon ??
+          trans.icon ??
+          trans.IconUrl ??
+          trans.iconUrl ??
+          trans.ResourceUrl ??
+          trans.resourceUrl ??
+          "";
 
-    // 5. Sort by StartTime ascending
-    Object.keys(parsedSchoolScheduleData).forEach((dStr) => {
-      parsedSchoolScheduleData[dStr].sort((a, b) =>
-        a.startTime.localeCompare(b.startTime),
-      );
-    });
-    Object.keys(parsedWorkScheduleData).forEach((dStr) => {
-      parsedWorkScheduleData[dStr].sort((a, b) =>
-        a.startTime.localeCompare(b.startTime),
-      );
-    });
-  }
+        const transNote = (trans.Note ?? trans.note ?? "").trim();
 
-  // Use parsed API data for schedules
-  const schoolScheduleData = parsedSchoolScheduleData;
-  const workScheduleData = parsedWorkScheduleData;
+        const transWeekday =
+          trans.Weekday !== undefined && trans.Weekday !== null
+            ? Number(trans.Weekday)
+            : trans.weekday !== undefined && trans.weekday !== null
+              ? Number(trans.weekday)
+              : trans.DayOfWeek !== undefined && trans.DayOfWeek !== null
+                ? Number(trans.DayOfWeek)
+                : undefined;
 
-  // Setup active values based on toggle state
+        const transScheduleType =
+          trans.ScheduleType !== undefined && trans.ScheduleType !== null
+            ? Number(trans.ScheduleType)
+            : trans.scheduleType !== undefined && trans.scheduleType !== null
+              ? Number(trans.scheduleType)
+              : memberContainer?.ScheduleType !== undefined && memberContainer?.ScheduleType !== null
+                ? Number(memberContainer.ScheduleType)
+                : 0;
+
+        const eventCard = {
+          id: transId,
+          title: transTitle,
+          time: timeDisplay,
+          startTime: transRawStartTime,
+          icon: transIcon,
+          note: transNote,
+          weekday: transWeekday,
+          scheduleType: transScheduleType,
+        };
+
+        const transDate = trans.Date ?? trans.date;
+        const dateStr = transDate ? String(transDate).substring(0, 10) : "";
+        const isDummyDate =
+          !dateStr ||
+          dateStr.startsWith("1990-") ||
+          dateStr.startsWith("1970-") ||
+          dateStr.startsWith("0001-");
+
+        // 1. School Schedule (ScheduleType 0): weekly recurring timetable mapped by Weekday
+        if (transScheduleType === 0) {
+          if (transWeekday !== undefined && transWeekday >= 0 && transWeekday < range.length) {
+            schoolMap[range[transWeekday]].push(eventCard);
+          } else if (!isDummyDate && schoolMap[dateStr]) {
+            schoolMap[dateStr].push(eventCard);
+          }
+        }
+        // 2. Work Schedule (ScheduleType 1): specific dated rotation or fallback by Weekday
+        else if (transScheduleType === 1) {
+          if (!isDummyDate && workMap[dateStr]) {
+            workMap[dateStr].push(eventCard);
+          } else if (isDummyDate && transWeekday !== undefined && transWeekday >= 0 && transWeekday < range.length) {
+            workMap[range[transWeekday]].push(eventCard);
+          }
+        }
+      });
+
+      // Sort items on each day chronologically by startTime
+      Object.keys(schoolMap).forEach((dStr) => {
+        schoolMap[dStr].sort((a, b) => (a.startTime || "").localeCompare(b.startTime || ""));
+      });
+      Object.keys(workMap).forEach((dStr) => {
+        workMap[dStr].sort((a, b) => (a.startTime || "").localeCompare(b.startTime || ""));
+      });
+    }
+
+    return {
+      dateRange: range,
+      parsedSchoolScheduleData: schoolMap,
+      parsedWorkScheduleData: workMap,
+    };
+  }, [currentDateStart, scheduleDataResponse, activeUserId]);
+
   const isSchool = activeSchedule === "school";
-
-  // Format the overall date range for display
   const displayStartDate = dateRange.length > 0 ? dateRange[0] : "";
-  const displayEndDate =
-    dateRange.length > 0 ? dateRange[dateRange.length - 1] : "";
+  const displayEndDate = dateRange.length > 0 ? dateRange[dateRange.length - 1] : "";
 
   return (
     <div className="flex flex-col h-full p-4 sm:p-6 md:p-8 rounded-3xl min-h-[650px]">
@@ -594,7 +557,9 @@ export default function ScheduleView({
             {/* Displayed Date Range & Subtitle */}
             <div className="flex flex-col text-left sm:text-right">
               <span className="text-xs sm:text-sm font-bold text-purple-600/90 tracking-wide">
-                {displayStartDate} - {displayEndDate}
+                {displayStartDate && displayEndDate
+                  ? `${dayjs(displayStartDate).format("MMM D")} - ${dayjs(displayEndDate).format("MMM D, YYYY")}`
+                  : `${displayStartDate} - ${displayEndDate}`}
               </span>
               <span className="text-[10px] sm:text-xs font-semibold text-gray-400 uppercase tracking-wider mt-0.5">
                 {isSchool
@@ -612,12 +577,12 @@ export default function ScheduleView({
         >
           {isSchool ? (
             <SchoolScheduleView
-              scheduleData={schoolScheduleData}
+              scheduleData={parsedSchoolScheduleData}
               dateRange={dateRange}
             />
           ) : (
             <WorkScheduleView
-              scheduleData={workScheduleData}
+              scheduleData={parsedWorkScheduleData}
               dateRange={dateRange}
             />
           )}
@@ -626,3 +591,4 @@ export default function ScheduleView({
     </div>
   );
 }
+
