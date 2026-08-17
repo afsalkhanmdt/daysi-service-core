@@ -349,12 +349,44 @@ const CalendarView = ({
           ) !== 1,
       );
 
-    const filteredOptimisticEvents = optimisticEvents.filter(
-      (e) =>
+    // Anti-flicker deduplication:
+    // Filter out optimistic events if a matching real event has already been received from the server
+    const filteredOptimisticEvents = optimisticEvents.filter((opt) => {
+      const isSpecial =
         Number(
-          e.extendedProps?.isSpecialEvent ?? e.extendedProps?.IsSpecialEvent,
-        ) !== 1,
-    );
+          opt.extendedProps?.isSpecialEvent ?? opt.extendedProps?.IsSpecialEvent,
+        ) === 1;
+      if (isSpecial) return false;
+
+      const optGuid =
+        opt.extendedProps?.eventGuID ||
+        opt.extendedProps?.EventGuId ||
+        opt.extendedProps?.eventGuid;
+      const optStart = opt.start ? new Date(opt.start as any).getTime() : 0;
+      const optResource = String(opt.resourceId || "");
+
+      const alreadyInServerEvents = filteredEvents.some((srv) => {
+        const srvGuid =
+          srv.extendedProps?.EventGuId ||
+          srv.extendedProps?.eventGuID ||
+          srv.extendedProps?.eventGuid;
+        if (optGuid && srvGuid && String(optGuid) === String(srvGuid)) {
+          return String(srv.resourceId) === optResource;
+        }
+
+        const srvStart = srv.start ? new Date(srv.start as any).getTime() : 0;
+        const srvResource = String(srv.resourceId || "");
+        return (
+          srv.title === opt.title &&
+          srvResource === optResource &&
+          optStart > 0 &&
+          srvStart > 0 &&
+          Math.abs(srvStart - optStart) < 2000
+        );
+      });
+
+      return !alreadyInServerEvents;
+    });
 
     return [
       ...filteredEvents,
@@ -452,26 +484,39 @@ const CalendarView = ({
     }
   }, [getScrollTarget]);
 
+  const lastScrolledDateRef = useRef<string | null>(null);
+  const initialDataLoadedRef = useRef<boolean>(false);
+
   // Combined effect for navigation and scrolling
   useEffect(() => {
     if (!calendarRef.current?.getApi) return;
     const api = calendarRef.current.getApi();
+
+    const dateKey = currentDate.toDateString();
+    const isNewDate = lastScrolledDateRef.current !== dateKey;
 
     // 1. Navigate to the correct date asynchronously to avoid React 18 flushSync warnings
     const navTimeout = setTimeout(() => {
       api.gotoDate(currentDate);
     }, 0);
 
-    // 2. Trigger scroll with a slight delay to allow rendering
-    const scrollTimeout = setTimeout(() => {
-      executeScroll();
-    }, 250); // Increased delay slightly for better reliability after reload
+    // 2. Trigger scroll when explicitly navigating to a new date, on initial mount, or once when initial events arrive
+    let scrollTimeout: NodeJS.Timeout | null = null;
+    if (isNewDate || (!initialDataLoadedRef.current && events.length > 0)) {
+      lastScrolledDateRef.current = dateKey;
+      if (events.length > 0) {
+        initialDataLoadedRef.current = true;
+      }
+      scrollTimeout = setTimeout(() => {
+        executeScroll();
+      }, 250);
+    }
 
     return () => {
       clearTimeout(navTimeout);
-      clearTimeout(scrollTimeout);
+      if (scrollTimeout) clearTimeout(scrollTimeout);
     };
-  }, [currentDate, executeScroll, data]); // Added data dependency to re-scroll after reload
+  }, [currentDate, executeScroll, events.length]);
 
   // Debug effect to log slot information
   useEffect(() => {
@@ -522,8 +567,6 @@ const CalendarView = ({
   const handleEditAppointment = async (
     appointmentData: UserEventUpdateRequest,
   ) => {
-    setIsLoading?.(true);
-
     const now = new Date().toISOString();
 
     const updatedAppointmentData = {
@@ -554,7 +597,7 @@ const CalendarView = ({
       noPush: appointmentData.noPush || false,
     };
 
-    // Create optimistic version
+    // Create optimistic version with isOptimistic and isUploading flags
     const optimisticEditedEvents = createOptimisticEvents(
       updatedAppointmentData,
       data?.Members || [],
@@ -562,41 +605,32 @@ const CalendarView = ({
 
     const originalEventId = String(appointmentData.id);
 
-    // Replace original event with optimistic event
+    // Replace original event with optimistic event instantly
     setOptimisticUpdates((prev) => ({
       ...prev,
       [originalEventId]: optimisticEditedEvents,
     }));
 
+    if (updatedAppointmentData.startDate) {
+      setCurrentDate(new Date(updatedAppointmentData.startDate));
+    }
+
     try {
       const response = await updateAppointmentCall(updatedAppointmentData);
 
       if (response) {
-        // Remove optimistic event immediately
-        setOptimisticUpdates((prev) => {
-          const next = { ...prev };
-          delete next[originalEventId];
-          return next;
-        });
-
-        // Then fetch actual updated event
+        // Await dataReload first so new server state arrives before optimistic state is released
         await dataReload();
-
-        if (updatedAppointmentData.startDate) {
-          setCurrentDate(new Date(updatedAppointmentData.startDate));
-        }
       }
     } catch (error) {
-      // Rollback optimistic update
+      console.error("Failed to update appointment:", error);
+    } finally {
+      // Clear optimistic state only after reload has seamlessly populated the new event
       setOptimisticUpdates((prev) => {
         const next = { ...prev };
         delete next[originalEventId];
         return next;
       });
-
-      console.error(error);
-    } finally {
-      setIsLoading?.(false);
     }
   };
 
@@ -851,9 +885,14 @@ const CalendarView = ({
               repeatStr !== "undefined" &&
               repeatStr !== "";
 
+            const isUploading =
+              eventInfo.event.extendedProps?.isUploading ||
+              eventInfo.event.extendedProps?.isOptimistic;
+
             return (
               <div
                 onClick={() => {
+                  if (isUploading) return;
                   checkSubscription(() => {
                     if (isRecurring) {
                       // Show the recurring options overlay first
@@ -867,11 +906,13 @@ const CalendarView = ({
                     }
                   });
                 }}
-                className={`h-full border-t-4 rounded-xl border-sky-500 ${
-                  eventInfo.event.extendedProps.ExternalCalendarName
-                    ? "bg-slate-200"
-                    : "bg-white"
-                } shadow-sm overflow-auto min-h-32 w-full max-w-96 cursor-pointer hover:shadow-md transition-shadow`}
+                className={`h-full border-t-4 rounded-xl ${
+                  isUploading
+                    ? "border-amber-400 bg-amber-50/20 shadow-xs cursor-wait"
+                    : eventInfo.event.extendedProps.ExternalCalendarName
+                      ? "border-sky-500 bg-slate-200 shadow-sm cursor-pointer hover:shadow-md"
+                      : "border-sky-500 bg-white shadow-sm cursor-pointer hover:shadow-md"
+                } overflow-auto min-h-32 w-full max-w-96 transition-all duration-300`}
               >
                 <EventCardUI
                   eventInfo={eventInfo}
