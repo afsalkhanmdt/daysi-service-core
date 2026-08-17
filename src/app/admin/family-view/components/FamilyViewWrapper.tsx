@@ -281,8 +281,6 @@ const FamilyViewWrapper = ({
   const handleCreateAppointment = async (
     appointmentData: UserEventCreateRequest,
   ) => {
-    setIsActionLoading(true);
-
     const now = new Date().toISOString();
 
     // Create a new object with all the added values (UserEventCreateCommand)
@@ -327,6 +325,7 @@ const FamilyViewWrapper = ({
       familyDetails?.Members || [],
     );
 
+    // Instantly add optimistic card with "Uploading..." indicator
     setOptimisticEvents((prev) => [...prev, ...createdOptimisticEvents]);
 
     const optimisticIds = createdOptimisticEvents.map((e: any) => e.id);
@@ -342,19 +341,16 @@ const FamilyViewWrapper = ({
       ]);
 
       if (response) {
-        setOptimisticEvents((prev) =>
-          prev.filter((e) => !optimisticIds.includes(e.id)),
-        );
+        // Await reload first so the server event arrives before removing optimistic dummy
         await reload();
       }
     } catch (error) {
+      console.error("Error creating appointment:", error);
+    } finally {
+      // Clear optimistic cards only after reload has seamlessly taken over
       setOptimisticEvents((prev) =>
         prev.filter((e) => !optimisticIds.includes(e.id)),
       );
-
-      console.error(error);
-    } finally {
-      setIsActionLoading(false);
     }
   };
 
@@ -576,22 +572,19 @@ const FamilyViewWrapper = ({
             reloadPM={reloadPM}
             reloadTodo={reloadTodo}
             reload={reload}
+            onResetDate={() => setCurrentDate(new Date())}
             setIsLoading={setIsActionLoading}
             onNewAppointment={() =>
-              // checkSubscription(() => setShowCreateAppointment(true))
-              setShowCreateAppointment(true)
+              checkSubscription(() => setShowCreateAppointment(true))
             }
             onNewToDo={() =>
-              // checkSubscription(() => setShowCreateTodo(true))
-              setShowCreateTodo(true)
+              checkSubscription(() => setShowCreateTodo(true))
             }
             onNewPocketMoney={() =>
-              // checkSubscription(() => setShowCreatePocketMoney(true))
-              setShowCreatePocketMoney(true)
+              checkSubscription(() => setShowCreatePocketMoney(true))
             }
             onImportAppointments={() =>
-              // checkSubscription(() => setShowImportAppointments(true))
-              setShowImportAppointments(true)
+              checkSubscription(() => setShowImportAppointments(true))
             }
           />
         </div>
@@ -641,22 +634,19 @@ const FamilyViewWrapper = ({
           reloadTodo={reloadTodo}
           reloadSchedule={reloadSchedule}
           reload={reload}
+          onResetDate={() => setCurrentDate(new Date())}
           setIsLoading={setIsActionLoading}
           onNewAppointment={() =>
-            // checkSubscription(() => setShowCreateAppointment(true))
-            setShowCreateAppointment(true)
+            checkSubscription(() => setShowCreateAppointment(true))
           }
           onNewToDo={() =>
-            // checkSubscription(() => setShowCreateTodo(true))
-            setShowCreateTodo(true)
+            checkSubscription(() => setShowCreateTodo(true))
           }
           onNewPocketMoney={() =>
-            // checkSubscription(() => setShowCreatePocketMoney(true))
-            setShowCreatePocketMoney(true)
+            checkSubscription(() => setShowCreatePocketMoney(true))
           }
           onImportAppointments={() =>
-            // checkSubscription(() => setShowImportAppointments(true))
-            setShowImportAppointments(true)
+            checkSubscription(() => setShowImportAppointments(true))
           }
         />
       </div>
@@ -706,8 +696,7 @@ const FamilyViewWrapper = ({
               setIsLoading={setIsActionLoading}
               isTasksLoading={isTasksLoading}
               onImportAppointments={() =>
-                // checkSubscription(() => setShowImportAppointments(true))
-                setShowCreateAppointment(true)
+                checkSubscription(() => setShowImportAppointments(true))
               }
               optimisticUpdates={optimisticUpdates}
               setOptimisticUpdates={setOptimisticUpdates}
