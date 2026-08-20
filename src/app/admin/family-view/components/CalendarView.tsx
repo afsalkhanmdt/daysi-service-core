@@ -23,6 +23,7 @@ import {
 import { useFetch } from "@/app/hooks/useFetch";
 import { useSearchParams } from "next/navigation";
 import { FamilyData } from "./FamilyViewWrapper";
+import { SubscriptionTypeEnum } from "@/app/types/familytypes";
 
 import SideBarMobileView from "./SideBarMobileView";
 import MobileEventAndScrollBar from "./MobileEventAndScrollBar";
@@ -122,8 +123,12 @@ const CalendarView = ({
 
   const [editType, setEditType] = useState<"single" | "series" | null>(null);
 
+  const isPremiumUser =
+    data?.Family.SubscriptionType === 1 ||
+    data?.Family.SubscriptionType === "Premium";
+
   const checkSubscription = (callback: () => void) => {
-    if (data?.Family.SubscriptionType !== "Premium") {
+    if (!isPremiumUser) {
       onFreemium();
     } else {
       callback();
@@ -772,7 +777,7 @@ const CalendarView = ({
         calendarRef={calendarRef}
         currentDate={currentDate}
         setCurrentDate={setCurrentDate}
-        isPremium={data?.Family.SubscriptionType === "Premium"}
+        isPremium={isPremiumUser}
         country={
           data.Members.find((m) => m.MemberId === data.LoggedInUserId)
             ?.HolidaysCountryCode || "dk"

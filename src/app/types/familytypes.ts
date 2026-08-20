@@ -15,7 +15,12 @@ export type ToDoFamilyGroupResponse = {
   IsActive: boolean;
 };
 
-export type SubscriptionType = "Basis" | "Premium";
+export enum SubscriptionTypeEnum {
+  Basis = 0,
+  Premium = 1,
+}
+
+export type SubscriptionType = "Basis" | "Premium" | 0 | 1 | SubscriptionTypeEnum;
 
 export type FamilyResponse = {
   Id: number;
