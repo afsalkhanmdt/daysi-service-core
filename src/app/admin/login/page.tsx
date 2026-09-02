@@ -135,7 +135,7 @@ const Login = () => {
                 Remember me
               </label>
               <Link
-                href="#"
+                href="/admin/forgot-password"
                 className="text-sky-500 hover:underline transition duration-200"
               >
                 Forgot Password?

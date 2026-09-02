@@ -1,4 +1,6 @@
- export const AdminLoginCall = async (username: string, password: string) => {
+import apiUrl from "@/config/apiUrl";
+
+export const AdminLoginCall = async (username: string, password: string) => {
   const formData = new URLSearchParams();
   formData.append("grant_type", "password");
   formData.append("username", username);
@@ -35,8 +37,56 @@
   return res.json();
 };
 
+export interface ForgotPasswordPayload {
+  UserName: string;
+  FamilyId?: number | null;
+  Locale?: string;
+}
 
-import apiUrl from "@/config/apiUrl";
+export const ForgotPasswordCall = async (payload: ForgotPasswordPayload) => {
+  const backendBase = apiUrl.endsWith("/") ? apiUrl : `${apiUrl}/`;
+  // Try Account/ForgotPassword or fallback to ForgotPassword
+  const url = `${backendBase}Account/ForgotPassword`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Source": "events-webpage"
+    },
+    body: JSON.stringify(payload),
+    redirect: "manual"
+  });
+
+  if (!res.ok) {
+    let errorMessage = "Failed to reset password. Please try again.";
+    try {
+      const errorData = await res.json();
+      if (errorData.message || errorData.Message) {
+        errorMessage = errorData.message || errorData.Message;
+      } else if (errorData.error_description) {
+        errorMessage = errorData.error_description;
+      }
+    } catch {
+      if (res.status === 404) {
+        errorMessage = "User not found with the provided credentials.";
+      } else if (res.status === 400) {
+        errorMessage = "Invalid request. Please check the entered username or details.";
+      } else {
+        errorMessage = `Error: ${res.status} ${res.statusText}`;
+      }
+    }
+    throw new Error(errorMessage);
+  }
+
+  // Handle 200/204 with or without JSON body
+  try {
+    return await res.json();
+  } catch {
+    return { success: true };
+  }
+};
+
 
 interface ApiCallParameters {
     url: string;
