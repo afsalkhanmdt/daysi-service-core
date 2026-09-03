@@ -310,24 +310,74 @@ const ImportAppointmentsPopup: React.FC<ImportAppointmentsPopupProps> = ({
 
           <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 items-center gap-x-4 gap-y-4">
             {(() => {
-              const rawItems =
+              const isLanguageMatch = (providerLang: string, targetLocale: string) => {
+                if (!providerLang || !targetLocale) return false;
+                const pLang = providerLang.trim().toLowerCase();
+                const tLoc = targetLocale.trim().toLowerCase();
+
+                if (pLang === tLoc) return true;
+
+                const pCode = pLang.split(/[-_]/)[0];
+                const tCode = tLoc.split(/[-_]/)[0];
+                if (pCode === tCode) return true;
+
+                // Norwegian Bokmål / Norwegian aliases
+                if ((pCode === "nb" || pCode === "no") && (tCode === "nb" || tCode === "no")) {
+                  return true;
+                }
+
+                return false;
+              };
+
+              const currentLocale = locale || "en";
+
+              let matchedProviders =
                 externalCalendarTypes && externalCalendarTypes.length > 0
-                  ? externalCalendarTypes.map((item) => {
-                      const matchedStatic = STATIC_EXTERNAL_CALENDAR_LOGOS.find(
-                        (s) =>
-                          s.name.toLowerCase() === item.Name.toLowerCase() ||
-                          item.Name.toLowerCase().includes(s.name.toLowerCase()) ||
-                          s.name.toLowerCase().includes(item.Name.toLowerCase()),
-                      );
-                      return {
-                        name: item.Name,
-                        logo: matchedStatic?.logo || item.Logo,
-                        link: item.Link,
-                      };
-                    })
+                  ? externalCalendarTypes.filter((item) =>
+                      isLanguageMatch(item.Language, currentLocale)
+                    )
+                  : [];
+
+              // Fallback to English if no match found for current locale
+              if (
+                matchedProviders.length === 0 &&
+                externalCalendarTypes &&
+                externalCalendarTypes.length > 0
+              ) {
+                matchedProviders = externalCalendarTypes.filter((item) =>
+                  isLanguageMatch(item.Language, "en")
+                );
+              }
+
+              // Fallback to all types if still empty
+              if (
+                matchedProviders.length === 0 &&
+                externalCalendarTypes &&
+                externalCalendarTypes.length > 0
+              ) {
+                matchedProviders = externalCalendarTypes;
+              }
+
+              const rawItems =
+                matchedProviders.length > 0
+                  ? [...matchedProviders]
+                      .sort((a, b) => (a.SequenceNumber || 0) - (b.SequenceNumber || 0))
+                      .map((item) => {
+                        const matchedStatic = STATIC_EXTERNAL_CALENDAR_LOGOS.find(
+                          (s) =>
+                            s.name.toLowerCase() === item.Name.toLowerCase() ||
+                            item.Name.toLowerCase().includes(s.name.toLowerCase()) ||
+                            s.name.toLowerCase().includes(item.Name.toLowerCase())
+                        );
+                        return {
+                          name: item.Name,
+                          logo: matchedStatic?.logo || item.Logo,
+                          link: item.Link,
+                        };
+                      })
                   : STATIC_EXTERNAL_CALENDAR_LOGOS;
 
-              // Deduplicate logos by normalized name so each provider appears only once
+              // Deduplicate logos by normalized name
               const uniqueItemsMap = new Map<string, (typeof rawItems)[0]>();
               rawItems.forEach((item) => {
                 const key = item.name.trim().toLowerCase();
