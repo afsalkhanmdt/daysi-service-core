@@ -265,17 +265,23 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
 
     if (!repeatEndDate) return { beforeDates, afterDates };
 
-    const toDay = (d: Date) => d.toISOString().split("T")[0]; // YYYY-MM-DD
+    // Format local date string YYYY-MM-DD for reliable day-level comparisons
+    const toDay = (d: Date) => {
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd}`;
+    };
 
     let currentDate = new Date(originalStartDate);
     const editDay = toDay(new Date(editDate));
-    const endDate = new Date(repeatEndDate);
+    const endDay = toDay(new Date(repeatEndDate));
 
     // Collect dates before the edited occurrence (day-level comparison)
-    while (currentDate <= endDate) {
+    while (toDay(currentDate) <= endDay) {
       const currentDay = toDay(currentDate);
       if (currentDay === editDay) {
-        // This is the occurrence being edited — skip it
+        // This is the occurrence being edited — advance to the next occurrence and break to after loop
         currentDate = getNextOccurrence(currentDate, repeatType);
         break;
       }
@@ -283,13 +289,12 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
         beforeDates.push(currentDate.toISOString());
         currentDate = getNextOccurrence(currentDate, repeatType);
       } else {
-        // Passed the edit date without finding it (shouldn't happen if data is correct)
         break;
       }
     }
 
     // Collect dates after the edited occurrence
-    while (currentDate <= endDate) {
+    while (toDay(currentDate) <= endDay) {
       afterDates.push(currentDate.toISOString());
       currentDate = getNextOccurrence(currentDate, repeatType);
     }
@@ -321,9 +326,10 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
   const createSeriesPayload = (
     startDate: string,
     endDate: string,
-    repeatEndDate: string,
+    repeatEndDate: string | null,
     originalEvent: any,
     participants: any[],
+    isSingleInstance: boolean = false,
   ): UserEventCreateRequest => {
     // Extract the time portion from the original series start so the new
     // occurrences keep the same start/end time as the original event.
@@ -343,7 +349,13 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
     const endTime = extractTime(origEndISO);
 
     // Build date-only strings (YYYY-MM-DD) from the ISO datetimes
-    const toDateOnly = (iso: string) => iso.split("T")[0];
+    const toDateOnly = (iso: string) => {
+      const d = new Date(iso);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd}`;
+    };
 
     return {
       title: originalEvent.title,
@@ -353,17 +365,19 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
       endDate: buildTimestamp(toDateOnly(endDate), endTime),
       localStartDate: buildLocalTimestamp(toDateOnly(startDate), startTime),
       localEndDate: buildLocalTimestamp(toDateOnly(endDate), endTime),
-      repeat: originalEvent.repeat,
-      repeatEndDate: (() => {
-        const d = new Date(repeatEndDate);
-        if (!isNaN(d.getTime())) {
-          const yyyy = d.getFullYear();
-          const mm = String(d.getMonth() + 1).padStart(2, "0");
-          const dd = String(d.getDate()).padStart(2, "0");
-          return buildTimestamp(`${yyyy}-${mm}-${dd}`, "23:59:59");
-        }
-        return new Date(repeatEndDate).toISOString();
-      })(),
+      repeat: isSingleInstance ? 0 : originalEvent.repeat,
+      repeatEndDate: isSingleInstance || !repeatEndDate
+        ? null
+        : (() => {
+            const d = new Date(repeatEndDate);
+            if (!isNaN(d.getTime())) {
+              const yyyy = d.getFullYear();
+              const mm = String(d.getMonth() + 1).padStart(2, "0");
+              const dd = String(d.getDate()).padStart(2, "0");
+              return buildTimestamp(`${yyyy}-${mm}-${dd}`, "23:59:59");
+            }
+            return new Date(repeatEndDate).toISOString();
+          })(),
       alert: originalEvent.alert || 0,
       isForAll: originalEvent.isForAll || 0,
       isAllDayEvent: originalEvent.isAllDayEvent || 0,
@@ -377,14 +391,16 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
       // Always normalize recurrenceRule to camelCase — the API returns it in
       // PascalCase ({ Frequency, Interval }) but the create endpoint requires
       // camelCase ({ frequency, interval }). Sending PascalCase = INVALID_MODEL_STATE.
-      recurrenceRule: (() => {
-        const rule = originalEvent.recurrenceRule;
-        if (!rule) return { frequency: 0, interval: 1 };
-        return {
-          frequency: rule.frequency ?? rule.Frequency ?? 0,
-          interval: rule.interval ?? rule.Interval ?? 1,
-        };
-      })(),
+      recurrenceRule: isSingleInstance
+        ? { frequency: 0, interval: 1 }
+        : (() => {
+            const rule = originalEvent.recurrenceRule;
+            if (!rule) return { frequency: 0, interval: 1 };
+            return {
+              frequency: rule.frequency ?? rule.Frequency ?? 0,
+              interval: rule.interval ?? rule.Interval ?? 1,
+            };
+          })(),
       alarms: originalEvent.alarms || [],
       latitude: originalEvent.latitude || "",
       longitude: originalEvent.longitude || "",
@@ -520,6 +536,83 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
     return participants;
   };
 
+  // Participants for CREATE calls of the original series (before/after series when splitting)
+  // Preserves original series participants so only the single edited occurrence changes
+  const getOriginalParticipantsForCreate = () => {
+    const firstResource = resources[0];
+
+    const participants: {
+      localId: number | string;
+      memberId: string;
+      eventId: number;
+    }[] = [];
+
+    // Add the family (first resource) member
+    if (firstResource) {
+      participants.push({
+        localId: firstResource.id,
+        memberId: firstResource.extendedProps?.memberId || "",
+        eventId: 0,
+      });
+    }
+
+    const rawParticipants: any[] =
+      initialData?.participants ||
+      initialData?.extendedProps?.participants ||
+      initialData?.extendedProps?.Participants ||
+      (initialData as any)?.Participants ||
+      (initialData as any)?.EventParticipant ||
+      [];
+
+    const isForAllValue = Number(
+      initialData?.isForAll ??
+        initialData?.IsForAll ??
+        initialData?.extendedProps?.IsForAll ??
+        initialData?.extendedProps?.isForAll ??
+        0,
+    );
+
+    const otherResources = resources.slice(1);
+
+    if (rawParticipants && rawParticipants.length > 0) {
+      const originalMemberIds = new Set(
+        rawParticipants.map((p: any) =>
+          String(p.ParticipantId || p.memberId || p.MemberId || p.id || ""),
+        ),
+      );
+
+      otherResources.forEach((resource) => {
+        const memberId = String(resource.extendedProps?.memberId || "");
+        const localId = String(resource.id);
+        if (
+          originalMemberIds.has(memberId) ||
+          originalMemberIds.has(localId)
+        ) {
+          participants.push({
+            localId: resource.id,
+            memberId: memberId,
+            eventId: 0,
+          });
+        }
+      });
+    } else if (isForAllValue === 1) {
+      otherResources.forEach((resource) => {
+        participants.push({
+          localId: resource.id,
+          memberId: String(resource.extendedProps?.memberId || ""),
+          eventId: 0,
+        });
+      });
+    }
+
+    // Safety fallback: if no participants matched, fallback to current form participants
+    if (participants.length <= 1 && otherResources.length > 0) {
+      return getParticipantsForCreate();
+    }
+
+    return participants;
+  };
+
   // Get the update payload
   const getUpdatePayload = (): UserEventUpdateRequest => {
     let repeatEndDate: string | null = null;
@@ -624,20 +717,6 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
         initialData?.extendedProps?.repeatEndDate ??
         initialData?.repeatEndDate ??
         null;
-
-      // ── CRITICAL FIX ──────────────────────────────────────────────────────
-      // When a user clicks a recurrence instance, initialData.startDate is
-      // the START OF THAT SPECIFIC OCCURRENCE, NOT the first occurrence of the
-      // series. Using it as the series start makes originalSeriesStartISO ===
-      // editDateISO, so calculateSplitDates finds nothing before the edit and
-      // nothing after — both arrays are empty, and neither createAppointmentCall
-      // is ever invoked.
-      //
-      // The raw API event always stores the FIRST occurrence's start/end in
-      // extendedProps.Start / extendedProps.End as numeric timestamp strings.
-      // We must use those for originalSeriesStartISO, and use
-      // initialData.startDate only as editDateISO (the clicked occurrence).
-      // ─────────────────────────────────────────────────────────────────────
 
       const parseTs = (val: any): string => {
         if (!val) return "";
@@ -791,8 +870,8 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
         _originalEndISO: originalSeriesEndISO,
       };
 
-      // Format participants for the new series — create shape only { localId, memberId }
-      const formattedParticipants = getParticipantsForCreate();
+      // Format original participants for the before/after series (retaining original assignment)
+      const originalSeriesParticipants = getOriginalParticipantsForCreate();
 
       const results = {
         beforeSeries: null as UserEventCreateRequest | null,
@@ -801,8 +880,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
       };
 
       // 1. Update the single edited event FIRST (detach it from the recurring
-      //    series by setting repeat=0). The backend must process this before the
-      //    two new series are created so there is no overlap.
+      //    series by setting repeat=0). Uses newly selected participants from the form.
       const updatePayload = getUpdatePayload();
       updatePayload.repeat = 0;
       updatePayload.repeatEndDate = null;
@@ -810,7 +888,7 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
 
       await onSubmit(results.editedEvent);
 
-      // 2. Create "Before" series (occurrences before the edited one)
+      // 2. Create "Before" series (occurrences before the edited one) with ORIGINAL participants
       if (beforeDates.length > 0) {
         const beforeStart = beforeDates[0];
         const beforeEnd = calculateEndDate(
@@ -830,14 +908,15 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
           beforeEnd,
           beforeSeriesEnd,
           originalEventSnapshot,
-          formattedParticipants,
+          originalSeriesParticipants,
+          beforeDates.length === 1,
         );
 
         await onCreateSeries(beforePayload);
         results.beforeSeries = beforePayload;
       }
 
-      // 3. Create "After" series (occurrences after the edited one)
+      // 3. Create "After" series (occurrences after the edited one) with ORIGINAL participants
       if (afterDates.length > 0) {
         const afterStart = afterDates[0];
         const afterEnd = calculateEndDate(
@@ -857,7 +936,8 @@ const EditAppointmentPopup: React.FC<EditAppointmentPopupProps> = ({
           afterEnd,
           afterSeriesEnd,
           originalEventSnapshot,
-          formattedParticipants,
+          originalSeriesParticipants,
+          afterDates.length === 1,
         );
 
         await onCreateSeries(afterPayload);

@@ -732,7 +732,10 @@ const FamilyViewWrapper = ({
         onSubmit={handleImportAppointments}
         familyId={Number(familyId)}
         locale={
-          familyDetails?.Members?.find((m) => m.MemberId === userId)?.Locale ||
+          familyDetails?.Members?.find(
+            (m) => m.MemberId === (userId || familyDetails?.LoggedInUserId)
+          )?.Locale ||
+          i18next.language ||
           "en"
         }
         externalCalendarTypes={familyDetails?.ExternalCalendarTypes}
