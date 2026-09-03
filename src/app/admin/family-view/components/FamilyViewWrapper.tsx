@@ -20,7 +20,7 @@ import mainIcon from "@/app/admin/assets/2026-03-06 NEW MyFamilii Header - ONLY 
 import dp from "@/app/admin/assets/try.jpg";
 
 import { useFetch } from "@/app/hooks/useFetch";
-import { FamilyResponse } from "@/app/types/familytypes";
+import { FamilyResponse, SubscriptionTypeEnum } from "@/app/types/familytypes";
 import {
   ExternalCalendar,
   ExternalCalendarResponse,
@@ -214,8 +214,12 @@ const FamilyViewWrapper = ({
 
   const { t } = useTranslation("common");
 
+  const isPremiumUser =
+    familyDetails?.Family.SubscriptionType === 1 ||
+    familyDetails?.Family.SubscriptionType === "Premium";
+
   const checkSubscription = (callback: () => void) => {
-    if (familyDetails?.Family.SubscriptionType !== "Premium") {
+    if (!isPremiumUser) {
       setShowFreemiumModal(true);
     } else {
       callback();

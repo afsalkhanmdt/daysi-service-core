@@ -11,6 +11,7 @@ import { PMData, PMTask } from "@/app/types/pocketMoney";
 import EditTodoPopup from "./EditTodoPopup";
 import { ToDoTaskType } from "@/app/types/todo";
 import { updatePocketMoneyTaskCall, updateToDoTaskCall } from "@/services/api";
+import { SubscriptionTypeEnum } from "@/app/types/familytypes";
 
 const ToDoAndPMComponent = ({
   todoDetails,
@@ -55,8 +56,12 @@ const ToDoAndPMComponent = ({
     null,
   );
 
+  const isPremiumUser =
+    familyDetails?.Family.SubscriptionType === 1 ||
+    familyDetails?.Family.SubscriptionType === "Premium";
+
   const checkSubscription = (callback: () => void) => {
-    if (familyDetails?.Family.SubscriptionType !== "Premium") {
+    if (!isPremiumUser) {
       onFreemium();
     } else {
       callback();

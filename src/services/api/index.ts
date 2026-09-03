@@ -1,4 +1,5 @@
-import { postCall,deleteCall } from "@/services/api/apiCall";
+import { postCall, deleteCall, ForgotPasswordCall, type ForgotPasswordPayload } from "@/services/api/apiCall";
+export { ForgotPasswordCall, type ForgotPasswordPayload };
 export const createAppointmentCall = postCall("Events/CreateV1");
 export const updateAppointmentCall = postCall("Events/Update");
 export const deleteAppointmentCall = (
