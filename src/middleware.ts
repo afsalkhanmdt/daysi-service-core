@@ -16,8 +16,10 @@ const validateToken = async (token: string) => {
 
 const allowlist = [
     '/api/account/register',
+    '/api/account/forgotpassword',
     '/token',
     '/admin/login',
+    '/admin/forgot-password',
     '/admin/family-view',
     '/api/calendar-proxy',
     '/subscription',
