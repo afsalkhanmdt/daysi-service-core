@@ -27,7 +27,7 @@ import {
 import { useResources } from "@/app/context/ResourceContext";
 import { initialFormDataForPMTaskApi } from "@/app/constants/pocketMoneyForm";
 import { usePocketMoneyValidation } from "@/app/hooks/usePocketMoneyValidation";
-import { finishPocketMoneyTaskCall } from "@/services/api";
+import { finishPocketMoneyTaskCall, payoutDepositCall } from "@/services/api";
 import Family from "@/models/family";
 
 // Status constants
@@ -378,18 +378,39 @@ const EditPocketMoneyPopup: React.FC<
 
     setCurrentStatus(newStatus);
 
-    const apiData = {
+    const finishApiData = {
       FamilyId: familyId ?? formData.FamilyId,
       PMTransId: pocketMoney?.PMTransId,
       FinishedBy: loggedInUserId ?? "",
     };
 
-          const response = await finishPocketMoneyTaskCall(apiData);
-          if (response) {
-            if (reloadPM) await reloadPM();
-          }
-        
-      
+    try {
+      const response = await finishPocketMoneyTaskCall(finishApiData);
+
+      // Deposit the task amount into the member's wallet upon finishing/approving task
+      const targetFamilyId = familyId ?? formData.FamilyId;
+      const targetMemberId = loggedInUserId || pocketMoney?.FamilyMembersPlanned?.[0]?.MemberId || "";
+      const taskAmount = formData.PMAmount || pocketMoney?.PMAmount || 0;
+
+      if (targetFamilyId && targetMemberId && taskAmount > 0) {
+        await payoutDepositCall({
+          FamilyId: Number(targetFamilyId),
+          TransType: 0, // 0 = Deposit (adds amount to member's wallet)
+          Members: [
+            {
+              MemberId: targetMemberId,
+              Amount: Number(taskAmount),
+            },
+          ],
+        });
+      }
+
+      if (response) {
+        if (reloadPM) await reloadPM();
+      }
+    } catch (error) {
+      console.error("Error completing/depositing pocket money task:", error);
+    }
 
     // Auto-save with new status
     onClose();
