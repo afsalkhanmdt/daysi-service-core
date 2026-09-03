@@ -47,6 +47,7 @@ const CreatePocketMoneyPopup: React.FC<
       PMStdFamilyTasks.map((task: any) => ({
         id: task.PMStdFamilyTaskId || task.id,
         label: task.Description || task.description || task.label,
+        amount: Number(task.Amount ?? task.amount ?? task.PMAmount ?? 0),
         isSelected: false,
       }))
     );
@@ -91,11 +92,23 @@ const CreatePocketMoneyPopup: React.FC<
     );
 
     if (selectedTasks.length > 0) {
+      const selected = selectedTasks[0];
+      const matched = PMStdFamilyTasks.find(
+        (task: any) =>
+          (task.PMStdFamilyTaskId || task.id) === selected.id ||
+          (task.Description || task.description || task.label) === selected.label
+      );
+      const amountVal = Number(
+        matched?.Amount ?? matched?.amount ?? matched?.PMAmount ?? (selected as any).amount ?? 0
+      );
+
       setFormData((prev) => ({
         ...prev,
-        PMDescription: selectedTasks[0].label,
+        PMDescription: selected.label,
+        PMAmount: amountVal > 0 ? amountVal : prev.PMAmount,
       }));
       clearError("PMDescription");
+      if (amountVal > 0) clearError("PMAmount");
       setIsCustomDescription(false);
     } else {
       setFormData((prev) => ({
@@ -116,12 +129,12 @@ const CreatePocketMoneyPopup: React.FC<
     clearError("PMDescription");
 
     // Check if the typed description matches any standard task
-    const isStandardTask = standardTasks.some(
-      (task) => task.label === value,
+    const matchedTask = PMStdFamilyTasks.find(
+      (task: any) => (task.Description || task.description || task.label) === value,
     );
 
-    if (isStandardTask) {
-      // If it matches a standard task, select it
+    if (matchedTask) {
+      // If it matches a standard task, select it and populate amount
       setIsCustomDescription(false);
       setStandardTasks((prev) =>
         prev.map((task) => ({
@@ -129,6 +142,14 @@ const CreatePocketMoneyPopup: React.FC<
           isSelected: task.label === value,
         })),
       );
+      const amountVal = Number(matchedTask.Amount ?? matchedTask.amount ?? matchedTask.PMAmount ?? 0);
+      if (amountVal > 0) {
+        setFormData((prev) => ({
+          ...prev,
+          PMAmount: amountVal,
+        }));
+        clearError("PMAmount");
+      }
     } else if (value.trim() !== "") {
       // If it's custom text (not matching any standard task)
       setIsCustomDescription(true);
@@ -334,11 +355,22 @@ const CreatePocketMoneyPopup: React.FC<
                         }));
                         setStandardTasks(updatedTasks);
                         if (isSelected) {
+                          const matched = PMStdFamilyTasks.find(
+                            (t: any) =>
+                              (t.PMStdFamilyTaskId || t.id) === task.id ||
+                              (t.Description || t.description || t.label) === task.label
+                          );
+                          const amountVal = Number(
+                            matched?.Amount ?? matched?.amount ?? matched?.PMAmount ?? (task as any).amount ?? 0
+                          );
+
                           setFormData((prev) => ({
                             ...prev,
                             PMDescription: task.label,
+                            PMAmount: amountVal > 0 ? amountVal : prev.PMAmount,
                           }));
                           clearError("PMDescription");
+                          if (amountVal > 0) clearError("PMAmount");
                           setIsCustomDescription(false);
                         } else {
                           setFormData((prev) => ({
