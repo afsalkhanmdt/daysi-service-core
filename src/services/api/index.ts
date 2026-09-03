@@ -15,6 +15,7 @@ export const deleteAppointmentCall = (
 export const createPocketMoneyTaskCall = postCall("PocketMoney/CreatePMTask");
 export const updatePocketMoneyTaskCall = postCall("PocketMoney/UpdatePMTask");
 export const finishPocketMoneyTaskCall =  postCall("PocketMoney/Finish");
+export const payoutDepositCall = postCall("PocketMoney/PayoutDeposit");
 export const createToDoTaskCall = postCall("ToDo/CreateToDo");
 export const updateToDoTaskCall = postCall("ToDo/UpdateTodo");
 export const createCalendarFeedCall = postCall("CalendarFeeds/Create");

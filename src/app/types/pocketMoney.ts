@@ -8,6 +8,28 @@ export interface PocketMoneyPopupProps {
   pocketMoney?: PMTask | null; // For edit mode
   familyId?: number;
   loggedInUserId?: string;
+  dataReload?: () => void;
+}
+
+export interface MemberPayoutDepositAmount {
+  MemberId: string;
+  Amount: number;
+}
+
+export interface PayoutDepositCommand {
+  FamilyId: number;
+  Members: MemberPayoutDepositAmount[];
+  TransType: number;
+}
+
+export interface PayoutDepositMemberResponse {
+  MemberId: string;
+  AmountEarned?: number;
+}
+
+export interface PMPayoutDepositResponse {
+  Members: PayoutDepositMemberResponse[];
+  UpdatedOn: string;
 }
 
 export interface PMTaskCreateCommand {

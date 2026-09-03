@@ -2,9 +2,12 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import SchoolScheduleView from "./SchoolScheduleView";
-import WorkScheduleView from "./WorkScheduleView";
+import AdvancedScheduleView, { WeekBlock } from "./AdvancedScheduleView";
 import dayjs from "dayjs";
+import isoWeek from "dayjs/plugin/isoWeek";
 import { useTranslation } from "react-i18next";
+
+dayjs.extend(isoWeek);
 
 interface ScheduleViewProps {
   data?: any;
@@ -74,7 +77,8 @@ export default function ScheduleView({
 }: ScheduleViewProps) {
   const { t } = useTranslation();
 
-  const [activeSchedule, setActiveSchedule] = useState<"school" | "work">("school");
+  // Selector 1: "simple" (Simple Schedule) | Selector 2: "advanced" (Advanced Schedule)
+  const [activeSchedule, setActiveSchedule] = useState<"simple" | "advanced">("simple");
   const members = data?.Members || [];
   const [selectedMemberId, setSelectedMemberId] = useState<string>("");
 
@@ -97,29 +101,43 @@ export default function ScheduleView({
 
   const activeUserId = selectedMemberId || currentUserId || (members[0]?.MemberId ?? "");
 
-  // Auto-switch active schedule tab ("school" vs "work") based on selected member's schedule types
+  // Auto-switch selector ("simple" vs "advanced") based on member's schedule types if available
   useEffect(() => {
     if (activeUserId && scheduleDataResponse) {
       const list = getMemberSchedulesList(scheduleDataResponse, activeUserId);
       if (list.length > 0) {
-        let hasSchool = false;
-        let hasWork = false;
+        let hasSimple = false;
+        let hasAdvanced = false;
         for (const item of list) {
           const sType = item.ScheduleType ?? item.scheduleType;
           if (String(sType) === "1") {
-            hasWork = true;
+            hasAdvanced = true;
           } else {
-            hasSchool = true;
+            hasSimple = true;
           }
         }
-        if (hasWork && !hasSchool) {
-          setActiveSchedule("work");
-        } else if (hasSchool && !hasWork) {
-          setActiveSchedule("school");
+        if (hasAdvanced && !hasSimple) {
+          setActiveSchedule("advanced");
+        } else if (hasSimple && !hasAdvanced) {
+          setActiveSchedule("simple");
         }
       }
     }
   }, [activeUserId, scheduleDataResponse]);
+
+  // Extract DaysPerPage from database / memberContainer (0: One day per col, 1: Multi 7-days per col)
+  const dbDaysPerPage = useMemo(() => {
+    if (!scheduleDataResponse || !activeUserId) return 0;
+    const memberContainer = getMemberScheduleContainer(scheduleDataResponse, activeUserId);
+    const memberObj = members.find((m: any) => m.MemberId === activeUserId);
+    const val =
+      memberContainer?.DaysPerPage ??
+      memberContainer?.daysPerPage ??
+      memberObj?.DaysPerPage ??
+      memberObj?.daysPerPage ??
+      0;
+    return Number(val) === 1 ? 1 : 0;
+  }, [scheduleDataResponse, activeUserId, members]);
 
   // Current view start date (Monday of the current week)
   const [currentDateStart, setCurrentDateStart] = useState<Date>(() => {
@@ -178,19 +196,59 @@ export default function ScheduleView({
     setCurrentDateStart(start);
   };
 
-  // Generate 7 days for the selected week (Monday = index 0 .. Sunday = index 6)
-  const { dateRange, parsedSchoolScheduleData, parsedWorkScheduleData } = useMemo(() => {
-    const range: string[] = [];
-    const schoolMap: Record<string, any[]> = {};
-    const workMap: Record<string, any[]> = {};
+  // Generate date ranges and schedule maps
+  // 1. Single 7-day range for Simple Schedule and Advanced Schedule (DaysPerPage = 0)
+  // 2. Multi-week 7-day columns (4 weeks) for Advanced Schedule (DaysPerPage = 1)
+  const {
+    dateRange,
+    parsedSimpleScheduleData,
+    parsedAdvancedScheduleData,
+    multiWeekBlocks,
+  } = useMemo(() => {
+    const singleWeekRange: string[] = [];
+    const simpleMap: Record<string, any[]> = {};
+    const advancedMap: Record<string, any[]> = {};
 
     let curr = dayjs(currentDateStart).startOf("day");
     for (let i = 0; i < 7; i++) {
       const dStr = curr.format("YYYY-MM-DD");
-      range.push(dStr);
-      schoolMap[dStr] = [];
-      workMap[dStr] = [];
+      singleWeekRange.push(dStr);
+      simpleMap[dStr] = [];
+      advancedMap[dStr] = [];
       curr = curr.add(1, "day");
+    }
+
+    // Build 4 consecutive 7-day weeks for Multi 7-days view (DaysPerPage = 1)
+    const multiWeeks: WeekBlock[] = [];
+    let multiWeekCursor = dayjs(currentDateStart).startOf("day");
+    for (let w = 0; w < 4; w++) {
+      const weekStartStr = multiWeekCursor.format("YYYY-MM-DD");
+      const weekEndStr = multiWeekCursor.add(6, "day").format("YYYY-MM-DD");
+      const weekDays: WeekBlock["days"] = [];
+
+      for (let d = 0; d < 7; d++) {
+        const dayObj = multiWeekCursor.add(d, "day");
+        const dayStr = dayObj.format("YYYY-MM-DD");
+        if (!advancedMap[dayStr]) {
+          advancedMap[dayStr] = [];
+        }
+        weekDays.push({
+          dateStr: dayStr,
+          dayLabel: dayObj.format("dddd"),
+          dateLabel: dayObj.format("MMM D"),
+          shortDay: dayObj.format("ddd"),
+          tasks: [],
+        });
+      }
+
+      multiWeeks.push({
+        weekNumber: multiWeekCursor.isoWeek(),
+        startDate: weekStartStr,
+        endDate: weekEndStr,
+        days: weekDays,
+      });
+
+      multiWeekCursor = multiWeekCursor.add(7, "day");
     }
 
     if (scheduleDataResponse && activeUserId) {
@@ -279,41 +337,62 @@ export default function ScheduleView({
           dateStr.startsWith("1970-") ||
           dateStr.startsWith("0001-");
 
-        // 1. School Schedule (ScheduleType 0): weekly recurring timetable mapped by Weekday
+        // 1. Simple Schedule (ScheduleType 0): weekly recurring timetable mapped by Weekday (Monday = index 0 .. Sunday = index 6)
         if (transScheduleType === 0) {
-          if (transWeekday !== undefined && transWeekday >= 0 && transWeekday < range.length) {
-            schoolMap[range[transWeekday]].push(eventCard);
-          } else if (!isDummyDate && schoolMap[dateStr]) {
-            schoolMap[dateStr].push(eventCard);
+          if (transWeekday !== undefined && transWeekday >= 0 && transWeekday < singleWeekRange.length) {
+            simpleMap[singleWeekRange[transWeekday]].push(eventCard);
+          } else if (!isDummyDate && simpleMap[dateStr]) {
+            simpleMap[dateStr].push(eventCard);
           }
         }
-        // 2. Work Schedule (ScheduleType 1): specific dated rotation or fallback by Weekday
-        else if (transScheduleType === 1) {
-          if (!isDummyDate && workMap[dateStr]) {
-            workMap[dateStr].push(eventCard);
-          } else if (isDummyDate && transWeekday !== undefined && transWeekday >= 0 && transWeekday < range.length) {
-            workMap[range[transWeekday]].push(eventCard);
+        // 2. Advanced Schedule (ScheduleType 1 or explicit advanced tasks):
+        else {
+          if (!isDummyDate) {
+            if (advancedMap[dateStr]) {
+              advancedMap[dateStr].push(eventCard);
+            }
+          } else if (transWeekday !== undefined && transWeekday >= 0) {
+            if (transWeekday < singleWeekRange.length) {
+              advancedMap[singleWeekRange[transWeekday]].push(eventCard);
+            }
+            // Also map to multi-week blocks for matching weekday
+            multiWeeks.forEach((week) => {
+              if (transWeekday < week.days.length) {
+                const targetDayStr = week.days[transWeekday].dateStr;
+                if (!advancedMap[targetDayStr]?.some((e) => e.id === eventCard.id)) {
+                  advancedMap[targetDayStr]?.push(eventCard);
+                }
+              }
+            });
           }
         }
       });
 
       // Sort items on each day chronologically by startTime
-      Object.keys(schoolMap).forEach((dStr) => {
-        schoolMap[dStr].sort((a, b) => (a.startTime || "").localeCompare(b.startTime || ""));
+      Object.keys(simpleMap).forEach((dStr) => {
+        simpleMap[dStr].sort((a, b) => (a.startTime || "").localeCompare(b.startTime || ""));
       });
-      Object.keys(workMap).forEach((dStr) => {
-        workMap[dStr].sort((a, b) => (a.startTime || "").localeCompare(b.startTime || ""));
+      Object.keys(advancedMap).forEach((dStr) => {
+        advancedMap[dStr].sort((a, b) => (a.startTime || "").localeCompare(b.startTime || ""));
+      });
+
+      // Populate multiWeek days with sorted tasks
+      multiWeeks.forEach((week) => {
+        week.days.forEach((day) => {
+          day.tasks = advancedMap[day.dateStr] || [];
+        });
       });
     }
 
     return {
-      dateRange: range,
-      parsedSchoolScheduleData: schoolMap,
-      parsedWorkScheduleData: workMap,
+      dateRange: singleWeekRange,
+      parsedSimpleScheduleData: simpleMap,
+      parsedAdvancedScheduleData: advancedMap,
+      multiWeekBlocks: multiWeeks,
     };
   }, [currentDateStart, scheduleDataResponse, activeUserId]);
 
-  const isSchool = activeSchedule === "school";
+  const isSimple = activeSchedule === "simple";
   const displayStartDate = dateRange.length > 0 ? dateRange[0] : "";
   const displayEndDate = dateRange.length > 0 ? dateRange[dateRange.length - 1] : "";
 
@@ -345,7 +424,9 @@ export default function ScheduleView({
                 }`}
               >
                 <div
-                  className={`w-8 h-8 rounded-full overflow-hidden flex items-center justify-center shrink-0 ${isActive ? "bg-gray-700" : "bg-gray-100"} ring-2 ${isActive ? "ring-gray-800" : "ring-white"}`}
+                  className={`w-8 h-8 rounded-full overflow-hidden flex items-center justify-center shrink-0 ${
+                    isActive ? "bg-gray-700" : "bg-gray-100"
+                  } ring-2 ${isActive ? "ring-gray-800" : "ring-white"}`}
                 >
                   {member.ResourceUrl ? (
                     <img
@@ -355,7 +436,9 @@ export default function ScheduleView({
                     />
                   ) : (
                     <span
-                      className={`text-xs font-bold ${isActive ? "text-white" : "text-gray-500"}`}
+                      className={`text-xs font-bold ${
+                        isActive ? "text-white" : "text-gray-500"
+                      }`}
                     >
                       {(member.FirstName || member.MemberName)?.charAt(0) || "U"}
                     </span>
@@ -377,29 +460,30 @@ export default function ScheduleView({
             {t("Family Schedule", "Family Schedule")}
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 font-medium mt-0.5">
-            {t(
-              "Switch between school classes and work rotations",
-              "Switch between school classes and work rotations",
-            )}
+            {isSimple
+              ? t("Simple 7-Day School & Routine Schedule", "Simple 7-Day School & Routine Schedule")
+              : dbDaysPerPage === 1
+                ? t("Advanced Schedule (Multiple 7-Days per Column)", "Advanced Schedule (Multiple 7-Days per Column)")
+                : t("Advanced Schedule (1 Day per Column)", "Advanced Schedule (1 Day per Column)")}
           </p>
         </div>
 
-        {/* Sliding Segmented Toggle Control */}
+        {/* Sliding Segmented Toggle Control: 1: Simple Schedule , 2: Advanced Schedule */}
         <div className="relative flex p-1 bg-gray-100/80 rounded-2xl border border-gray-200/40 w-full sm:w-auto">
           {/* Animated active background block */}
           <div
             className={`absolute top-1 bottom-1 rounded-xl bg-white shadow-md transition-all duration-300 ease-out ${
-              isSchool
-                ? "left-1 w-[calc(50%-4px)] sm:w-[150px]"
-                : "left-[50%] w-[calc(50%-4px)] sm:left-[154px] sm:w-[150px]"
+              isSimple
+                ? "left-1 w-[calc(50%-4px)] sm:w-[170px]"
+                : "left-[50%] w-[calc(50%-4px)] sm:left-[174px] sm:w-[170px]"
             }`}
           />
 
-          {/* School Schedule Button */}
+          {/* 1: Simple Schedule Button */}
           <button
-            onClick={() => setActiveSchedule("school")}
-            className={`relative z-10 flex items-center justify-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-bold transition-colors duration-300 w-1/2 sm:w-[150px] ${
-              isSchool ? "text-gray-900" : "text-gray-500 hover:text-gray-800"
+            onClick={() => setActiveSchedule("simple")}
+            className={`relative z-10 flex items-center justify-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-bold transition-colors duration-300 w-1/2 sm:w-[170px] ${
+              isSimple ? "text-gray-900" : "text-gray-500 hover:text-gray-800"
             }`}
           >
             <svg
@@ -415,14 +499,14 @@ export default function ScheduleView({
                 d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
               />
             </svg>
-            <span>{t("School Schedule", "School Schedule")}</span>
+            <span>{t("Simple Schedule", "Simple Schedule")}</span>
           </button>
 
-          {/* Work Schedule Button */}
+          {/* 2: Advanced Schedule Button */}
           <button
-            onClick={() => setActiveSchedule("work")}
-            className={`relative z-10 flex items-center justify-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-bold transition-colors duration-300 w-1/2 sm:w-[150px] ${
-              !isSchool ? "text-gray-900" : "text-gray-500 hover:text-gray-800"
+            onClick={() => setActiveSchedule("advanced")}
+            className={`relative z-10 flex items-center justify-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-bold transition-colors duration-300 w-1/2 sm:w-[170px] ${
+              !isSimple ? "text-gray-900" : "text-gray-500 hover:text-gray-800"
             }`}
           >
             <svg
@@ -438,7 +522,7 @@ export default function ScheduleView({
                 d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3a1.5 1.5 0 011.5-1.5h3a1.5 1.5 0 011.5 1.5v3"
               />
             </svg>
-            <span>{t("Work Schedule", "Work Schedule")}</span>
+            <span>{t("Advanced Schedule", "Advanced Schedule")}</span>
           </button>
         </div>
       </div>
@@ -449,12 +533,16 @@ export default function ScheduleView({
         <div className="flex flex-col md:flex-row md:items-center justify-between pb-6 mb-6 border-b border-gray-100 gap-4 shrink-0">
           <div className="flex items-center gap-3">
             <h2 className="text-xl sm:text-2xl font-bold text-gray-800 tracking-tight">
-              {isSchool
-                ? t("Work School Schedule", "Work School Schedule")
-                : t("Hybrid Work Schedule", "Hybrid Work Schedule")}
+              {isSimple
+                ? t("Simple Schedule", "Simple Schedule")
+                : t("Advanced Schedule", "Advanced Schedule")}
             </h2>
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
-              {t("Active Range", "Active Range")}
+              {isSimple
+                ? t("1 Week (7 Days)", "1 Week (7 Days)")
+                : dbDaysPerPage === 1
+                  ? t("Multi 7-Days Columns", "Multi 7-Days Columns")
+                  : t("1 Day / Column", "1 Day / Column")}
             </span>
           </div>
 
@@ -562,9 +650,11 @@ export default function ScheduleView({
                   : `${displayStartDate} - ${displayEndDate}`}
               </span>
               <span className="text-[10px] sm:text-xs font-semibold text-gray-400 uppercase tracking-wider mt-0.5">
-                {isSchool
-                  ? t("School Term", "School Term")
-                  : t("Work Rotation", "Work Rotation")}
+                {isSimple
+                  ? t("1 Week 7 Days (Mon - Sun)", "1 Week 7 Days (Mon - Sun)")
+                  : dbDaysPerPage === 1
+                    ? t("Multiple 7-Days Columns", "Multiple 7-Days Columns")
+                    : t("1 Day / Column", "1 Day / Column")}
               </span>
             </div>
           </div>
@@ -572,18 +662,20 @@ export default function ScheduleView({
 
         {/* Content Container with Animation Key */}
         <div
-          key={isSchool ? "school" : "work"}
+          key={isSimple ? "simple" : `advanced-${dbDaysPerPage}`}
           className="animate-week-change flex-1 flex flex-col min-h-0 overflow-y-auto custom-scrollbar"
         >
-          {isSchool ? (
+          {isSimple ? (
             <SchoolScheduleView
-              scheduleData={parsedSchoolScheduleData}
+              scheduleData={parsedSimpleScheduleData}
               dateRange={dateRange}
             />
           ) : (
-            <WorkScheduleView
-              scheduleData={parsedWorkScheduleData}
+            <AdvancedScheduleView
+              scheduleData={parsedAdvancedScheduleData}
               dateRange={dateRange}
+              daysPerPage={dbDaysPerPage}
+              multiWeekData={multiWeekBlocks}
             />
           )}
         </div>
@@ -591,4 +683,3 @@ export default function ScheduleView({
     </div>
   );
 }
-
