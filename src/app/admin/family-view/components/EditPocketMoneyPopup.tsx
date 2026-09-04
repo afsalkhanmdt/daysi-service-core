@@ -27,7 +27,10 @@ import {
 import { useResources } from "@/app/context/ResourceContext";
 import { initialFormDataForPMTaskApi } from "@/app/constants/pocketMoneyForm";
 import { usePocketMoneyValidation } from "@/app/hooks/usePocketMoneyValidation";
-import { finishPocketMoneyTaskCall, payoutDepositCall } from "@/services/api";
+import {
+  finishPocketMoneyTaskCall,
+  approvePocketMoneyTaskCall,
+} from "@/services/api";
 import Family from "@/models/family";
 
 // Status constants
@@ -373,43 +376,36 @@ const EditPocketMoneyPopup: React.FC<
     } else if (currentStatus === STATUS.FINISHED) {
       newStatus = STATUS.APPROVED;
     } else {
-      return; // Should not happen
+      return;
     }
 
     setCurrentStatus(newStatus);
 
-    const finishApiData = {
-      FamilyId: familyId ?? formData.FamilyId,
-      PMTransId: pocketMoney?.PMTransId,
-      FinishedBy: loggedInUserId ?? "",
-    };
+    const targetFamilyId = familyId ?? formData.FamilyId;
+    const targetMemberId =
+      loggedInUserId || pocketMoney?.FamilyMembersPlanned?.[0]?.MemberId || "";
 
     try {
-      const response = await finishPocketMoneyTaskCall(finishApiData);
-
-      // Deposit the task amount into the member's wallet upon finishing/approving task
-      const targetFamilyId = familyId ?? formData.FamilyId;
-      const targetMemberId = loggedInUserId || pocketMoney?.FamilyMembersPlanned?.[0]?.MemberId || "";
-      const taskAmount = formData.PMAmount || pocketMoney?.PMAmount || 0;
-
-      if (targetFamilyId && targetMemberId && taskAmount > 0) {
-        await payoutDepositCall({
-          FamilyId: Number(targetFamilyId),
-          TransType: 0, // 0 = Deposit (adds amount to member's wallet)
-          Members: [
-            {
-              MemberId: targetMemberId,
-              Amount: Number(taskAmount),
-            },
-          ],
-        });
-      }
-
-      if (response) {
-        if (reloadPM) await reloadPM();
+      if (currentStatus === STATUS.OPEN) {
+        const finishApiData = {
+          FamilyId: targetFamilyId,
+          PMTransId: pocketMoney?.PMTransId,
+          FinishedBy: targetMemberId,
+        };
+        const response = await finishPocketMoneyTaskCall(finishApiData);
+        if (response && reloadPM) await reloadPM();
+      } else if (currentStatus === STATUS.FINISHED) {
+        const approveApiData = {
+          FamilyId: targetFamilyId,
+          PMTransId: pocketMoney?.PMTransId,
+          ApprovedBy: loggedInUserId ?? "",
+          FinishedBy: targetMemberId,
+        };
+        const response = await approvePocketMoneyTaskCall(approveApiData);
+        if (response && reloadPM) await reloadPM();
       }
     } catch (error) {
-      console.error("Error completing/depositing pocket money task:", error);
+      console.error("Error updating pocket money status:", error);
     }
 
     // Auto-save with new status
