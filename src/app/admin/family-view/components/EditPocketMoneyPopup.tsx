@@ -43,7 +43,7 @@ const STATUS = {
 
 const EditPocketMoneyPopup: React.FC<
   PocketMoneyPopupProps & { isLoading?: boolean; PMStdFamilyTasks?: any[]; reloadPM?: () => void }
-> = ({ isOpen, onClose, onSubmit, pocketMoney, isLoading, PMStdFamilyTasks = [], reloadPM, familyId, loggedInUserId }) => {
+> = ({ isOpen, onClose, onSubmit, pocketMoney, isLoading, PMStdFamilyTasks = [], reloadPM, dataReload, familyId, loggedInUserId, loggedInUserMemberType, currentMemberId }) => {
   const [formData, setFormData] = useState<PMTaskCreateCommand>(
     initialFormDataForPMTaskApi,
   );
@@ -53,6 +53,7 @@ const EditPocketMoneyPopup: React.FC<
     useState<PMTaskCreateCommand | null>(null);
   const [currentStatus, setCurrentStatus] = useState<number>(STATUS.OPEN);
   const [isCustomDescription, setIsCustomDescription] = useState(false);
+  const [isStatusUpdating, setIsStatusUpdating] = useState(false);
 
   const { resources } = useResources();
   const modalRef = useRef<HTMLDivElement>(null);
@@ -121,8 +122,25 @@ const EditPocketMoneyPopup: React.FC<
     setInitialFormData(mappedFormData);
     setHasChanges(false);
 
-    // Set current status
-    setCurrentStatus(pocketMoney.Status || STATUS.OPEN);
+    // Determine initial status based on currentMemberId if present, else task/finished planned member
+    const plannedMembers = pocketMoney.FamilyMembersPlanned || [];
+    const memberPlanned = currentMemberId
+      ? plannedMembers.find((p) => String(p.MemberId) === String(currentMemberId))
+      : null;
+
+    let initialStatus = Number(pocketMoney.Status) || STATUS.OPEN;
+    if (memberPlanned && memberPlanned.Status !== undefined && memberPlanned.Status !== null) {
+      initialStatus = Number(memberPlanned.Status);
+    } else {
+      const hasFinishedMember = plannedMembers.some(
+        (p) => Number(p.Status) === STATUS.FINISHED,
+      );
+      if (initialStatus === STATUS.OPEN && hasFinishedMember) {
+        initialStatus = STATUS.FINISHED;
+      }
+    }
+
+    setCurrentStatus(initialStatus);
 
     // Check if the description matches any standard task
     const isStandardTask = PMStdFamilyTasks.some(
@@ -253,51 +271,28 @@ const EditPocketMoneyPopup: React.FC<
       ...prev,
       PMDescription: value,
     }));
-    clearError("PMDescription");
 
-    // Check if the typed description matches any standard task
-    const isStandardTask = PMStdFamilyTasks.some(
-      (task: any) => (task.Description || task.description || task.label) === value,
-    );
-
-    if (isStandardTask) {
-      // If it matches a standard task, select it
-      setIsCustomDescription(false);
+    if (value.trim()) {
+      clearError("PMDescription");
+      // Deselect standard tasks when typing custom
       setStandardTasks((prev) =>
-        prev.map((task) => ({
-          ...task,
-          isSelected: task.label === value,
-        })),
+        prev.map((task) => ({ ...task, isSelected: false })),
       );
-    } else if (value.trim() !== "") {
-      // If it's custom text (not matching any standard task)
       setIsCustomDescription(true);
-      // Deselect all standard tasks
-      setStandardTasks((prev) =>
-        prev.map((task) => ({
-          ...task,
-          isSelected: false,
-        })),
-      );
     } else {
-      // If empty, reset
       setIsCustomDescription(false);
-      setStandardTasks((prev) =>
-        prev.map((task) => ({
-          ...task,
-          isSelected: false,
-        })),
-      );
     }
   };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseFloat(e.target.value) || 0;
+    const value = parseFloat(e.target.value) || 0;
     setFormData((prev) => ({
       ...prev,
-      PMAmount: val,
+      PMAmount: value,
     }));
-    if (val > 0) clearError("PMAmount");
+    if (value > 0) {
+      clearError("PMAmount");
+    }
   };
 
   const handleFirstComeFirstServeToggle = (checked: boolean) => {
@@ -407,9 +402,6 @@ const EditPocketMoneyPopup: React.FC<
     } catch (error) {
       console.error("Error updating pocket money status:", error);
     }
-
-    // Auto-save with new status
-    onClose();
   };
 
   useEffect(() => {
@@ -742,21 +734,46 @@ const EditPocketMoneyPopup: React.FC<
               Cancel
             </button>
             {showStatusButton && (
-              <button
-                type="button"
-                onClick={handleStatusChange}
-                className={`px-4 py-1.5 text-sm font-medium text-white rounded-lg transition-colors ${
-                  currentStatus === STATUS.OPEN
-                    ? "bg-yellow-500 hover:bg-yellow-600"
-                    : "bg-green-500 hover:bg-green-600"
-                }`}
-              >
-                {currentStatus === STATUS.OPEN ? "FINISHED" : "APPROVE"}
-              </button>
+              (() => {
+                const canApprove =
+                  loggedInUserMemberType === 0 || loggedInUserMemberType === 1;
+
+                if (currentStatus === STATUS.FINISHED && !canApprove) {
+                  return (
+                    <button
+                      type="button"
+                      disabled
+                      title="Only family administrators or parents can approve tasks"
+                      className="px-4 py-1.5 text-sm font-medium text-gray-500 bg-gray-200 rounded-lg cursor-not-allowed opacity-80"
+                    >
+                      NOT APPROVED
+                    </button>
+                  );
+                }
+
+                return (
+                  <button
+                    type="button"
+                    disabled={isStatusUpdating || isLoading}
+                    onClick={handleStatusChange}
+                    className={`px-4 py-1.5 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                      currentStatus === STATUS.OPEN
+                        ? "bg-yellow-500 hover:bg-yellow-600"
+                        : "bg-green-500 hover:bg-green-600"
+                    }`}
+                  >
+                    {isStatusUpdating
+                      ? "Updating..."
+                      : currentStatus === STATUS.OPEN
+                        ? "FINISH"
+                        : "APPROVE"}
+                  </button>
+                );
+              })()
             )}
             <button
               onClick={(e) => handleSubmit(e as any)}
-              disabled={isLoading}
+              disabled={isLoading || isStatusUpdating}
               className="px-5 py-1.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? "Saving..." : "Save Changes"}
