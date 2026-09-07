@@ -364,63 +364,43 @@ const EditPocketMoneyPopup: React.FC<
 
   // Handle status change button
   const handleStatusChange = async () => {
-    const actionStatus = currentStatus;
-    const newStatus =
-      actionStatus === STATUS.OPEN
-        ? STATUS.FINISHED
-        : actionStatus === STATUS.FINISHED
-          ? STATUS.APPROVED
-          : null;
+    let newStatus: number;
 
-    if (newStatus === null || isStatusUpdating) return;
+    if (currentStatus === STATUS.OPEN) {
+      newStatus = STATUS.FINISHED;
+    } else if (currentStatus === STATUS.FINISHED) {
+      newStatus = STATUS.APPROVED;
+    } else {
+      return;
+    }
 
-    setIsStatusUpdating(true);
+    setCurrentStatus(newStatus);
 
     const targetFamilyId = familyId ?? formData.FamilyId;
-    // Find the member who is targeted / planned / finished
-    const finishedPlannedMember = (pocketMoney?.FamilyMembersPlanned || []).find(
-      (p) => Number(p.Status) === STATUS.FINISHED,
-    );
-    const assignedMemberId =
-      currentMemberId ||
-      finishedPlannedMember?.MemberId ||
-      pocketMoney?.FamilyMembersPlanned?.[0]?.MemberId ||
-      formData.FamilyMembersPlanned?.[0] ||
-      loggedInUserId ||
-      "";
+    const targetMemberId =
+      loggedInUserId || pocketMoney?.FamilyMembersPlanned?.[0]?.MemberId || "";
 
     try {
-      if (actionStatus === STATUS.OPEN) {
+      if (currentStatus === STATUS.OPEN) {
         const finishApiData = {
           FamilyId: targetFamilyId,
           PMTransId: pocketMoney?.PMTransId,
-          FinishedBy: assignedMemberId,
+          FinishedBy: targetMemberId,
         };
         const response = await finishPocketMoneyTaskCall(finishApiData);
-        if (response) {
-          setCurrentStatus(newStatus);
-          if (reloadPM) await reloadPM();
-          if (dataReload) await dataReload();
-        }
-      } else if (actionStatus === STATUS.FINISHED) {
+        if (response && reloadPM) await reloadPM();
+      } else if (currentStatus === STATUS.FINISHED) {
         const approveApiData = {
           FamilyId: targetFamilyId,
           PMTransId: pocketMoney?.PMTransId,
           ApprovedBy: loggedInUserId ?? "",
-          FinishedBy: assignedMemberId,
+          FinishedBy: targetMemberId,
         };
         const response = await approvePocketMoneyTaskCall(approveApiData);
-        if (response) {
-          setCurrentStatus(newStatus);
-          if (reloadPM) await reloadPM();
-          if (dataReload) await dataReload();
-        }
+        if (response && reloadPM) await reloadPM();
       }
     } catch (error) {
       console.error("Error updating pocket money status:", error);
-    } finally {
-      setIsStatusUpdating(false);
-      onClose();
     }
   };
 
