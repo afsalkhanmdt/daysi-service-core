@@ -15,26 +15,44 @@ interface ScheduleViewProps {
   scheduleDataResponse?: any;
 }
 
+// Helper to check if a date string is dummy/placeholder
+function isDummyDateString(dStr: string | undefined | null): boolean {
+  if (!dStr) return true;
+  const s = String(dStr).trim();
+  return (
+    s.startsWith("1900-") ||
+    s.startsWith("1970-") ||
+    s.startsWith("1990-") ||
+    s.startsWith("0001-") ||
+    s.startsWith("0000-") ||
+    s.startsWith("0002-")
+  );
+}
+
 // Helper to extract a member's schedule container from various response shapes
-function getMemberScheduleContainer(scheduleDataResponse: any, memberId: string): any {
-  if (!scheduleDataResponse || !memberId) return null;
+function getMemberScheduleContainer(
+  scheduleDataResponse: any,
+  memberId: string,
+  membersList?: any[]
+): any {
+  if (!memberId) return null;
 
   let membersArray: any[] = [];
   if (
-    scheduleDataResponse.MemberSchedules &&
+    scheduleDataResponse?.MemberSchedules &&
     Array.isArray(scheduleDataResponse.MemberSchedules)
   ) {
     membersArray = scheduleDataResponse.MemberSchedules;
   } else if (Array.isArray(scheduleDataResponse)) {
     membersArray = scheduleDataResponse;
-  } else if (typeof scheduleDataResponse === "object") {
+  } else if (scheduleDataResponse && typeof scheduleDataResponse === "object") {
     if (scheduleDataResponse[memberId]) {
       return scheduleDataResponse[memberId];
     }
     membersArray = Object.values(scheduleDataResponse);
   }
 
-  const found = membersArray.find(
+  let found = membersArray.find(
     (m: any) =>
       m?.FamilyMemberId === memberId ||
       m?.familyMemberId === memberId ||
@@ -42,24 +60,69 @@ function getMemberScheduleContainer(scheduleDataResponse: any, memberId: string)
       m?.memberId === memberId
   );
 
+  if (!found && membersList && Array.isArray(membersList)) {
+    found = membersList.find(
+      (m: any) =>
+        m?.FamilyMemberId === memberId ||
+        m?.familyMemberId === memberId ||
+        m?.MemberId === memberId ||
+        m?.memberId === memberId
+    );
+  }
+
   return found || null;
 }
 
 // Helper to extract the list of schedule items for a member
-function getMemberSchedulesList(scheduleDataResponse: any, memberId: string): any[] {
-  const container = getMemberScheduleContainer(scheduleDataResponse, memberId);
+function getMemberSchedulesList(
+  scheduleDataResponse: any,
+  memberId: string,
+  membersList?: any[]
+): any[] {
+  const container = getMemberScheduleContainer(
+    scheduleDataResponse,
+    memberId,
+    membersList
+  );
   if (!container) return [];
 
   if (Array.isArray(container)) return container;
-  if (Array.isArray(container.Schedules)) return container.Schedules;
-  if (Array.isArray(container.schedules)) return container.schedules;
-  if (Array.isArray(container.Transactions)) return container.Transactions;
-  if (Array.isArray(container.transactions)) return container.transactions;
-  if (Array.isArray(container.SHTrans)) return container.SHTrans;
-  if (Array.isArray(container.MasterSchedules)) return container.MasterSchedules;
-  if (Array.isArray(container.masterSchedules)) return container.masterSchedules;
 
-  return [];
+  const list: any[] = [];
+  const addItems = (arr: any) => {
+    if (Array.isArray(arr)) {
+      list.push(...arr);
+    }
+  };
+
+  addItems(container.MasterSchedules);
+  addItems(container.masterSchedules);
+  addItems(container.SHTrans);
+  addItems(container.shTrans);
+  addItems(container.Transactions);
+  addItems(container.transactions);
+  addItems(container.Schedules);
+  addItems(container.schedules);
+
+  if (membersList && Array.isArray(membersList)) {
+    const memberObj = membersList.find(
+      (m: any) =>
+        m?.FamilyMemberId === memberId ||
+        m?.familyMemberId === memberId ||
+        m?.MemberId === memberId ||
+        m?.memberId === memberId
+    );
+    if (memberObj && memberObj !== container) {
+      addItems(memberObj.MasterSchedules);
+      addItems(memberObj.masterSchedules);
+    }
+  }
+
+  if (list.length === 0 && Array.isArray(container.items)) {
+    addItems(container.items);
+  }
+
+  return list;
 }
 
 // Helper to format time strings (e.g. "08:00:00" -> "08:00")
@@ -88,7 +151,7 @@ export default function ScheduleView({
       if (!selectedMemberId || !members.some((m: any) => m.MemberId === selectedMemberId)) {
         let defaultId = members[0].MemberId;
         for (const m of members) {
-          const list = getMemberSchedulesList(scheduleDataResponse, m.MemberId);
+          const list = getMemberSchedulesList(scheduleDataResponse, m.MemberId, members);
           if (list && list.length > 0) {
             defaultId = m.MemberId;
             break;
@@ -103,8 +166,8 @@ export default function ScheduleView({
 
   // Auto-switch selector ("simple" vs "advanced") based on member's schedule types if available
   useEffect(() => {
-    if (activeUserId && scheduleDataResponse) {
-      const list = getMemberSchedulesList(scheduleDataResponse, activeUserId);
+    if (activeUserId) {
+      const list = getMemberSchedulesList(scheduleDataResponse, activeUserId, members);
       if (list.length > 0) {
         let hasSimple = false;
         let hasAdvanced = false;
@@ -123,12 +186,12 @@ export default function ScheduleView({
         }
       }
     }
-  }, [activeUserId, scheduleDataResponse]);
+  }, [activeUserId, scheduleDataResponse, members]);
 
   // Extract DaysPerPage from database / memberContainer (0: One day per col, 1: Multi 7-days per col)
   const dbDaysPerPage = useMemo(() => {
-    if (!scheduleDataResponse || !activeUserId) return 0;
-    const memberContainer = getMemberScheduleContainer(scheduleDataResponse, activeUserId);
+    if (!activeUserId) return 0;
+    const memberContainer = getMemberScheduleContainer(scheduleDataResponse, activeUserId, members);
     const memberObj = members.find((m: any) => m.MemberId === activeUserId);
     const val =
       memberContainer?.DaysPerPage ??
@@ -144,8 +207,7 @@ export default function ScheduleView({
     const now = new Date();
     const day = now.getDay();
     const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-    const start = new Date(now.setDate(diff));
-    start.setHours(0, 0, 0, 0);
+    const start = new Date(now.getFullYear(), now.getMonth(), diff, 0, 0, 0, 0);
     return start;
   });
 
@@ -170,8 +232,7 @@ export default function ScheduleView({
       const m = dayjs(prev).subtract(1, "month").startOf("month");
       const day = m.day();
       const diff = m.date() - day + (day === 0 ? -6 : 1);
-      const start = m.date(diff).toDate();
-      start.setHours(0, 0, 0, 0);
+      const start = new Date(m.year(), m.month(), diff, 0, 0, 0, 0);
       return start;
     });
   };
@@ -181,8 +242,7 @@ export default function ScheduleView({
       const m = dayjs(prev).add(1, "month").startOf("month");
       const day = m.day();
       const diff = m.date() - day + (day === 0 ? -6 : 1);
-      const start = m.date(diff).toDate();
-      start.setHours(0, 0, 0, 0);
+      const start = new Date(m.year(), m.month(), diff, 0, 0, 0, 0);
       return start;
     });
   };
@@ -191,8 +251,7 @@ export default function ScheduleView({
     const now = new Date();
     const day = now.getDay();
     const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-    const start = new Date(now.setDate(diff));
-    start.setHours(0, 0, 0, 0);
+    const start = new Date(now.getFullYear(), now.getMonth(), diff, 0, 0, 0, 0);
     setCurrentDateStart(start);
   };
 
@@ -251,9 +310,9 @@ export default function ScheduleView({
       multiWeekCursor = multiWeekCursor.add(7, "day");
     }
 
-    if (scheduleDataResponse && activeUserId) {
-      const memberContainer = getMemberScheduleContainer(scheduleDataResponse, activeUserId);
-      const allTrans = getMemberSchedulesList(scheduleDataResponse, activeUserId);
+    if (activeUserId) {
+      const memberContainer = getMemberScheduleContainer(scheduleDataResponse, activeUserId, members);
+      const allTrans = getMemberSchedulesList(scheduleDataResponse, activeUserId, members);
 
       allTrans.forEach((trans: any, idx: number) => {
         const transId =
@@ -307,7 +366,9 @@ export default function ScheduleView({
               ? Number(trans.weekday)
               : trans.DayOfWeek !== undefined && trans.DayOfWeek !== null
                 ? Number(trans.DayOfWeek)
-                : undefined;
+                : trans.dayOfWeek !== undefined && trans.dayOfWeek !== null
+                  ? Number(trans.dayOfWeek)
+                  : undefined;
 
         const transScheduleType =
           trans.ScheduleType !== undefined && trans.ScheduleType !== null
@@ -318,6 +379,25 @@ export default function ScheduleView({
                 ? Number(memberContainer.ScheduleType)
                 : 0;
 
+        const transDate = trans.Date ?? trans.date ?? trans.StartDate ?? trans.startDate;
+        const dateStr = transDate ? String(transDate).substring(0, 10) : "";
+        const isDummy = isDummyDateString(dateStr);
+
+        // Determine target day index (0 = Monday, ..., 6 = Sunday)
+        let targetDayIndex: number | undefined = undefined;
+        if (transWeekday !== undefined && !isNaN(transWeekday)) {
+          if (transWeekday >= 0 && transWeekday <= 6) {
+            targetDayIndex = transWeekday;
+          } else if (transWeekday === 7) {
+            targetDayIndex = 6;
+          }
+        } else if (dateStr && !isDummy) {
+          const dObj = dayjs(dateStr);
+          if (dObj.isValid()) {
+            targetDayIndex = (dObj.day() + 6) % 7;
+          }
+        }
+
         const eventCard = {
           id: transId,
           title: transTitle,
@@ -325,42 +405,40 @@ export default function ScheduleView({
           startTime: transRawStartTime,
           icon: transIcon,
           note: transNote,
-          weekday: transWeekday,
+          weekday: targetDayIndex,
           scheduleType: transScheduleType,
         };
 
-        const transDate = trans.Date ?? trans.date;
-        const dateStr = transDate ? String(transDate).substring(0, 10) : "";
-        const isDummyDate =
-          !dateStr ||
-          dateStr.startsWith("1990-") ||
-          dateStr.startsWith("1970-") ||
-          dateStr.startsWith("0001-");
-
         // 1. Simple Schedule (ScheduleType 0): weekly recurring timetable mapped by Weekday (Monday = index 0 .. Sunday = index 6)
         if (transScheduleType === 0) {
-          if (transWeekday !== undefined && transWeekday >= 0 && transWeekday < singleWeekRange.length) {
-            simpleMap[singleWeekRange[transWeekday]].push(eventCard);
-          } else if (!isDummyDate && simpleMap[dateStr]) {
-            simpleMap[dateStr].push(eventCard);
+          if (targetDayIndex !== undefined && targetDayIndex >= 0 && targetDayIndex < singleWeekRange.length) {
+            const targetDateStr = singleWeekRange[targetDayIndex];
+            if (!simpleMap[targetDateStr]?.some((e) => e.id === eventCard.id)) {
+              simpleMap[targetDateStr].push(eventCard);
+            }
+          } else if (!isDummy && simpleMap[dateStr]) {
+            if (!simpleMap[dateStr]?.some((e) => e.id === eventCard.id)) {
+              simpleMap[dateStr].push(eventCard);
+            }
           }
         }
         // 2. Advanced Schedule (ScheduleType 1 or explicit advanced tasks):
         else {
-          if (!isDummyDate) {
-            if (advancedMap[dateStr]) {
+          if (!isDummy && advancedMap[dateStr]) {
+            if (!advancedMap[dateStr]?.some((e) => e.id === eventCard.id)) {
               advancedMap[dateStr].push(eventCard);
             }
-          } else if (transWeekday !== undefined && transWeekday >= 0) {
-            if (transWeekday < singleWeekRange.length) {
-              advancedMap[singleWeekRange[transWeekday]].push(eventCard);
+          } else if (targetDayIndex !== undefined && targetDayIndex >= 0 && targetDayIndex < singleWeekRange.length) {
+            const targetDateStr = singleWeekRange[targetDayIndex];
+            if (!advancedMap[targetDateStr]?.some((e) => e.id === eventCard.id)) {
+              advancedMap[targetDateStr].push(eventCard);
             }
             // Also map to multi-week blocks for matching weekday
             multiWeeks.forEach((week) => {
-              if (transWeekday < week.days.length) {
-                const targetDayStr = week.days[transWeekday].dateStr;
-                if (!advancedMap[targetDayStr]?.some((e) => e.id === eventCard.id)) {
-                  advancedMap[targetDayStr]?.push(eventCard);
+              if (targetDayIndex !== undefined && targetDayIndex < week.days.length) {
+                const targetWeekDayStr = week.days[targetDayIndex].dateStr;
+                if (!advancedMap[targetWeekDayStr]?.some((e) => e.id === eventCard.id)) {
+                  advancedMap[targetWeekDayStr]?.push(eventCard);
                 }
               }
             });
@@ -390,7 +468,7 @@ export default function ScheduleView({
       parsedAdvancedScheduleData: advancedMap,
       multiWeekBlocks: multiWeeks,
     };
-  }, [currentDateStart, scheduleDataResponse, activeUserId]);
+  }, [currentDateStart, scheduleDataResponse, activeUserId, members]);
 
   const isSimple = activeSchedule === "simple";
   const displayStartDate = dateRange.length > 0 ? dateRange[0] : "";
