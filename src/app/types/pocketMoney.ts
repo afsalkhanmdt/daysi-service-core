@@ -8,7 +8,9 @@ export interface PocketMoneyPopupProps {
   pocketMoney?: PMTask | null; // For edit mode
   familyId?: number;
   loggedInUserId?: string;
+  loggedInUserMemberType?: number;
   dataReload?: () => void;
+  currentMemberId?: string;
 }
 
 export interface MemberPayoutDepositAmount {

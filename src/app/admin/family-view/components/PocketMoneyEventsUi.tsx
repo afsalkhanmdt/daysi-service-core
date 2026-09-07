@@ -7,9 +7,11 @@ import { PMTask } from "@/app/types/pocketMoney";
 const PocketMoneyEventUi = ({
   PMEventData,
   familyDetails,
+  currentMemberId,
 }: {
   PMEventData: PMTask;
   familyDetails: FamilyData;
+  currentMemberId?: string;
 }) => {
   const { t } = useTranslation("common");
 
@@ -19,6 +21,16 @@ const PocketMoneyEventUi = ({
   const participants = (familyDetails.Members || []).filter((m) =>
     plannedMembers.some((pm) => String(pm.MemberId) === String(m.MemberId)),
   );
+
+  // Determine status for this specific member column if currentMemberId is provided
+  const memberPlanned = currentMemberId
+    ? plannedMembers.find((p) => String(p.MemberId) === String(currentMemberId))
+    : null;
+
+  const effectiveStatus =
+    memberPlanned && memberPlanned.Status !== undefined && memberPlanned.Status !== null
+      ? Number(memberPlanned.Status)
+      : Number(PMEventData.Status || 0);
 
   // Get status and corresponding tick mark color
   // Status: 0=OPEN (Grey), 1=FINISHED (Yellow), 2=APPROVED (Green)
@@ -48,8 +60,8 @@ const PocketMoneyEventUi = ({
     }
   };
 
-  const tickColor = getStatusTickColor(PMEventData.Status || 0);
-  const statusLabel = getStatusLabel(PMEventData.Status || 0);
+  const tickColor = getStatusTickColor(effectiveStatus);
+  const statusLabel = getStatusLabel(effectiveStatus);
 
   return (
     <div className="min-w-52 sm:min-w-0 h-24 sm:h-20 border-t-2 sm:border-t-4 shadow-gray-300 rounded-xl border-sky-800 bg-white shadow-md flex flex-col justify-between gap-1 p-1 relative">
