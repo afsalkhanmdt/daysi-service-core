@@ -733,7 +733,9 @@ const FamilyViewWrapper = ({
         familyId={Number(familyId)}
         locale={
           familyDetails?.Members?.find(
-            (m) => m.MemberId === (userId || familyDetails?.LoggedInUserId)
+            (m) =>
+              m.MemberType === 0 ||
+              m.MemberId === familyDetails?.Family?.MemberId,
           )?.Locale ||
           i18next.language ||
           "en"
