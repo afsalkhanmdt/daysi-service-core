@@ -55,6 +55,7 @@ const ToDoAndPMComponent = ({
   const [selectedPocketMoney, setSelectedPocketMoney] = useState<PMTask | null>(
     null,
   );
+  const [selectedPocketMoneyMemberId, setSelectedPocketMoneyMemberId] = useState<string | undefined>(undefined);
 
   const isPremiumUser =
     familyDetails?.Family.SubscriptionType === 1 ||
@@ -102,8 +103,24 @@ const ToDoAndPMComponent = ({
     : [];
 
   const pmTasksArr: PMTask[] = useMemo(() => {
-    // Only show Open (0) tasks. Finished (1), Approved (2), and Deleted (3) should be hidden.
-    return (PMTaskDetails?.PMTasks ?? []).filter((pm) => pm.Status === 0);
+    // Only show Open (0) and Finished (1) tasks. Approved (2) and Deleted (3) must be hidden.
+    return (PMTaskDetails?.PMTasks ?? []).filter((pm) => {
+      const status = Number(pm.Status);
+      if (status === 2 || status === 3) return false;
+
+      // Also check if all planned members are already approved
+      const planned = Array.isArray(pm.FamilyMembersPlanned)
+        ? pm.FamilyMembersPlanned
+        : [];
+      if (
+        planned.length > 0 &&
+        planned.every((p) => Number(p.Status) === 2)
+      ) {
+        return false;
+      }
+
+      return status === 0 || status === 1;
+    });
   }, [PMTaskDetails?.PMTasks]);
 
   const pmTasksByMember = useMemo(() => {
@@ -123,6 +140,9 @@ const ToDoAndPMComponent = ({
         map.get(firstResourceId)!.push(pm);
       } else {
         for (const p of planned) {
+          // Hide individual planned member entry if they are already approved
+          if (Number(p.Status) === 2) continue;
+
           const mid = normalizeId(p.MemberId);
           if (!map.has(mid)) map.set(mid, []);
           map.get(mid)!.push(pm);
@@ -318,6 +338,7 @@ const ToDoAndPMComponent = ({
                                   onClick={() => {
                                     checkSubscription(() => {
                                       setSelectedPocketMoney(pm);
+                                      setSelectedPocketMoneyMemberId(rid);
                                       setShowEditPocketMoney(true);
                                     });
                                   }}
@@ -325,6 +346,7 @@ const ToDoAndPMComponent = ({
                                   <PocketMoneyEventUi
                                     PMEventData={pm}
                                     familyDetails={familyDetails}
+                                    currentMemberId={rid}
                                   />
                                 </div>
                               ))}
@@ -431,13 +453,23 @@ const ToDoAndPMComponent = ({
         pocketMoney={selectedPocketMoney}
         familyId={PMTaskDetails?.PMFamily?.FamilyId || familyDetails?.Family?.Id}
         loggedInUserId={familyDetails?.LoggedInUserId}
+        loggedInUserMemberType={
+          familyDetails?.Members?.find(
+            (m) =>
+              String(m.MemberId) === String(familyDetails?.LoggedInUserId) ||
+              String(m.Id) === String(familyDetails?.LoggedInUserId),
+          )?.MemberType
+        }
+        currentMemberId={selectedPocketMoneyMemberId}
         onClose={() => {
           setShowEditPocketMoney(false);
           setSelectedPocketMoney(null);
+          setSelectedPocketMoneyMemberId(undefined);
         }}
         onSubmit={handleEditPocketMoney}
         isLoading={isComponentLoading}
         reloadPM={reloadPM}
+        dataReload={dataReload}
         PMStdFamilyTasks={familyDetails?.Family?.PMStdFamilyTasks || []}
       />
     </div>
