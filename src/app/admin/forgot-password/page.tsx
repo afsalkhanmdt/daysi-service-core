@@ -9,7 +9,6 @@ import { ForgotPasswordCall } from "@/services/api/apiCall";
 
 const ForgotPassword = () => {
   const [userName, setUserName] = useState("");
-  const [familyId, setFamilyId] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -38,7 +37,6 @@ const ForgotPassword = () => {
     try {
       await ForgotPasswordCall({
         UserName: userName.trim(),
-        FamilyId: familyId ? Number(familyId) : null,
         Locale: userLanguage || "en",
       });
 
@@ -46,7 +44,6 @@ const ForgotPassword = () => {
         "A temporary password has been generated and sent to your registered email address."
       );
       setUserName("");
-      setFamilyId("");
     } catch (err: any) {
       console.error("Forgot password failed:", err);
       setError(
@@ -129,20 +126,6 @@ const ForgotPassword = () => {
                     required
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Family ID <span className="text-xs text-gray-400">(Optional - for sub-member accounts)</span>
-                </label>
-                <input
-                  type="number"
-                  placeholder="e.g. 1045"
-                  value={familyId}
-                  onChange={(e) => setFamilyId(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent transition duration-200"
-                  disabled={loading}
-                />
               </div>
 
               {error && (
