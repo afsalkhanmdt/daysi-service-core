@@ -1,29 +1,46 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import SubscriptionHeader from "@/components/Subscription/SubscriptionHeader";
 import logo from "@/app/admin/assets/DaysiEnLogo.png";
+import { useTranslation } from "react-i18next";
+import { getStripePlanForLocale, normalizeLocale } from "@/app/constants/stripePlans";
 
 const SubscriptionPage = () => {
   const router = useRouter();
+  const { t, i18n } = useTranslation();
   const [loading, setLoading] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [userData, setUserData] = useState<{
     familyId: string;
     userId: string;
+    locale: string;
   } | null>(null);
 
   useEffect(() => {
     const familyId = localStorage.getItem("familyId");
     const userId = localStorage.getItem("memberId");
+    const storedLocale = localStorage.getItem("user_locale") || localStorage.getItem("i18nextLng");
 
     if (!familyId || !userId) {
       router.push("/admin/login");
     } else {
-      setUserData({ familyId, userId });
+      setUserData({
+        familyId,
+        userId,
+        locale: normalizeLocale(storedLocale || i18n.language),
+      });
     }
-  }, [router]);
+  }, [router, i18n.language]);
+
+  const activeLocale = useMemo(() => {
+    return normalizeLocale(userData?.locale || i18n.language);
+  }, [userData?.locale, i18n.language]);
+
+  const planConfig = useMemo(() => {
+    return getStripePlanForLocale(activeLocale);
+  }, [activeLocale]);
 
   const handleSubscribe = async (months: number) => {
     const token = localStorage.getItem("access_token");
@@ -46,6 +63,7 @@ const SubscriptionPage = () => {
           familyId: parseInt(userData.familyId),
           userId: userData.userId,
           subscriptionMonths: months,
+          locale: activeLocale,
           membersUpdatedOn: new Date().toISOString(),
         }),
       });
@@ -66,22 +84,23 @@ const SubscriptionPage = () => {
   };
 
   const benefits = [
-    "Create, edit, and delete appointments",
-    "Full access to Task management",
-    "Shared Family Calendar",
-    "Pocket Money tracking",
-    "No advertisements",
-    "Priority support",
+    t("Create, edit, and delete appointments", "Create, edit, and delete appointments"),
+    t("Full access to Task management", "Full access to Task management"),
+    t("Shared Family Calendar", "Shared Family Calendar"),
+    t("Pocket Money tracking", "Pocket Money tracking"),
+    t("No advertisements", "No advertisements"),
+    t("Priority support", "Priority support"),
   ];
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 dark:bg-gray-900">
       <div className="max-w-4xl mx-auto">
         <SubscriptionHeader
-          title="Create Premium Subscription"
-          description={`The Premium versions is needed, to
-          Create & Edit Appointments and Tasks
-          on the Web-platform`}
+          title={t("Create Premium Subscription", "Create Premium Subscription")}
+          description={t(
+            "The Premium versions is needed, to Create & Edit Appointments and Tasks on the Web-platform",
+            "The Premium versions is needed, to\nCreate & Edit Appointments and Tasks\non the Web-platform"
+          )}
           logoUrl={logo.src}
         />
 
@@ -113,13 +132,15 @@ const SubscriptionPage = () => {
           <div className="bg-white rounded-lg shadow-lg overflow-hidden flex flex-col dark:bg-gray-800">
             <div className="px-6 py-8">
               <h3 className="text-2xl font-semibold text-gray-900 text-center dark:text-white">
-                Monthly Plan
+                {t("Monthly Plan", "Monthly Plan")}
               </h3>
               <div className="mt-4 flex justify-center items-baseline text-6xl font-extrabold text-gray-900 dark:text-white">
-                <span className="text-4xl font-medium text-gray-500">$</span>
-                9.99
+                <span className="text-3xl font-medium text-gray-500 mr-1">
+                  {planConfig.currencySymbol}
+                </span>
+                {planConfig.monthlyDisplayPrice}
                 <span className="ml-1 text-2xl font-medium text-gray-500">
-                  /mo
+                  /{t("mo", "mo")}
                 </span>
               </div>
             </div>
@@ -155,8 +176,8 @@ const SubscriptionPage = () => {
                   className="w-full flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
                 >
                   {loading === 1
-                    ? "Redirecting to Stripe..."
-                    : "Subscribe Monthly"}
+                    ? t("Redirecting to Stripe...", "Redirecting to Stripe...")
+                    : t("Subscribe Monthly", "Subscribe Monthly")}
                 </button>
               </div>
             </div>
@@ -166,18 +187,20 @@ const SubscriptionPage = () => {
           <div className="bg-white rounded-lg shadow-lg overflow-hidden border-2 border-blue-500 flex flex-col dark:bg-gray-800">
             <div className="bg-blue-500 px-6 py-2">
               <p className="text-xs font-bold uppercase tracking-wide text-white text-center">
-                Best Value - Save 20%
+                {t("Best Value - Save 20%", "Best Value - Save 20%")}
               </p>
             </div>
             <div className="px-6 py-8">
               <h3 className="text-2xl font-semibold text-gray-900 text-center dark:text-white">
-                Annual Plan
+                {t("Annual Plan", "Annual Plan")}
               </h3>
               <div className="mt-4 flex justify-center items-baseline text-6xl font-extrabold text-gray-900 dark:text-white">
-                <span className="text-4xl font-medium text-gray-500">$</span>
-                95.99
+                <span className="text-3xl font-medium text-gray-500 mr-1">
+                  {planConfig.currencySymbol}
+                </span>
+                {planConfig.yearlyDisplayPrice}
                 <span className="ml-1 text-2xl font-medium text-gray-500">
-                  /yr
+                  /{t("yr", "yr")}
                 </span>
               </div>
             </div>
@@ -213,8 +236,8 @@ const SubscriptionPage = () => {
                   className="w-full flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
                 >
                   {loading === 12
-                    ? "Redirecting to Stripe..."
-                    : "Subscribe Annually"}
+                    ? t("Redirecting to Stripe...", "Redirecting to Stripe...")
+                    : t("Subscribe Annually", "Subscribe Annually")}
                 </button>
               </div>
             </div>
