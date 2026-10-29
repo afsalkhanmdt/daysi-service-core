@@ -1,10 +1,12 @@
 "use client";
+
 import {
   PMTask,
   PMTaskCreateCommand,
   PocketMoneyPopupProps,
+  PMTransStatus,
 } from "@/app/types/pocketMoney";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import Image from "next/image";
 import createPocketMoneyImage from "@/app/admin/assets/doctor-suitcase-with-a-cross-svgrepo-com 1.png";
 import closeIcon from "@/app/admin/assets/close-428.png";
@@ -14,9 +16,7 @@ import participantsIcon from "@/app/admin/assets/participantsIcon.png";
 import DescriptionIcon from "@/app/admin/assets/descriptionIcon.png";
 import repeatIcon from "@/app/admin/assets/repeatIcon.png";
 import nameIcon from "@/app/admin/assets/name.png";
-import MultipleSelector, {
-  SelectableOption,
-} from "./FormComponents/MultipleSelector";
+import { SelectableOption } from "./FormComponents/MultipleSelector";
 import SingleSelector from "./FormComponents/SingleSelector";
 import ResponsiblePersonSelector from "./FormComponents/ResponsiblePersonSelector";
 import { REPEAT_OPTIONS } from "@/app/constants/appointmentForm";
@@ -31,19 +31,42 @@ import {
   finishPocketMoneyTaskCall,
   approvePocketMoneyTaskCall,
 } from "@/services/api";
-import Family from "@/models/family";
+import { MemberResponse, MemberType } from "@/app/types/familyMemberTypes";
+import {
+  canUpdatePocketMoney,
+  canFinishPocketMoney,
+  canApprovePocketMoney,
+  isPocketMoneyAssignedToMember,
+  getBackendError,
+} from "@/app/utils/taskPermissions";
+import { appToast } from "@/components/Toast/ToastContext";
 
-// Status constants
-const STATUS = {
-  OPEN: 0,
-  FINISHED: 1,
-  APPROVED: 2,
-};
+interface EditPocketMoneyPopupProps extends PocketMoneyPopupProps {
+  isLoading?: boolean;
+  PMStdFamilyTasks?: any[];
+  reloadPM?: () => Promise<void> | void;
+  currentMember?: MemberResponse | null;
+  onWalletCredit?: (memberId: string, amount: number, currency: string) => void;
+  totalFamilyMembersCount?: number;
+}
 
-
-const EditPocketMoneyPopup: React.FC<
-  PocketMoneyPopupProps & { isLoading?: boolean; PMStdFamilyTasks?: any[]; reloadPM?: () => void }
-> = ({ isOpen, onClose, onSubmit, pocketMoney, isLoading, PMStdFamilyTasks = [], reloadPM, dataReload, familyId, loggedInUserId, loggedInUserMemberType, currentMemberId }) => {
+const EditPocketMoneyPopup: React.FC<EditPocketMoneyPopupProps> = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  pocketMoney,
+  isLoading,
+  PMStdFamilyTasks = [],
+  reloadPM,
+  dataReload,
+  familyId,
+  loggedInUserId,
+  loggedInUserMemberType,
+  currentMemberId,
+  currentMember,
+  onWalletCredit,
+  totalFamilyMembersCount,
+}) => {
   const [formData, setFormData] = useState<PMTaskCreateCommand>(
     initialFormDataForPMTaskApi,
   );
@@ -51,7 +74,7 @@ const EditPocketMoneyPopup: React.FC<
   const [hasChanges, setHasChanges] = useState(false);
   const [initialFormData, setInitialFormData] =
     useState<PMTaskCreateCommand | null>(null);
-  const [currentStatus, setCurrentStatus] = useState<number>(STATUS.OPEN);
+  const [currentStatus, setCurrentStatus] = useState<number>(PMTransStatus.Open);
   const [isCustomDescription, setIsCustomDescription] = useState(false);
   const [isStatusUpdating, setIsStatusUpdating] = useState(false);
 
@@ -77,11 +100,57 @@ const EditPocketMoneyPopup: React.FC<
         id: task.PMStdFamilyTaskId || task.id,
         label: task.Description || task.description || task.label,
         isSelected: false,
-      }))
+      })),
     );
   }, [PMStdFamilyTasks]);
+
   const [repeatSequence, setRepeatSequence] =
     useState<SelectableOption[]>(REPEAT_OPTIONS);
+
+  // Derive current member details
+  const effectiveMemberType = Number(
+    currentMember?.MemberType ?? loggedInUserMemberType ?? MemberType.Member,
+  );
+  const isFamilyAdmin = effectiveMemberType === MemberType.FamilyAdmin;
+  const currentUserId = String(
+    currentMember?.MemberId ?? currentMember?.Id ?? loggedInUserId ?? "",
+  );
+
+  // Permission evaluation
+  const isAssigned = useMemo(() => {
+    if (!pocketMoney || !currentUserId) return false;
+    return isPocketMoneyAssignedToMember(
+      pocketMoney,
+      currentUserId,
+      totalFamilyMembersCount,
+    );
+  }, [pocketMoney, currentUserId, totalFamilyMembersCount]);
+
+  const canEditDetails = useMemo(() => {
+    if (!pocketMoney) return false;
+    return canUpdatePocketMoney(
+      { ...pocketMoney, Status: currentStatus },
+      currentMember || { MemberType: effectiveMemberType, MemberId: currentUserId },
+      totalFamilyMembersCount,
+    );
+  }, [pocketMoney, currentStatus, currentMember, effectiveMemberType, currentUserId, totalFamilyMembersCount]);
+
+  const canFinish = useMemo(() => {
+    if (!pocketMoney || currentStatus !== PMTransStatus.Open) return false;
+    return canFinishPocketMoney(
+      { ...pocketMoney, Status: currentStatus },
+      currentMember || { MemberType: effectiveMemberType, MemberId: currentUserId },
+      totalFamilyMembersCount,
+    );
+  }, [pocketMoney, currentStatus, currentMember, effectiveMemberType, currentUserId, totalFamilyMembersCount]);
+
+  const canApprove = useMemo(() => {
+    if (!pocketMoney) return false;
+    return canApprovePocketMoney(
+      { ...pocketMoney, Status: currentStatus },
+      currentMember || { MemberType: effectiveMemberType, MemberId: currentUserId },
+    );
+  }, [pocketMoney, currentStatus, currentMember, effectiveMemberType, currentUserId]);
 
   // Function to check if form data has changed
   const checkForChanges = (currentData: PMTaskCreateCommand) => {
@@ -122,29 +191,34 @@ const EditPocketMoneyPopup: React.FC<
     setInitialFormData(mappedFormData);
     setHasChanges(false);
 
-    // Determine initial status based on currentMemberId if present, else task/finished planned member
+    // Determine initial status based on currentMemberId if present, else task status
     const plannedMembers = pocketMoney.FamilyMembersPlanned || [];
     const memberPlanned = currentMemberId
       ? plannedMembers.find((p) => String(p.MemberId) === String(currentMemberId))
       : null;
 
-    let initialStatus = Number(pocketMoney.Status) || STATUS.OPEN;
-    if (memberPlanned && memberPlanned.Status !== undefined && memberPlanned.Status !== null) {
+    let initialStatus = Number(pocketMoney.Status) || PMTransStatus.Open;
+    if (
+      memberPlanned &&
+      memberPlanned.Status !== undefined &&
+      memberPlanned.Status !== null
+    ) {
       initialStatus = Number(memberPlanned.Status);
     } else {
       const hasFinishedMember = plannedMembers.some(
-        (p) => Number(p.Status) === STATUS.FINISHED,
+        (p) => Number(p.Status) === PMTransStatus.Finished,
       );
-      if (initialStatus === STATUS.OPEN && hasFinishedMember) {
-        initialStatus = STATUS.FINISHED;
+      if (initialStatus === PMTransStatus.Open && hasFinishedMember) {
+        initialStatus = PMTransStatus.Finished;
       }
     }
 
     setCurrentStatus(initialStatus);
 
-    // Check if the description matches any standard task
     const isStandardTask = PMStdFamilyTasks.some(
-      (task: any) => (task.Description || task.description || task.label) === mappedFormData.PMDescription,
+      (task: any) =>
+        (task.Description || task.description || task.label) ===
+        mappedFormData.PMDescription,
     );
     setIsCustomDescription(!isStandardTask);
 
@@ -179,9 +253,8 @@ const EditPocketMoneyPopup: React.FC<
       })),
     );
     clearAllErrors();
-  }, [pocketMoney]);
+  }, [pocketMoney, currentMemberId]);
 
-  // Check for changes whenever formData updates
   useEffect(() => {
     if (initialFormData) {
       const changed = checkForChanges(formData);
@@ -192,6 +265,7 @@ const EditPocketMoneyPopup: React.FC<
   // ===== HANDLER FUNCTIONS =====
 
   const handleRepeatChange = (selectedRepeat: SelectableOption[]) => {
+    if (!canEditDetails) return;
     setRepeatSequence((prev) =>
       prev.map((option) => ({
         ...option,
@@ -216,8 +290,7 @@ const EditPocketMoneyPopup: React.FC<
   };
 
   const handleStandardTaskChange = (selectedTasks: SelectableOption[]) => {
-    // Don't allow selection if custom description is being typed
-    if (isCustomDescription) return;
+    if (!canEditDetails || isCustomDescription) return;
 
     setStandardTasks((prev) =>
       prev.map((task) => ({
@@ -244,6 +317,7 @@ const EditPocketMoneyPopup: React.FC<
   const handleResponsiblePersonsChange = (
     selectedPersons: SelectableOption[],
   ) => {
+    if (!canEditDetails) return;
     setResponsiblePersons((prev) =>
       prev.map((person) => ({
         ...person,
@@ -266,6 +340,7 @@ const EditPocketMoneyPopup: React.FC<
   const handleDescriptionChange = (
     e: React.ChangeEvent<HTMLTextAreaElement>,
   ) => {
+    if (!canEditDetails) return;
     const value = e.target.value;
     setFormData((prev) => ({
       ...prev,
@@ -274,7 +349,6 @@ const EditPocketMoneyPopup: React.FC<
 
     if (value.trim()) {
       clearError("PMDescription");
-      // Deselect standard tasks when typing custom
       setStandardTasks((prev) =>
         prev.map((task) => ({ ...task, isSelected: false })),
       );
@@ -285,6 +359,7 @@ const EditPocketMoneyPopup: React.FC<
   };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!canEditDetails) return;
     const value = parseFloat(e.target.value) || 0;
     setFormData((prev) => ({
       ...prev,
@@ -296,6 +371,7 @@ const EditPocketMoneyPopup: React.FC<
   };
 
   const handleFirstComeFirstServeToggle = (checked: boolean) => {
+    if (!canEditDetails) return;
     setFormData((prev) => ({
       ...prev,
       FirstComeFirstServe: checked,
@@ -303,6 +379,7 @@ const EditPocketMoneyPopup: React.FC<
   };
 
   const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    if (!canEditDetails) return;
     setFormData((prev) => ({
       ...prev,
       Note: e.target.value,
@@ -332,8 +409,12 @@ const EditPocketMoneyPopup: React.FC<
     };
   }, [isOpen, showCloseConfirmation, hasChanges]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canEditDetails) {
+      appToast.error("You can only edit Pocket Money tasks assigned to you.");
+      return;
+    }
 
     if (
       !validate(formData.PMDescription, formData.PMAmount, responsiblePersons)
@@ -341,12 +422,16 @@ const EditPocketMoneyPopup: React.FC<
       return;
     }
 
-    onSubmit(formData);
-    onClose();
+    try {
+      await onSubmit(formData);
+      onClose();
+    } catch {
+      // Keep modal open so edits are not lost
+    }
   };
 
   const handleClosePopup = () => {
-    if (hasChanges) {
+    if (hasChanges && canEditDetails) {
       setShowCloseConfirmation(true);
     } else {
       onClose();
@@ -362,65 +447,121 @@ const EditPocketMoneyPopup: React.FC<
     setShowCloseConfirmation(false);
   };
 
-  // Handle status change button
-  const handleStatusChange = async () => {
-    const actionStatus = currentStatus;
-    const newStatus =
-      actionStatus === STATUS.OPEN
-        ? STATUS.FINISHED
-        : actionStatus === STATUS.FINISHED
-          ? STATUS.APPROVED
-          : null;
+  // Mark task as FINISHED (1)
+  const handleMarkFinished = async () => {
+    if (!canFinish || isStatusUpdating) return;
+    setIsStatusUpdating(true);
 
-    if (newStatus === null || isStatusUpdating) return;
+    const targetFamilyId = familyId ?? formData.FamilyId;
+    const assignedMemberId =
+      currentMemberId ||
+      pocketMoney?.FamilyMembersPlanned?.[0]?.MemberId ||
+      formData.FamilyMembersPlanned?.[0] ||
+      currentUserId ||
+      "";
+
+    try {
+      const finishApiData = {
+        FamilyId: targetFamilyId,
+        PMTransId: pocketMoney?.PMTransId || (pocketMoney as any)?.LocalPMTaskId,
+        FinishedBy: assignedMemberId,
+      };
+
+      const response = await finishPocketMoneyTaskCall(finishApiData);
+      const err = getBackendError(response);
+      if (err.hasError) {
+        appToast.error(err.message || "Failed to mark task finished");
+        return;
+      }
+
+      setCurrentStatus(PMTransStatus.Finished);
+      appToast.success("Task marked as finished!");
+      if (reloadPM) await reloadPM();
+      if (dataReload) await dataReload();
+      onClose();
+    } catch (error) {
+      const err = getBackendError(error);
+      appToast.error(err.message || "Failed to mark task finished");
+    } finally {
+      setIsStatusUpdating(false);
+    }
+  };
+
+  // Approve task (transition to 2 & wallet credit)
+  const handleApprove = async () => {
+    if (!canApprove || isStatusUpdating) return;
+    if (!isFamilyAdmin) {
+      appToast.error("Only Family Admins can approve Pocket Money tasks.");
+      return;
+    }
 
     setIsStatusUpdating(true);
 
     const targetFamilyId = familyId ?? formData.FamilyId;
-    // Find the member who is targeted / planned / finished
     const finishedPlannedMember = (pocketMoney?.FamilyMembersPlanned || []).find(
-      (p) => Number(p.Status) === STATUS.FINISHED,
+      (p) => Number(p.Status) === PMTransStatus.Finished,
     );
     const assignedMemberId =
       currentMemberId ||
       finishedPlannedMember?.MemberId ||
       pocketMoney?.FamilyMembersPlanned?.[0]?.MemberId ||
       formData.FamilyMembersPlanned?.[0] ||
-      loggedInUserId ||
       "";
 
+    const amount = Number(formData.PMAmount || pocketMoney?.PMAmount || 0);
+    const currency = formData.CurrencyCode || (pocketMoney as any)?.CurrencyCode || "DKK";
+
+    // 1. Optimistic wallet update
+    if (assignedMemberId && amount > 0 && onWalletCredit) {
+      onWalletCredit(assignedMemberId, amount, currency);
+    }
+
     try {
-      if (actionStatus === STATUS.OPEN) {
-        const finishApiData = {
-          FamilyId: targetFamilyId,
-          PMTransId: pocketMoney?.PMTransId,
-          FinishedBy: assignedMemberId,
-        };
-        const response = await finishPocketMoneyTaskCall(finishApiData);
-        if (response) {
-          setCurrentStatus(newStatus);
-          if (reloadPM) await reloadPM();
-          if (dataReload) await dataReload();
+      const approveApiData = {
+        familyId: Number(targetFamilyId),
+        pmTransId: Number(pocketMoney?.PMTransId || (pocketMoney as any)?.LocalPMTaskId),
+        finishedBy: String(assignedMemberId),
+        approvedBy: String(currentUserId),
+        FamilyId: Number(targetFamilyId),
+        PMTransId: Number(pocketMoney?.PMTransId || (pocketMoney as any)?.LocalPMTaskId),
+        FinishedBy: String(assignedMemberId),
+        ApprovedBy: String(currentUserId),
+      };
+
+      const response = await approvePocketMoneyTaskCall(approveApiData);
+      const err = getBackendError(response);
+      if (err.hasError) {
+        // Rollback optimistic credit on error
+        if (assignedMemberId && amount > 0 && onWalletCredit) {
+          onWalletCredit(assignedMemberId, -amount, currency);
         }
-      } else if (actionStatus === STATUS.FINISHED) {
-        const approveApiData = {
-          FamilyId: targetFamilyId,
-          PMTransId: pocketMoney?.PMTransId,
-          ApprovedBy: loggedInUserId ?? "",
-          FinishedBy: assignedMemberId,
-        };
-        const response = await approvePocketMoneyTaskCall(approveApiData);
-        if (response) {
-          setCurrentStatus(newStatus);
-          if (reloadPM) await reloadPM();
-          if (dataReload) await dataReload();
-        }
+        appToast.error(
+          err.errorCode === 127
+            ? "Only Family Admins can approve Pocket Money tasks."
+            : err.message || "Failed to approve task",
+        );
+        return;
       }
+
+      setCurrentStatus(PMTransStatus.Approved);
+      // 4. Show confirmation toast
+      appToast.success(`Task approved! ${amount} ${currency} credited to mWallet`);
+
+      if (reloadPM) await reloadPM();
+      if (dataReload) await dataReload();
+      onClose();
     } catch (error) {
-      console.error("Error updating pocket money status:", error);
+      if (assignedMemberId && amount > 0 && onWalletCredit) {
+        onWalletCredit(assignedMemberId, -amount, currency);
+      }
+      const err = getBackendError(error);
+      appToast.error(
+        err.errorCode === 127
+          ? "Only Family Admins can approve Pocket Money tasks."
+          : err.message || "Failed to approve task",
+      );
     } finally {
       setIsStatusUpdating(false);
-      onClose();
     }
   };
 
@@ -447,24 +588,24 @@ const EditPocketMoneyPopup: React.FC<
 
   if (!isOpen || !pocketMoney) return null;
 
-  // Get status display info
+  // Status display info
   const getStatusInfo = (status: number) => {
     switch (status) {
-      case STATUS.OPEN:
+      case PMTransStatus.Open:
         return {
           label: "OPEN",
           color: "#9CA3AF",
           textColor: "text-gray-500",
           bgColor: "bg-gray-100",
         };
-      case STATUS.FINISHED:
+      case PMTransStatus.Finished:
         return {
-          label: "FINISHED",
+          label: !isFamilyAdmin ? "PENDING APPROVAL" : "FINISHED",
           color: "#EAB308",
           textColor: "text-yellow-600",
           bgColor: "bg-yellow-50",
         };
-      case STATUS.APPROVED:
+      case PMTransStatus.Approved:
         return {
           label: "APPROVED",
           color: "#22C55E",
@@ -482,7 +623,17 @@ const EditPocketMoneyPopup: React.FC<
   };
 
   const statusInfo = getStatusInfo(currentStatus);
-  const showStatusButton = currentStatus !== STATUS.APPROVED;
+  const isApproved = currentStatus === PMTransStatus.Approved;
+  const isFinished = currentStatus === PMTransStatus.Finished;
+  const isOpenStatus = currentStatus === PMTransStatus.Open;
+
+  const isFamilyWide = Boolean(
+    pocketMoney.FirstComeFirstServe ||
+      (pocketMoney as any).firstComeFirstServe ||
+      (pocketMoney as any).isForAll ||
+      (pocketMoney.FamilyMembersPlanned &&
+        pocketMoney.FamilyMembersPlanned.length >= (totalFamilyMembersCount || 0)),
+  );
 
   return (
     <>
@@ -495,7 +646,7 @@ const EditPocketMoneyPopup: React.FC<
           className="bg-white rounded-xl w-full max-w-2xl max-h-[98vh] flex flex-col shadow-2xl relative"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Compact Header with Status */}
+          {/* Header */}
           <div className="flex justify-between items-center px-4 py-2 border-b">
             <div className="flex items-center gap-2">
               <div className="bg-blue-100 p-1.5 rounded-lg">
@@ -509,6 +660,11 @@ const EditPocketMoneyPopup: React.FC<
               <h2 className="text-lg font-bold text-gray-800">
                 Edit Pocket Money
               </h2>
+              {isFamilyWide && (
+                <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200 text-xs font-bold uppercase tracking-wider">
+                  Family
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-3">
               {/* Status Badge */}
@@ -543,10 +699,34 @@ const EditPocketMoneyPopup: React.FC<
             </div>
           </div>
 
+          {/* Read-Only Informative Notice */}
+          {!canEditDetails && (
+            <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center gap-2 text-xs text-amber-800 font-medium">
+              <svg
+                className="w-4 h-4 text-amber-600 flex-shrink-0"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 2a3 3 0 00-3 3v2H6a2 2 0 00-2 2v6a2 2 0 002 2h8a2 2 0 002-2V9a2 2 0 00-2-2h-1V5a3 3 0 00-3-3zm1 5V5a1 1 0 10-2 0v2h2z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <span>
+                {isApproved
+                  ? "This task is completed and approved (read-only)."
+                  : isFinished && !isFamilyAdmin
+                  ? "This task is pending admin approval (read-only)."
+                  : "You can only edit Pocket Money tasks assigned to you."}
+              </span>
+            </div>
+          )}
+
           {/* Scrollable Form Content */}
           <div className="overflow-y-auto flex-1 p-3 lg:p-4">
             <form onSubmit={handleSubmit} className="space-y-3">
-              {/* Standard Task Selection - Display on two lines */}
+              {/* Standard Task Selection */}
               <div className="space-y-1">
                 <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
                   <Image src={nameIcon} alt="icon" width={12} height={12} />{" "}
@@ -559,9 +739,7 @@ const EditPocketMoneyPopup: React.FC<
                         key={task.id}
                         type="button"
                         onClick={() => {
-                          // Don't allow selection if custom description is being typed
-                          if (isCustomDescription) return;
-
+                          if (!canEditDetails || isCustomDescription) return;
                           const isSelected = !task.isSelected;
                           const updatedTasks = standardTasks.map((t) => ({
                             ...t,
@@ -583,22 +761,21 @@ const EditPocketMoneyPopup: React.FC<
                           }
                         }}
                         className={`px-2 py-1 text-xs rounded-lg border transition-all text-left ${
-                          isCustomDescription
+                          !canEditDetails || isCustomDescription
                             ? "opacity-50 cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200"
                             : task.isSelected
-                              ? "bg-blue-500 text-white border-blue-500"
-                              : "bg-white text-gray-700 border-gray-200 hover:border-blue-300"
+                            ? "bg-blue-500 text-white border-blue-500"
+                            : "bg-white text-gray-700 border-gray-200 hover:border-blue-300"
                         }`}
-                        disabled={isCustomDescription}
+                        disabled={!canEditDetails || isCustomDescription}
                       >
                         {task.label}
                       </button>
                     ))}
                   </div>
-                  {isCustomDescription && (
+                  {isCustomDescription && canEditDetails && (
                     <p className="text-xs text-yellow-600 font-medium mt-1">
-                      Custom description is being typed. Standard tasks are
-                      disabled.
+                      Custom description is being typed. Standard tasks are disabled.
                     </p>
                   )}
                 </div>
@@ -609,7 +786,7 @@ const EditPocketMoneyPopup: React.FC<
                 )}
               </div>
 
-              {/* Task Description - Made more narrow */}
+              {/* Custom Task Description */}
               <div className="space-y-1">
                 <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
                   <Image
@@ -621,29 +798,27 @@ const EditPocketMoneyPopup: React.FC<
                   Custom Task Description
                 </label>
                 <div
-                  className={`bg-blue-50/50 p-2 rounded-xl border flex flex-col ${errors.PMDescription ? "border-red-500" : "border-blue-100"}`}
+                  className={`bg-blue-50/50 p-2 rounded-xl border flex flex-col ${
+                    errors.PMDescription ? "border-red-500" : "border-blue-100"
+                  }`}
                 >
                   <textarea
                     placeholder="Detailed description of the task..."
                     value={formData.PMDescription}
                     onChange={handleDescriptionChange}
+                    disabled={!canEditDetails}
                     rows={1}
-                    className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm min-h-[38px]"
+                    className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm min-h-[38px] disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
                   {errors.PMDescription && (
                     <p className="text-xs text-red-500 font-medium mt-1">
                       {errors.PMDescription}
                     </p>
                   )}
-                  {isCustomDescription && (
-                    <p className="text-xs text-blue-500 font-medium mt-1">
-                      Custom description mode - standard tasks are disabled.
-                    </p>
-                  )}
                 </div>
               </div>
 
-              {/* Payment Details - Made more narrow */}
+              {/* Payment Details */}
               <div className="space-y-1">
                 <label className="text-xs font-bold flex items-center gap-1.5 text-gray-800 uppercase tracking-wider">
                   <Image
@@ -655,14 +830,17 @@ const EditPocketMoneyPopup: React.FC<
                   Payment Details
                 </label>
                 <div
-                  className={`bg-blue-50/50 p-2 rounded-xl border flex flex-col ${errors.PMAmount ? "border-red-500" : "border-blue-100"}`}
+                  className={`bg-blue-50/50 p-2 rounded-xl border flex flex-col ${
+                    errors.PMAmount ? "border-red-500" : "border-blue-100"
+                  }`}
                 >
                   <input
                     type="number"
                     placeholder="Enter amount"
                     value={formData.PMAmount || ""}
                     onChange={handleAmountChange}
-                    className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-all"
+                    disabled={!canEditDetails}
+                    className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
                   {errors.PMAmount && (
                     <p className="text-xs text-red-500 font-medium mt-1">
@@ -691,6 +869,7 @@ const EditPocketMoneyPopup: React.FC<
                     <ToggleSwitch
                       checked={formData.FirstComeFirstServe}
                       onChange={handleFirstComeFirstServeToggle}
+                      disabled={!canEditDetails}
                     />
                   </div>
                 </div>
@@ -698,6 +877,7 @@ const EditPocketMoneyPopup: React.FC<
                   options={responsiblePersons}
                   onSelectionChange={handleResponsiblePersonsChange}
                   subHeading="Select who can do this task"
+                  disabled={!canEditDetails}
                 />
                 {errors.participants && (
                   <p className="text-xs text-red-500 font-medium mt-1">
@@ -717,6 +897,7 @@ const EditPocketMoneyPopup: React.FC<
                   onSelectionChange={(s) => handleRepeatChange([s])}
                   selectedBorderColor="blue"
                   selectedBadgeColor="blue"
+                  disabled={!canEditDetails}
                 />
               </div>
 
@@ -737,7 +918,8 @@ const EditPocketMoneyPopup: React.FC<
                     rows={2}
                     value={formData.Note}
                     onChange={handleNotesChange}
-                    className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm min-h-[60px]"
+                    disabled={!canEditDetails}
+                    className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm min-h-[60px] disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -745,59 +927,79 @@ const EditPocketMoneyPopup: React.FC<
           </div>
 
           {/* Footer Actions */}
-          <div className="px-4 py-2.5 border-t bg-gray-50 rounded-b-xl flex justify-end gap-3">
+          <div className="px-4 py-2.5 border-t bg-gray-50 rounded-b-xl flex justify-end items-center gap-3">
             <button
               type="button"
               onClick={handleClosePopup}
               className="px-4 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200 bg-white"
             >
-              Cancel
+              {!canEditDetails && !canFinish && !canApprove ? "Close" : "Cancel"}
             </button>
-            {showStatusButton && (
-              (() => {
-                const canApprove =
-                  loggedInUserMemberType === 0 || loggedInUserMemberType === 1;
 
-                if (currentStatus === STATUS.FINISHED && !canApprove) {
-                  return (
-                    <button
-                      type="button"
-                      disabled
-                      title="Only family administrators or parents can approve tasks"
-                      className="px-4 py-1.5 text-sm font-medium text-gray-500 bg-gray-200 rounded-lg cursor-not-allowed opacity-80"
-                    >
-                      NOT APPROVED
-                    </button>
-                  );
-                }
+            {/* Finished badge for family members */}
+            {isFinished && !isFamilyAdmin && (
+              <span className="px-3 py-1.5 text-xs font-bold text-amber-700 bg-amber-100 border border-amber-300 rounded-lg">
+                Pending Approval
+              </span>
+            )}
 
-                return (
+            {/* Approved badge for all */}
+            {isApproved && (
+              <span className="px-3 py-1.5 text-xs font-bold text-emerald-700 bg-emerald-100 border border-emerald-300 rounded-lg">
+                Completed
+              </span>
+            )}
+
+            {/* Action buttons based on status & role table */}
+            {isOpenStatus && (
+              <>
+                {/* Family Admin or Assigned Member can Mark Finished */}
+                {canFinish && (
                   <button
                     type="button"
                     disabled={isStatusUpdating || isLoading}
-                    onClick={handleStatusChange}
-                    className={`px-4 py-1.5 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                      currentStatus === STATUS.OPEN
-                        ? "bg-yellow-500 hover:bg-yellow-600"
-                        : "bg-green-500 hover:bg-green-600"
-                    }`}
+                    onClick={handleMarkFinished}
+                    className="px-4 py-1.5 text-sm font-medium text-white bg-yellow-500 hover:bg-yellow-600 rounded-lg shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isStatusUpdating
-                      ? "Updating..."
-                      : currentStatus === STATUS.OPEN
-                        ? "FINISH"
-                        : "APPROVE"}
+                    {isStatusUpdating ? "Updating..." : "Mark Finished"}
                   </button>
-                );
-              })()
+                )}
+
+                {/* Family Admin can directly Approve from Open */}
+                {canApprove && (
+                  <button
+                    type="button"
+                    disabled={isStatusUpdating || isLoading}
+                    onClick={handleApprove}
+                    className="px-4 py-1.5 text-sm font-medium text-white bg-green-500 hover:bg-green-600 rounded-lg shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isStatusUpdating ? "Approving..." : "Approve"}
+                  </button>
+                )}
+              </>
             )}
-            <button
-              onClick={(e) => handleSubmit(e as any)}
-              disabled={isLoading || isStatusUpdating}
-              className="px-5 py-1.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? "Saving..." : "Save Changes"}
-            </button>
+
+            {isFinished && isFamilyAdmin && (
+              <button
+                type="button"
+                disabled={isStatusUpdating || isLoading}
+                onClick={handleApprove}
+                className="px-4 py-1.5 text-sm font-medium text-white bg-green-500 hover:bg-green-600 rounded-lg shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isStatusUpdating ? "Approving..." : "Approve"}
+              </button>
+            )}
+
+            {/* Edit / Save button: Only when canEditDetails is true */}
+            {canEditDetails && (
+              <button
+                onClick={(e) => handleSubmit(e as any)}
+                disabled={isLoading || isStatusUpdating}
+                className="px-5 py-1.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? "Saving..." : "Save Changes"}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -810,8 +1012,7 @@ const EditPocketMoneyPopup: React.FC<
               Unsaved Changes
             </h3>
             <p className="text-sm text-gray-600 mb-6">
-              You have unsaved changes. Are you sure you want to close without
-              saving?
+              You have unsaved changes. Are you sure you want to close without saving?
             </p>
             <div className="flex justify-end gap-3">
               <button

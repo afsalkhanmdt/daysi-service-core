@@ -77,6 +77,7 @@ const CalendarView = ({
   isTasksLoading,
   optimisticUpdates,
   setOptimisticUpdates,
+  onWalletCredit,
 }: {
   data: FamilyData;
   currentDate: Date;
@@ -94,6 +95,7 @@ const CalendarView = ({
   isTasksLoading?: boolean;
   optimisticUpdates: Record<string, any[]>;
   setOptimisticUpdates: Dispatch<SetStateAction<Record<string, any[]>>>;
+  onWalletCredit?: (memberId: string, amount: number, currency: string) => void;
 }) => {
   const { resources, setMembers } = useResources();
 
@@ -1153,6 +1155,7 @@ const CalendarView = ({
               setIsLoading={setIsLoading}
               isLoading={isLoading}
               resourceOrder={formattedResources}
+              onWalletCredit={onWalletCredit}
             />
           </div>
         )}
@@ -1173,6 +1176,7 @@ const CalendarView = ({
             setIsLoading={setIsLoading}
             isLoading={isLoading}
             resourceOrder={formattedResources}
+            onWalletCredit={onWalletCredit}
           />
         </div>
       )}

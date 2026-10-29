@@ -7,11 +7,19 @@ import TodoEventUi from "./TodoEventsUi";
 import { FamilyData } from "./FamilyViewWrapper";
 import { useTranslation } from "react-i18next";
 import EditPocketMoneyPopup from "./EditPocketMoneyPopup";
-import { PMData, PMTask } from "@/app/types/pocketMoney";
+import { PMData, PMTask, PMTransStatus } from "@/app/types/pocketMoney";
 import EditTodoPopup from "./EditTodoPopup";
-import { ToDoTaskType } from "@/app/types/todo";
-import { updatePocketMoneyTaskCall, updateToDoTaskCall } from "@/services/api";
-import { SubscriptionTypeEnum } from "@/app/types/familytypes";
+import { ToDoStatus, ToDoTaskType } from "@/app/types/todo";
+import {
+  updatePocketMoneyTaskCall,
+  updateToDoStatusCall,
+  updateToDoTaskCall,
+} from "@/services/api";
+import { appToast } from "@/components/Toast/ToastContext";
+import {
+  canUpdateToDo,
+  getBackendError,
+} from "@/app/utils/taskPermissions";
 
 const ToDoAndPMComponent = ({
   todoDetails,
@@ -27,6 +35,8 @@ const ToDoAndPMComponent = ({
   isLoading,
   isTasksLoading,
   resourceOrder,
+  currentUserId,
+  onWalletCredit,
 }: {
   todoDetails: ToDoTaskType[];
   familyDetails: FamilyData;
@@ -44,6 +54,8 @@ const ToDoAndPMComponent = ({
     id: string;
     title?: string;
   }[];
+  currentUserId?: string;
+  onWalletCredit?: (memberId: string, amount: number, currency: string) => void;
 }) => {
   const { t } = useTranslation("common");
   const [isTasksOpen, setIsTasksOpen] = useState(false);
@@ -55,7 +67,39 @@ const ToDoAndPMComponent = ({
   const [selectedPocketMoney, setSelectedPocketMoney] = useState<PMTask | null>(
     null,
   );
-  const [selectedPocketMoneyMemberId, setSelectedPocketMoneyMemberId] = useState<string | undefined>(undefined);
+  const [selectedPocketMoneyMemberId, setSelectedPocketMoneyMemberId] = useState<
+    string | undefined
+  >(undefined);
+
+  // Optimistic tracking for ToDo status toggles (id -> status)
+  const [optimisticTodoStatus, setOptimisticTodoStatus] = useState<
+    Record<number, number>
+  >({});
+
+  const currentUserIdResolved =
+    currentUserId ||
+    familyDetails?.LoggedInUserId ||
+    (typeof window !== "undefined" ? localStorage.getItem("memberId") : "") ||
+    "";
+
+  const currentMember = useMemo(() => {
+    return (
+      familyDetails?.Members?.find(
+        (m) =>
+          String(m.MemberId) === String(currentUserIdResolved) ||
+          String(m.Id) === String(currentUserIdResolved),
+      ) || null
+    );
+  }, [familyDetails?.Members, currentUserIdResolved]);
+
+  const familyWideMemberId = useMemo(() => {
+    return (
+      (resourceOrder && resourceOrder.length > 0 ? resourceOrder[0].id : "") ||
+      (familyDetails?.Family?.MemberId
+        ? String(familyDetails.Family.MemberId)
+        : "")
+    );
+  }, [resourceOrder, familyDetails?.Family?.MemberId]);
 
   const isPremiumUser =
     familyDetails?.Family.SubscriptionType === 1 ||
@@ -96,30 +140,44 @@ const ToDoAndPMComponent = ({
       : orderedMembers;
   }, [familyDetails?.Members, resourceOrder, selectedMember]);
 
-  const todosArr: ToDoTaskType[] = todoDetails
+  const rawTodosArr: ToDoTaskType[] = todoDetails
     ? Array.isArray(todoDetails)
       ? todoDetails
       : [todoDetails]
     : [];
 
+  // Apply optimistic status overrides
+  const todosArr: ToDoTaskType[] = useMemo(() => {
+    return rawTodosArr.map((t) => {
+      if (optimisticTodoStatus[t.ToDoTaskId] !== undefined) {
+        return {
+          ...t,
+          Status: optimisticTodoStatus[t.ToDoTaskId],
+        };
+      }
+      return t;
+    });
+  }, [rawTodosArr, optimisticTodoStatus]);
+
   const pmTasksArr: PMTask[] = useMemo(() => {
     // Only show Open (0) and Finished (1) tasks. Approved (2) and Deleted (3) must be hidden.
     return (PMTaskDetails?.PMTasks ?? []).filter((pm) => {
       const status = Number(pm.Status);
-      if (status === 2 || status === 3) return false;
+      if (status === PMTransStatus.Approved || status === PMTransStatus.Deleted)
+        return false;
 
-      // Also check if all planned members are already approved
+      // Check if all planned members are already approved
       const planned = Array.isArray(pm.FamilyMembersPlanned)
         ? pm.FamilyMembersPlanned
         : [];
       if (
         planned.length > 0 &&
-        planned.every((p) => Number(p.Status) === 2)
+        planned.every((p) => Number(p.Status) === PMTransStatus.Approved)
       ) {
         return false;
       }
 
-      return status === 0 || status === 1;
+      return status === PMTransStatus.Open || status === PMTransStatus.Finished;
     });
   }, [PMTaskDetails?.PMTasks]);
 
@@ -140,8 +198,7 @@ const ToDoAndPMComponent = ({
         map.get(firstResourceId)!.push(pm);
       } else {
         for (const p of planned) {
-          // Hide individual planned member entry if they are already approved
-          if (Number(p.Status) === 2) continue;
+          if (Number(p.Status) === PMTransStatus.Approved) continue;
 
           const mid = normalizeId(p.MemberId);
           if (!map.has(mid)) map.set(mid, []);
@@ -150,7 +207,7 @@ const ToDoAndPMComponent = ({
       }
     }
     return map;
-  }, [pmTasksArr, familyDetails?.Members]);
+  }, [pmTasksArr, familyDetails?.Members, members]);
 
   const todosByMember = useMemo(() => {
     const map = new Map<string, ToDoTaskType[]>();
@@ -158,7 +215,14 @@ const ToDoAndPMComponent = ({
       members.length > 0 ? normalizeId(members[0]?.MemberId) : null;
 
     for (const t of todosArr) {
-      if (t.Status === 2) continue; // Skip closed tasks
+      // Skip closed tasks (Status 1 or 2)
+      if (
+        Number(t.Status) === ToDoStatus.Closed ||
+        Number(t.Status) === 1 ||
+        Number(t.Status) === 2
+      ) {
+        continue;
+      }
 
       if (t.IsForAll && firstResourceId) {
         if (!map.has(firstResourceId)) map.set(firstResourceId, []);
@@ -170,7 +234,13 @@ const ToDoAndPMComponent = ({
       const assignedTo = t.AssignedTo as any;
 
       if (Array.isArray(assignedTo)) {
-        assignedIds = assignedTo.filter((id: any) => id && String(id).trim());
+        assignedIds = assignedTo
+          .map((id: any) =>
+            typeof id === "object" && id !== null
+              ? String(id.MemberId || id.id || id.Id || "")
+              : String(id),
+          )
+          .filter((id) => id && String(id).trim());
       } else if (typeof assignedTo === "string") {
         const trimmed = assignedTo.trim();
         if (trimmed) {
@@ -195,22 +265,107 @@ const ToDoAndPMComponent = ({
     }
 
     return map;
-  }, [todosArr, familyDetails?.Members]);
+  }, [todosArr, members]);
 
   const [isComponentLoading, setIsComponentLoading] = useState(false);
+
+  // Toggle ToDo completion checkbox with Optimistic UI & error rollback
+  const handleToggleTodoStatus = async (
+    todo: ToDoTaskType,
+    newStatus: number,
+  ) => {
+    const todoId = todo.ToDoTaskId;
+
+    if (!canUpdateToDo(todo, currentMember, familyWideMemberId)) {
+      appToast.error("You do not have permission to update this ToDo task.");
+      return;
+    }
+
+    // 1. Optimistic update
+    setOptimisticTodoStatus((prev) => ({ ...prev, [todoId]: newStatus }));
+
+    try {
+      const response = await updateToDoStatusCall(
+        todoId,
+        newStatus,
+        currentUserIdResolved,
+      );
+
+      const err = getBackendError(response);
+      if (err.hasError) {
+        // Rollback optimistic update
+        setOptimisticTodoStatus((prev) => {
+          const next = { ...prev };
+          delete next[todoId];
+          return next;
+        });
+
+        appToast.error(
+          err.errorCode === 130
+            ? "You do not have permission to update this ToDo task."
+            : err.errorCode === 131
+            ? "This task no longer exists."
+            : err.message || "Failed to update task status",
+        );
+        return;
+      }
+
+      appToast.success(
+        newStatus === ToDoStatus.Closed
+          ? "Task marked as closed"
+          : "Task marked as open",
+      );
+
+      await Promise.all([reloadTodo(), dataReload()]);
+    } catch (error) {
+      // Rollback on network/error
+      setOptimisticTodoStatus((prev) => {
+        const next = { ...prev };
+        delete next[todoId];
+        return next;
+      });
+      const err = getBackendError(error);
+      appToast.error(err.message || "Failed to update task status");
+    } finally {
+      setOptimisticTodoStatus((prev) => {
+        const next = { ...prev };
+        delete next[todoId];
+        return next;
+      });
+    }
+  };
 
   const handleEditTodo = async (todoData: any) => {
     setIsComponentLoading(true);
     try {
       const response = await updateToDoTaskCall(todoData);
-      if (response) {
-        await Promise.all([reloadTodo(), dataReload()]);
-        // Shift view to the date the todo was created
-        const shiftDate = todoData.CreatedDate || todoData.createdDate;
-        if (shiftDate) {
-          setCurrentDate(new Date(Number(shiftDate)));
-        }
+      const err = getBackendError(response);
+      if (err.hasError) {
+        appToast.error(
+          err.errorCode === 130
+            ? "You do not have permission to update this ToDo task."
+            : err.errorCode === 131
+            ? "This task no longer exists."
+            : err.message || "Failed to update ToDo task",
+        );
+        return;
       }
+
+      appToast.success("ToDo task updated successfully");
+      await Promise.all([reloadTodo(), dataReload()]);
+      const shiftDate = todoData.CreatedDate || todoData.createdDate;
+      if (shiftDate) {
+        setCurrentDate(new Date(Number(shiftDate)));
+      }
+    } catch (error) {
+      const err = getBackendError(error);
+      appToast.error(
+        err.errorCode === 130
+          ? "You do not have permission to update this ToDo task."
+          : err.errorCode === 131
+          ? "This task no longer exists."
+          : err.message || "Failed to update ToDo task",
+      );
     } finally {
       setIsComponentLoading(false);
     }
@@ -219,42 +374,68 @@ const ToDoAndPMComponent = ({
   const handleEditPocketMoney = async (pocketMoneyData: any) => {
     setIsComponentLoading(true);
     try {
-      // We safely fall back to PMTransId since the backend primary key is often tracked there
-      const taskId = pocketMoneyData.PMTransId || selectedPocketMoney?.PMTransId || pocketMoneyData.PMTaskId || pocketMoneyData.LocalPMTaskId || selectedPocketMoney?.LocalPMTaskId || 0;
-      const familyId = familyDetails?.Family?.Id || pocketMoneyData.FamilyId || 0;
+      const taskId =
+        pocketMoneyData.PMTransId ||
+        selectedPocketMoney?.PMTransId ||
+        pocketMoneyData.PMTaskId ||
+        pocketMoneyData.LocalPMTaskId ||
+        selectedPocketMoney?.LocalPMTaskId ||
+        0;
+      const familyId =
+        familyDetails?.Family?.Id || pocketMoneyData.FamilyId || 0;
 
-      // Ensure we have a valid PMTaskId and FamilyId
       if (!taskId || taskId === 0) {
-        console.error("Invalid PMTaskId or FamilyId. Data:", { pocketMoneyData, selectedPocketMoney, familyId });
-        // You might want to show an error message to the user here
+        console.error("Invalid PMTaskId or FamilyId. Data:", {
+          pocketMoneyData,
+          selectedPocketMoney,
+          familyId,
+        });
         return;
       }
 
       const apiData = {
-        PMTaskId: taskId,
-        FamilyId: familyId,
-        PMDescription: pocketMoneyData.PMDescription || "",
-        PMAmount: pocketMoneyData.PMAmount || 0,
-        FirstComeFirstServe: pocketMoneyData.FirstComeFirstServe || false,
-        Note: pocketMoneyData.Note || "",
-        FamilyMembersPlanned: pocketMoneyData.FamilyMembersPlanned || [],
-        CreatedBy: pocketMoneyData.CreatedBy || "",
-        ActivityDate: pocketMoneyData.ActivityDate || new Date().toISOString(),
-        Interval: pocketMoneyData.Interval || 0,
-        Repeat: pocketMoneyData.Repeat || 0,
-        CurrencyCode: pocketMoneyData.CurrencyCode || "INR",
+        pmTaskId: taskId,
+        familyId: familyId,
+        pmDescription: pocketMoneyData.PMDescription || "",
+        pmAmount: pocketMoneyData.PMAmount || 0,
+        firstComeFirstServe: Boolean(pocketMoneyData.FirstComeFirstServe),
+        note: pocketMoneyData.Note || "",
+        familyMembersPlanned: pocketMoneyData.FamilyMembersPlanned || [],
+        createdBy: pocketMoneyData.CreatedBy || currentUserIdResolved,
+        activityDate:
+          pocketMoneyData.ActivityDate || new Date().toISOString(),
+        interval: pocketMoneyData.Interval || 0,
+        repeat: pocketMoneyData.Repeat || 0,
+        currencyCode: pocketMoneyData.CurrencyCode || "INR",
+        status:
+          pocketMoneyData.status ??
+          pocketMoneyData.Status ??
+          selectedPocketMoney?.Status,
       };
 
       const response = await updatePocketMoneyTaskCall(apiData);
-      if (response) {
-        await Promise.all([reloadPM(), dataReload()]);
-        if (pocketMoneyData.ActivityDate) {
-          setCurrentDate(new Date(pocketMoneyData.ActivityDate));
-        }
+      const err = getBackendError(response);
+      if (err.hasError) {
+        appToast.error(
+          err.errorCode === 123
+            ? "You can only edit Pocket Money tasks assigned to you."
+            : err.message || "Failed to update pocket money task",
+        );
+        return;
+      }
+
+      appToast.success("Pocket Money task updated successfully");
+      await Promise.all([reloadPM(), dataReload()]);
+      if (pocketMoneyData.ActivityDate) {
+        setCurrentDate(new Date(pocketMoneyData.ActivityDate));
       }
     } catch (error) {
-      console.error("Failed to update pocket money:", error);
-      // You might want to show an error toast/notification here
+      const err = getBackendError(error);
+      appToast.error(
+        err.errorCode === 123
+          ? "You can only edit Pocket Money tasks assigned to you."
+          : err.message || "Failed to update pocket money task",
+      );
     } finally {
       setIsComponentLoading(false);
     }
@@ -289,14 +470,14 @@ const ToDoAndPMComponent = ({
           }`}
         >
           {/* Pocket Money Section */}
-          <section className="bg-blue-100  sm:p-1 shadow-md ">
-            <div className="flex  min-h-28 sm:min-h-0 ">
+          <section className="bg-blue-100 sm:p-1 shadow-md">
+            <div className="flex min-h-28 sm:min-h-0">
               {(!isSmallScreen ||
                 members.some(
                   (m) =>
                     (pmTasksByMember.get(memberResourceId(m)) ?? []).length > 0,
                 )) && (
-                <div className="flex sm:items-center  justify-between sm:pr-1">
+                <div className="flex sm:items-center justify-between sm:pr-1">
                   <div className="font-semibold break-words w-min sm:w-[55px] rounded-lg p-1 sm:flex sm:items-center sm:justify-center text-xs bg-gradient-to-r from-emerald-400 to-sky-500 text-white text-center [writing-mode:vertical-rl] [transform:rotate(180deg)] sm:[writing-mode:horizontal-tb] sm:[transform:none]">
                     {t("Pocket Money Tasks")}
                   </div>
@@ -334,7 +515,7 @@ const ToDoAndPMComponent = ({
                               {sortedPMTasks.map((pm) => (
                                 <div
                                   key={`${pm.PMTransId}-${rid}`}
-                                  className="w-full my-auto sm:my-0"
+                                  className="w-full my-auto sm:my-0 cursor-pointer"
                                   onClick={() => {
                                     checkSubscription(() => {
                                       setSelectedPocketMoney(pm);
@@ -347,6 +528,7 @@ const ToDoAndPMComponent = ({
                                     PMEventData={pm}
                                     familyDetails={familyDetails}
                                     currentMemberId={rid}
+                                    currentMember={currentMember}
                                   />
                                 </div>
                               ))}
@@ -408,7 +590,7 @@ const ToDoAndPMComponent = ({
                               {sortedTodos.map((todo) => (
                                 <div
                                   key={`${todo.ToDoTaskId}-${rid}`}
-                                  className="w-full my-auto sm:my-0"
+                                  className="w-full my-auto sm:my-0 cursor-pointer"
                                   onClick={() => {
                                     checkSubscription(() => {
                                       setSelectedTodo(todo);
@@ -419,6 +601,9 @@ const ToDoAndPMComponent = ({
                                   <TodoEventUi
                                     ToDoData={todo}
                                     familyDetails={familyDetails}
+                                    currentMember={currentMember}
+                                    familyWideMemberId={familyWideMemberId}
+                                    onToggleStatus={handleToggleTodoStatus}
                                   />
                                 </div>
                               ))}
@@ -434,11 +619,15 @@ const ToDoAndPMComponent = ({
           </section>
         </div>
       )}
+
       {selectedTodo && (
         <EditTodoPopup
           ToDoFamilyGroup={familyDetails.Family.ToDoFamilyGroups}
           isOpen={showEditTodo}
           todo={selectedTodo}
+          currentMember={currentMember}
+          familyWideMemberId={familyWideMemberId}
+          familyId={familyDetails?.Family?.Id}
           onClose={() => {
             setShowEditTodo(false);
             setSelectedTodo(null);
@@ -452,15 +641,12 @@ const ToDoAndPMComponent = ({
         isOpen={showEditPocketMoney}
         pocketMoney={selectedPocketMoney}
         familyId={PMTaskDetails?.PMFamily?.FamilyId || familyDetails?.Family?.Id}
-        loggedInUserId={familyDetails?.LoggedInUserId}
-        loggedInUserMemberType={
-          familyDetails?.Members?.find(
-            (m) =>
-              String(m.MemberId) === String(familyDetails?.LoggedInUserId) ||
-              String(m.Id) === String(familyDetails?.LoggedInUserId),
-          )?.MemberType
-        }
+        loggedInUserId={currentUserIdResolved}
+        loggedInUserMemberType={currentMember?.MemberType}
         currentMemberId={selectedPocketMoneyMemberId}
+        currentMember={currentMember}
+        totalFamilyMembersCount={familyDetails?.Members?.length}
+        onWalletCredit={onWalletCredit}
         onClose={() => {
           setShowEditPocketMoney(false);
           setSelectedPocketMoney(null);
