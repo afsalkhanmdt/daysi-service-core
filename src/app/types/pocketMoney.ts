@@ -1,4 +1,14 @@
 import { FrequencyEnum } from "./appoinment";
+import { MemberType } from "./familyMemberTypes";
+
+export { MemberType };
+
+export enum PMTransStatus {
+  Open = 0,
+  Finished = 1,
+  Approved = 2,
+  Deleted = 3,
+}
 
 
 export interface PocketMoneyPopupProps {

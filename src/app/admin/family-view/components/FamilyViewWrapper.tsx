@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import dayjs from "dayjs";
 import Image from "next/image";
 
@@ -248,6 +248,77 @@ const FamilyViewWrapper = ({
       setIsLangReady(true);
     }
   }, [familyDetails]);
+
+    // Optimistic wallet balance updater
+  const handleWalletCredit = useCallback(
+    (memberId: string, deltaAmount: number) => {
+      setFamilyDetails((prev) => {
+        if (!prev || !prev.Members) return prev;
+        const normalizedTarget = String(memberId).trim().toLowerCase();
+        const updatedMembers = prev.Members.map((m) => {
+          const mId = String(m.MemberId ?? m.Id ?? '').trim().toLowerCase();
+          if (mId === normalizedTarget) {
+            const currentBalance = Number(m.AmountEarned || 0);
+            return {
+              ...m,
+              AmountEarned: Math.max(0, currentBalance + deltaAmount),
+            };
+          }
+          return m;
+        });
+        return {
+          ...prev,
+          Members: updatedMembers,
+        };
+      });
+    },
+    [],
+  );
+
+  // Foreground push notification handler for PMTaskApprovedNotification
+  useEffect(() => {
+    const handlePushPayload = (payload: any) => {
+      if (!payload) return;
+      const isApprovedNotification =
+        payload === 'PMTaskApprovedNotification' ||
+        payload.type === 'PMTaskApprovedNotification' ||
+        payload.notificationType === 'PMTaskApprovedNotification' ||
+        payload.data?.type === 'PMTaskApprovedNotification' ||
+        payload.data?.notificationType === 'PMTaskApprovedNotification';
+
+      if (isApprovedNotification) {
+        console.log('Received PMTaskApprovedNotification in foreground, refreshing mWallet...');
+        reload();
+        reloadPM();
+      }
+    };
+
+    const handleCustomPush = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      handlePushPayload(customEvent.detail);
+    };
+
+    const handleWindowMessage = (event: MessageEvent) => {
+      handlePushPayload(event.data);
+    };
+
+    window.addEventListener('PMTaskApprovedNotification', handleCustomPush);
+    window.addEventListener('push:notification', handleCustomPush);
+    window.addEventListener('message', handleWindowMessage);
+
+    if (typeof navigator !== 'undefined' && navigator.serviceWorker) {
+      navigator.serviceWorker.addEventListener('message', handleWindowMessage);
+    }
+
+    return () => {
+      window.removeEventListener('PMTaskApprovedNotification', handleCustomPush);
+      window.removeEventListener('push:notification', handleCustomPush);
+      window.removeEventListener('message', handleWindowMessage);
+      if (typeof navigator !== 'undefined' && navigator.serviceWorker) {
+        navigator.serviceWorker.removeEventListener('message', handleWindowMessage);
+      }
+    };
+  }, [reload, reloadPM]);
 
   // Auto-refresh every 60s
   useEffect(() => {
@@ -704,6 +775,7 @@ const FamilyViewWrapper = ({
               }
               optimisticUpdates={optimisticUpdates}
               setOptimisticUpdates={setOptimisticUpdates}
+              onWalletCredit={handleWalletCredit}
             />
           ) : (
             <div className="h-full overflow-y-auto">

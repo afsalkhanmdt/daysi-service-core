@@ -1,4 +1,12 @@
 import { ToDoFamilyGroupResponse } from "./familytypes";
+import { MemberType } from "./familyMemberTypes";
+
+export { MemberType };
+
+export enum ToDoStatus {
+  Open = 0,
+  Closed = 1,
+}
 
 
 

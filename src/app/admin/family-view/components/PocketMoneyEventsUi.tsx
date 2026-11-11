@@ -1,17 +1,21 @@
 "use client";
+import React from "react";
 import Image from "next/image";
 import { FamilyData } from "./FamilyViewWrapper";
 import { useTranslation } from "react-i18next";
-import { PMTask } from "@/app/types/pocketMoney";
+import { PMTask, PMTransStatus } from "@/app/types/pocketMoney";
+import { MemberResponse, MemberType } from "@/app/types/familyMemberTypes";
 
 const PocketMoneyEventUi = ({
   PMEventData,
   familyDetails,
   currentMemberId,
+  currentMember,
 }: {
   PMEventData: PMTask;
   familyDetails: FamilyData;
   currentMemberId?: string;
+  currentMember?: MemberResponse | null;
 }) => {
   const { t } = useTranslation("common");
 
@@ -19,7 +23,7 @@ const PocketMoneyEventUi = ({
 
   const plannedMembers = PMEventData.FamilyMembersPlanned || [];
   const participants = (familyDetails.Members || []).filter((m) =>
-    plannedMembers.some((pm) => String(pm.MemberId) === String(m.MemberId)),
+    plannedMembers.some((pm) => String(pm.MemberId) === String(m.MemberId))
   );
 
   // Determine status for this specific member column if currentMemberId is provided
@@ -32,28 +36,38 @@ const PocketMoneyEventUi = ({
       ? Number(memberPlanned.Status)
       : Number(PMEventData.Status || 0);
 
-  // Get status and corresponding tick mark color
-  // Status: 0=OPEN (Grey), 1=FINISHED (Yellow), 2=APPROVED (Green)
+  const isFamilyAdmin =
+    (currentMember?.MemberType ?? MemberType.Member) === MemberType.FamilyAdmin;
+
+  const isFamilyWide = Boolean(
+    PMEventData.FirstComeFirstServe ||
+      (PMEventData as any).firstComeFirstServe ||
+      (PMEventData as any).isForAll ||
+      (plannedMembers.length > 0 &&
+        plannedMembers.length >= (familyDetails.Members?.length || 0))
+  );
+
+  // Status colors & labels
   const getStatusTickColor = (status: number) => {
     switch (status) {
-      case 0: // OPEN
+      case PMTransStatus.Open:
         return "#9CA3AF"; // Grey
-      case 1: // FINISHED
+      case PMTransStatus.Finished:
         return "#EAB308"; // Yellow
-      case 2: // APPROVED
+      case PMTransStatus.Approved:
         return "#22C55E"; // Green
       default:
-        return "#9CA3AF"; // Grey
+        return "#9CA3AF";
     }
   };
 
   const getStatusLabel = (status: number) => {
     switch (status) {
-      case 0:
+      case PMTransStatus.Open:
         return "Open";
-      case 1:
-        return "Finished";
-      case 2:
+      case PMTransStatus.Finished:
+        return !isFamilyAdmin ? "Pending Approval" : "Finished";
+      case PMTransStatus.Approved:
         return "Approved";
       default:
         return "Open";
@@ -67,10 +81,28 @@ const PocketMoneyEventUi = ({
     <div className="min-w-52 sm:min-w-0 h-24 sm:h-20 border-t-2 sm:border-t-4 shadow-gray-300 rounded-xl border-sky-800 bg-white shadow-md flex flex-col justify-between gap-1 p-1 relative">
       <div>
         <div className="flex justify-between items-center">
-          <div className="text-center py-0.5 px-1.5 bg-slate-200 text-sky-800 w-fit text-[7px] rounded-2xl">
-            {t("Pocket Money Tasks")}
+          <div className="flex items-center gap-1">
+            <div className="text-center py-0.5 px-1.5 bg-slate-200 text-sky-800 w-fit text-[7px] rounded-2xl">
+              {t("Pocket Money Tasks")}
+            </div>
+            {isFamilyWide && (
+              <span className="text-center py-0.5 px-1.5 bg-purple-100 text-purple-700 border border-purple-200 w-fit text-[7px] font-bold rounded-2xl uppercase tracking-wider">
+                Family
+              </span>
+            )}
+            {effectiveStatus === PMTransStatus.Finished && !isFamilyAdmin && (
+              <span className="text-center py-0.5 px-1 bg-amber-100 text-amber-700 border border-amber-300 text-[7px] font-bold rounded-full">
+                Pending Approval
+              </span>
+            )}
+            {effectiveStatus === PMTransStatus.Approved && (
+              <span className="text-center py-0.5 px-1 bg-emerald-100 text-emerald-700 border border-emerald-300 text-[7px] font-bold rounded-full">
+                Approved
+              </span>
+            )}
           </div>
-          {/* Status Tick Mark - Inline SVG */}
+
+          {/* Status Tick Mark */}
           <div
             className="mr-2 flex items-center"
             title={`Status: ${statusLabel}`}

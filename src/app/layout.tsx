@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ResourceProvider } from "@/app/context/ResourceContext";
-import DeviceGuard from "@/components/DeviceGuard";
+import { ToastProvider } from "@/components/Toast/ToastContext";
 
 export const metadata: Metadata = {
   title: "MyFamilii",
@@ -20,7 +20,9 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased">
         <ResourceProvider>
-          <DeviceGuard>{children}</DeviceGuard>
+          <ToastProvider>
+            {children}
+          </ToastProvider>
         </ResourceProvider>
       </body>
     </html>
