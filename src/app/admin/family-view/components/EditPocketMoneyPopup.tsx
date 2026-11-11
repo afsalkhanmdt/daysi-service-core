@@ -447,23 +447,66 @@ const EditPocketMoneyPopup: React.FC<EditPocketMoneyPopupProps> = ({
     setShowCloseConfirmation(false);
   };
 
-  // Handle status change button
-  const handleStatusChange = async () => {
-    let newStatus: number;
+  // Mark task as FINISHED (1)
+  const handleMarkFinished = async () => {
+    if (!canFinish || isStatusUpdating) return;
+    setIsStatusUpdating(true);
 
-    if (currentStatus === STATUS.OPEN) {
-      newStatus = STATUS.FINISHED;
-    } else if (currentStatus === STATUS.FINISHED) {
-      newStatus = STATUS.APPROVED;
-    } else {
+    const targetFamilyId = familyId ?? formData.FamilyId;
+    const assignedMemberId =
+      currentMemberId ||
+      pocketMoney?.FamilyMembersPlanned?.[0]?.MemberId ||
+      formData.FamilyMembersPlanned?.[0] ||
+      currentUserId ||
+      "";
+
+    try {
+      const finishApiData = {
+        FamilyId: targetFamilyId,
+        PMTransId: pocketMoney?.PMTransId || (pocketMoney as any)?.LocalPMTaskId,
+        FinishedBy: assignedMemberId,
+      };
+
+      const response = await finishPocketMoneyTaskCall(finishApiData);
+      const err = getBackendError(response);
+      if (err.hasError) {
+        appToast.error(err.message || "Failed to mark task finished");
+        return;
+      }
+
+      setCurrentStatus(PMTransStatus.Finished);
+      appToast.success("Task marked as finished!");
+      if (reloadPM) await reloadPM();
+      if (dataReload) await dataReload();
+      onClose();
+    } catch (error) {
+      const err = getBackendError(error);
+      appToast.error(err.message || "Failed to mark task finished");
+    } finally {
+      setIsStatusUpdating(false);
+    }
+  };
+
+  // Approve task (transition to 2 & wallet credit)
+  const handleApprove = async () => {
+    if (!canApprove || isStatusUpdating) return;
+    if (!isFamilyAdmin) {
+      appToast.error("Only Family Admins can approve Pocket Money tasks.");
       return;
     }
 
-    setCurrentStatus(newStatus);
+    setIsStatusUpdating(true);
 
     const targetFamilyId = familyId ?? formData.FamilyId;
-    const targetMemberId =
-      loggedInUserId || pocketMoney?.FamilyMembersPlanned?.[0]?.MemberId || "";
+    const finishedPlannedMember = (pocketMoney?.FamilyMembersPlanned || []).find(
+      (p) => Number(p.Status) === PMTransStatus.Finished,
+    );
+    const assignedMemberId =
+      currentMemberId ||
+      finishedPlannedMember?.MemberId ||
+      pocketMoney?.FamilyMembersPlanned?.[0]?.MemberId ||
+      formData.FamilyMembersPlanned?.[0] ||
+      "";
 
     const amount = Number(formData.PMAmount || pocketMoney?.PMAmount || 0);
     const currency = formData.CurrencyCode || (pocketMoney as any)?.CurrencyCode || "DKK";
@@ -474,23 +517,30 @@ const EditPocketMoneyPopup: React.FC<EditPocketMoneyPopupProps> = ({
     }
 
     try {
-      if (currentStatus === STATUS.OPEN) {
-        const finishApiData = {
-          FamilyId: targetFamilyId,
-          PMTransId: pocketMoney?.PMTransId,
-          FinishedBy: targetMemberId,
-        };
-        const response = await finishPocketMoneyTaskCall(finishApiData);
-        if (response && reloadPM) await reloadPM();
-      } else if (currentStatus === STATUS.FINISHED) {
-        const approveApiData = {
-          FamilyId: targetFamilyId,
-          PMTransId: pocketMoney?.PMTransId,
-          ApprovedBy: loggedInUserId ?? "",
-          FinishedBy: targetMemberId,
-        };
-        const response = await approvePocketMoneyTaskCall(approveApiData);
-        if (response && reloadPM) await reloadPM();
+      const approveApiData = {
+        familyId: Number(targetFamilyId),
+        pmTransId: Number(pocketMoney?.PMTransId || (pocketMoney as any)?.LocalPMTaskId),
+        finishedBy: String(assignedMemberId),
+        approvedBy: String(currentUserId),
+        FamilyId: Number(targetFamilyId),
+        PMTransId: Number(pocketMoney?.PMTransId || (pocketMoney as any)?.LocalPMTaskId),
+        FinishedBy: String(assignedMemberId),
+        ApprovedBy: String(currentUserId),
+      };
+
+      const response = await approvePocketMoneyTaskCall(approveApiData);
+      const err = getBackendError(response);
+      if (err.hasError) {
+        // Rollback optimistic credit on error
+        if (assignedMemberId && amount > 0 && onWalletCredit) {
+          onWalletCredit(assignedMemberId, -amount, currency);
+        }
+        appToast.error(
+          err.errorCode === 127
+            ? "Only Family Admins can approve Pocket Money tasks."
+            : err.message || "Failed to approve task",
+        );
+        return;
       }
 
       setCurrentStatus(PMTransStatus.Approved);
@@ -501,7 +551,17 @@ const EditPocketMoneyPopup: React.FC<EditPocketMoneyPopupProps> = ({
       if (dataReload) await dataReload();
       onClose();
     } catch (error) {
-      console.error("Error updating pocket money status:", error);
+      if (assignedMemberId && amount > 0 && onWalletCredit) {
+        onWalletCredit(assignedMemberId, -amount, currency);
+      }
+      const err = getBackendError(error);
+      appToast.error(
+        err.errorCode === 127
+          ? "Only Family Admins can approve Pocket Money tasks."
+          : err.message || "Failed to approve task",
+      );
+    } finally {
+      setIsStatusUpdating(false);
     }
   };
 
