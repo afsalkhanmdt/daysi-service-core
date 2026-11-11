@@ -66,7 +66,7 @@ export default function ScheduleCard({
       )}
 
       {note && (
-        <span className="text-[10px] text-gray-500 font-medium italic mt-1 line-clamp-2">
+        <span className="text-[10px]  text-gray-500 font-medium italic mt-1 line-clamp-2">
           {note}
         </span>
       )}
