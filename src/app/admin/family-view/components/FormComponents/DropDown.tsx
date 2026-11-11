@@ -8,6 +8,7 @@ interface DropdownProps {
   placeholder?: string;
   iconUrl?: string;
   title?: string;
+  disabled?: boolean;
 }
 
 const CustomDropdown: React.FC<DropdownProps> = ({
@@ -17,6 +18,7 @@ const CustomDropdown: React.FC<DropdownProps> = ({
   placeholder = "Select an option",
   iconUrl,
   title,
+  disabled = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -64,8 +66,13 @@ const CustomDropdown: React.FC<DropdownProps> = ({
         {/* Dropdown Button */}
         <button
           type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white flex items-center justify-between hover:border-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+          disabled={disabled}
+          onClick={() => !disabled && setIsOpen(!isOpen)}
+          className={`w-full px-3 py-2 border rounded-lg flex items-center justify-between transition-colors focus:outline-none ${
+            disabled
+              ? "border-gray-200 bg-gray-100 cursor-not-allowed opacity-60"
+              : "border-gray-300 bg-white hover:border-gray-400 focus:ring-2 focus:ring-blue-500"
+          }`}
         >
           <div className="flex items-center gap-3">
             {selectedOption?.imageUrl && (
@@ -104,7 +111,7 @@ const CustomDropdown: React.FC<DropdownProps> = ({
         </button>
 
         {/* Dropdown Menu */}
-        {isOpen && (
+        {isOpen && !disabled && (
           <div className="absolute left-0 right-0 z-50 mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto">
             {options.map((option) => (
               <button

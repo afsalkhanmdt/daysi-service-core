@@ -19,6 +19,14 @@ export const approvePocketMoneyTaskCall = postCall("PocketMoney/Approve");
 export const payoutDepositCall = postCall("PocketMoney/PayoutDeposit");
 export const createToDoTaskCall = postCall("ToDo/CreateToDo");
 export const updateToDoTaskCall = postCall("ToDo/UpdateTodo");
+export const updateToDoStatusCall = (toDoTaskId: number | string, status: number, updatedBy: string) =>
+  postCall(
+    `ToDo/Status?toDoTaskId=${toDoTaskId}&status=${status}&updatedBy=${encodeURIComponent(updatedBy)}`
+  )({
+    toDoTaskId: Number(toDoTaskId),
+    status: Number(status),
+    updatedBy: String(updatedBy),
+  });
 export const createCalendarFeedCall = postCall("CalendarFeeds/Create");
 export const deleteCalendarFeedCall = (calendarId: number, membersUpdatedOn: string, locale: string) => deleteCall(`CalendarFeeds?calendarId=${calendarId}&membersUpdatedOn=${membersUpdatedOn}&locale=${locale}`);
 
